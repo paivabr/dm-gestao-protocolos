@@ -1,28 +1,66 @@
 import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 /**
- * Core user table backing auth flow.
- * Extend this file with additional tables as your product grows.
+ * Core user table for authentication with username and password.
  * Columns use camelCase to match both database fields and generated types.
  */
 export const users = mysqlTable("users", {
-  /**
-   * Surrogate primary key. Auto-incremented numeric value managed by the database.
-   * Use this for relations between tables.
-   */
   id: int("id").autoincrement().primaryKey(),
-  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
-  openId: varchar("openId", { length: 64 }).notNull().unique(),
-  name: text("name"),
+  username: varchar("username", { length: 100 }).notNull().unique(),
   email: varchar("email", { length: 320 }),
-  loginMethod: varchar("loginMethod", { length: 64 }),
+  passwordHash: varchar("passwordHash", { length: 255 }).notNull(),
+  name: text("name"),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-  lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
+  lastSignedIn: timestamp("lastSignedIn"),
 });
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+/**
+ * Clientes table for storing client information.
+ */
+export const clientes = mysqlTable("clientes", {
+  id: int("id").autoincrement().primaryKey(),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  cpfCnpj: varchar("cpfCnpj", { length: 20 }).notNull().unique(),
+  contato: varchar("contato", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Cliente = typeof clientes.$inferSelect;
+export type InsertCliente = typeof clientes.$inferInsert;
+
+/**
+ * Processos table for managing real estate processes.
+ */
+export const processos = mysqlTable("processos", {
+  id: int("id").autoincrement().primaryKey(),
+  titulo: varchar("titulo", { length: 255 }).notNull(),
+  clienteId: int("clienteId").notNull(),
+  status: mysqlEnum("status", ["Pendente", "Em Análise", "Protocolado", "Finalizado"]).default("Pendente").notNull(),
+  prazoVencimento: timestamp("prazoVencimento"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Processo = typeof processos.$inferSelect;
+export type InsertProcesso = typeof processos.$inferInsert;
+
+/**
+ * ChecklistItens table for document checklists per process.
+ */
+export const checklistItens = mysqlTable("checklistItens", {
+  id: int("id").autoincrement().primaryKey(),
+  processoId: int("processoId").notNull(),
+  item: varchar("item", { length: 255 }).notNull(),
+  concluido: int("concluido").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ChecklistItem = typeof checklistItens.$inferSelect;
+export type InsertChecklistItem = typeof checklistItens.$inferInsert;

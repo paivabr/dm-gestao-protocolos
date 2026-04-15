@@ -1,53 +1,83 @@
-import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
+import { COOKIE_NAME } from "@shared/const";
 import type { Express, Request, Response } from "express";
-import * as db from "../db";
+import * as auth from "../auth";
 import { getSessionCookieOptions } from "./cookies";
-import { sdk } from "./sdk";
 
-function getQueryParam(req: Request, key: string): string | undefined {
-  const value = req.query[key];
+function getBodyParam(req: Request, key: string): string | undefined {
+  const value = (req.body as Record<string, unknown>)[key];
   return typeof value === "string" ? value : undefined;
 }
 
 export function registerOAuthRoutes(app: Express) {
-  app.get("/api/oauth/callback", async (req: Request, res: Response) => {
-    const code = getQueryParam(req, "code");
-    const state = getQueryParam(req, "state");
+  /**
+   * POST /api/auth/login - Login with username and password
+   */
+  app.post("/api/auth/login", async (req: Request, res: Response) => {
+    const username = getBodyParam(req, "username");
+    const password = getBodyParam(req, "password");
 
-    if (!code || !state) {
-      res.status(400).json({ error: "code and state are required" });
+    if (!username || !password) {
+      res.status(400).json({ error: "username and password are required" });
       return;
     }
 
     try {
-      const tokenResponse = await sdk.exchangeCodeForToken(code, state);
-      const userInfo = await sdk.getUserInfo(tokenResponse.accessToken);
+      const result = await auth.loginUser(username, password);
 
-      if (!userInfo.openId) {
-        res.status(400).json({ error: "openId missing from user info" });
+      if (!result.success) {
+        res.status(401).json({ error: result.error });
         return;
       }
 
-      await db.upsertUser({
-        openId: userInfo.openId,
-        name: userInfo.name || null,
-        email: userInfo.email ?? null,
-        loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
-        lastSignedIn: new Date(),
+      const cookieOptions = getSessionCookieOptions(req);
+      const sessionDuration = 7 * 24 * 60 * 60 * 1000; // 7 days
+      res.cookie(COOKIE_NAME, result.sessionToken, {
+        ...cookieOptions,
+        maxAge: sessionDuration,
       });
 
-      const sessionToken = await sdk.createSessionToken(userInfo.openId, {
-        name: userInfo.name || "",
-        expiresInMs: ONE_YEAR_MS,
+      res.json({ success: true, user: result.user });
+    } catch (error) {
+      console.error("[Auth] Login failed", error);
+      res.status(500).json({ error: "Login failed" });
+    }
+  });
+
+  /**
+   * POST /api/auth/register - Register a new user
+   */
+  app.post("/api/auth/register", async (req: Request, res: Response) => {
+    const username = getBodyParam(req, "username");
+    const email = getBodyParam(req, "email");
+    const password = getBodyParam(req, "password");
+    const name = getBodyParam(req, "name");
+
+    if (!username || !email || !password || !name) {
+      res.status(400).json({
+        error: "username, email, password, and name are required",
       });
+      return;
+    }
+
+    try {
+      const result = await auth.registerUser(username, email, password, name);
+
+      if (!result.success) {
+        res.status(400).json({ error: result.error });
+        return;
+      }
 
       const cookieOptions = getSessionCookieOptions(req);
-      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+      const sessionDuration = 7 * 24 * 60 * 60 * 1000; // 7 days
+      res.cookie(COOKIE_NAME, result.sessionToken, {
+        ...cookieOptions,
+        maxAge: sessionDuration,
+      });
 
-      res.redirect(302, "/");
+      res.json({ success: true, user: result.user });
     } catch (error) {
-      console.error("[OAuth] Callback failed", error);
-      res.status(500).json({ error: "OAuth callback failed" });
+      console.error("[Auth] Register failed", error);
+      res.status(500).json({ error: "Registration failed" });
     }
   });
 }
