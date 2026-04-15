@@ -52,5 +52,5 @@
 - [x] Corrigir auditoria para registrar criação de processos
 - [x] Adicionar auditoria para alterações no checklist
 - [x] Corrigir exibição de Meu Perfil no menu lateral
-- [x] Importar dados da planilha Google Sheets (76 registros importados com sucesso)
+- [x] Importar dados da planilha Google Sheets (122 registros importados com sucesso)
 - [x] Fazer upload final para GitHub
