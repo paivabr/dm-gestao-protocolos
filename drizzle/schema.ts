@@ -6,14 +6,13 @@ import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, tinyint } from "d
  */
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
-  username: varchar("username", { length: 100 }).notNull().unique(),
+  openId: varchar("openId", { length: 64 }).notNull().unique(),
+  username: varchar("username", { length: 255 }),
   email: varchar("email", { length: 320 }),
-  passwordHash: varchar("passwordHash", { length: 255 }).notNull(),
+  passwordHash: varchar("passwordHash", { length: 255 }),
   name: text("name"),
+  loginMethod: varchar("loginMethod", { length: 64 }),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
-  fotoPerfil: text("fotoPerfil"),
-  resetPasswordToken: varchar("resetPasswordToken", { length: 255 }),
-  resetPasswordExpires: timestamp("resetPasswordExpires"),
   // Permissões de funcionalidades
   canCreateClient: tinyint("canCreateClient").default(0).notNull(),
   canEditProcess: tinyint("canEditProcess").default(0).notNull(),
