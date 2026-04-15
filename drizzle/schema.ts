@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, tinyint } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table for authentication with username and password.
@@ -14,6 +14,13 @@ export const users = mysqlTable("users", {
   fotoPerfil: text("fotoPerfil"),
   resetPasswordToken: varchar("resetPasswordToken", { length: 255 }),
   resetPasswordExpires: timestamp("resetPasswordExpires"),
+  // Permissões de funcionalidades
+  canCreateClient: tinyint("canCreateClient").default(0).notNull(),
+  canEditProcess: tinyint("canEditProcess").default(0).notNull(),
+  canDeleteProcess: tinyint("canDeleteProcess").default(0).notNull(),
+  canViewCalendar: tinyint("canViewCalendar").default(0).notNull(),
+  canViewProcesses: tinyint("canViewProcesses").default(0).notNull(),
+  canViewClients: tinyint("canViewClients").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn"),

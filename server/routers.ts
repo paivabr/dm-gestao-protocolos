@@ -514,6 +514,54 @@ export const appRouter = router({
         return { success: true };
       }),
   }),
+
+  // ============ PERMISSIONS ROUTES ============
+  permissions: router({
+    updateUserPermissions: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        canCreateClient: z.boolean().optional(),
+        canEditProcess: z.boolean().optional(),
+        canDeleteProcess: z.boolean().optional(),
+        canViewCalendar: z.boolean().optional(),
+        canViewProcesses: z.boolean().optional(),
+        canViewClients: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Only admins can update permissions
+        if (ctx.user?.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Apenas administradores podem alterar permissões" });
+        }
+
+        await db.updateUserPermissions(input.userId, {
+          canCreateClient: input.canCreateClient,
+          canEditProcess: input.canEditProcess,
+          canDeleteProcess: input.canDeleteProcess,
+          canViewCalendar: input.canViewCalendar,
+          canViewProcesses: input.canViewProcesses,
+          canViewClients: input.canViewClients,
+        });
+
+        return { success: true };
+      }),
+
+    getUserPermissions: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        // Only admins can view permissions
+        if (ctx.user?.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Apenas administradores podem ver permissões" });
+        }
+
+        return await db.getUserPermissions(input.userId);
+      }),
+
+    getMyPermissions: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        return await db.getUserPermissions(ctx.user.id);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

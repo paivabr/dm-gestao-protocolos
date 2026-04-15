@@ -15,6 +15,7 @@ export default function Admin() {
   const [filterUsuarioId, setFilterUsuarioId] = useState<string>("");
   const [filterUsuarioNome, setFilterUsuarioNome] = useState<string>("");
   const [filterProcessoId, setFilterProcessoId] = useState<string>("");
+  const [selectedUserForPermissions, setSelectedUserForPermissions] = useState<number | null>(null);
 
   const auditoriaQuery = trpc.auditoria.getAll.useQuery(undefined, {
     enabled: user?.role === "admin",
@@ -109,9 +110,10 @@ export default function Admin() {
       </div>
 
       <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="usuarios">Histórico por Usuário</TabsTrigger>
           <TabsTrigger value="processos">Histórico por Processo</TabsTrigger>
+          <TabsTrigger value="permissoes">Permissões</TabsTrigger>
         </TabsList>
 
         <TabsContent value="usuarios" className="space-y-4">
@@ -224,7 +226,157 @@ export default function Admin() {
             </Card>
           ))}
         </TabsContent>
+
+        <TabsContent value="permissoes" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Gerenciar Permissões de Usuários</CardTitle>
+              <CardDescription>Configure as permissões para cada usuário</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Selecione um usuário:</label>
+                <div className="space-y-2 max-h-96 overflow-y-auto border rounded-lg p-2">
+                  {usuariosComNomes.map((usuario) => (
+                    <button
+                      key={usuario.id}
+                      onClick={() => setSelectedUserForPermissions(usuario.id)}
+                      className={`w-full text-left px-4 py-2 rounded-lg border-2 transition-colors ${
+                        selectedUserForPermissions === usuario.id
+                          ? "border-blue-500 bg-blue-50"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      {usuario.nome}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {selectedUserForPermissions && (
+                <PermissionsManager userId={selectedUserForPermissions} userName={usuariosComNomes.find(u => u.id === selectedUserForPermissions)?.nome || ""} />
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+function PermissionsManager({ userId, userName }: { userId: number; userName: string }) {
+  const [permissions, setPermissions] = useState({
+    canCreateClient: false,
+    canEditProcess: false,
+    canDeleteProcess: false,
+    canViewCalendar: false,
+    canViewProcesses: false,
+    canViewClients: false,
+  });
+  const [isSaving, setIsSaving] = useState(false);
+
+  const getPermissionsQuery = trpc.permissions.getUserPermissions.useQuery(
+    { userId }
+  );
+
+  useEffect(() => {
+    if (getPermissionsQuery.data) {
+      setPermissions(getPermissionsQuery.data);
+    }
+  }, [getPermissionsQuery.data]);
+
+  const updatePermissionsMutation = trpc.permissions.updateUserPermissions.useMutation({
+    onSuccess: () => {
+      void getPermissionsQuery.refetch();
+      setIsSaving(false);
+    },
+  });
+
+  const handlePermissionChange = (permission: keyof typeof permissions) => {
+    setPermissions((prev) => ({
+      ...prev,
+      [permission]: !prev[permission],
+    }));
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    await updatePermissionsMutation.mutateAsync({
+      userId,
+      ...permissions,
+    });
+  };
+
+  return (
+    <Card className="border-blue-200 bg-blue-50">
+      <CardHeader>
+        <CardTitle className="text-lg">{userName}</CardTitle>
+        <CardDescription>Permissões do usuário</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-3">
+          <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-blue-100 transition-colors">
+            <input
+              type="checkbox"
+              checked={permissions.canViewClients}
+              onChange={() => handlePermissionChange("canViewClients")}
+              className="w-4 h-4"
+            />
+            <span className="text-sm font-medium">Ver Aba de Clientes</span>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-blue-100 transition-colors">
+            <input
+              type="checkbox"
+              checked={permissions.canCreateClient}
+              onChange={() => handlePermissionChange("canCreateClient")}
+              className="w-4 h-4"
+            />
+            <span className="text-sm font-medium">Criar Cadastro de Cliente</span>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-blue-100 transition-colors">
+            <input
+              type="checkbox"
+              checked={permissions.canViewProcesses}
+              onChange={() => handlePermissionChange("canViewProcesses")}
+              className="w-4 h-4"
+            />
+            <span className="text-sm font-medium">Ver Aba de Processos</span>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-blue-100 transition-colors">
+            <input
+              type="checkbox"
+              checked={permissions.canEditProcess}
+              onChange={() => handlePermissionChange("canEditProcess")}
+              className="w-4 h-4"
+            />
+            <span className="text-sm font-medium">Editar Processo</span>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-blue-100 transition-colors">
+            <input
+              type="checkbox"
+              checked={permissions.canDeleteProcess}
+              onChange={() => handlePermissionChange("canDeleteProcess")}
+              className="w-4 h-4"
+            />
+            <span className="text-sm font-medium">Excluir Processo</span>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-blue-100 transition-colors">
+            <input
+              type="checkbox"
+              checked={permissions.canViewCalendar}
+              onChange={() => handlePermissionChange("canViewCalendar")}
+              className="w-4 h-4"
+            />
+            <span className="text-sm font-medium">Ver Aba de Calendário</span>
+          </label>
+        </div>
+        <Button
+          onClick={handleSave}
+          disabled={isSaving || updatePermissionsMutation.isPending}
+          className="w-full mt-4"
+        >
+          {isSaving ? "Salvando..." : "Salvar Permissões"}
+        </Button>
+      </CardContent>
+    </Card>
   );
 }

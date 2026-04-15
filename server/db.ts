@@ -731,3 +731,69 @@ export async function marcarParcelaComoNaoPaga(id: number) {
     console.error("[Database] Failed to mark parcela as unpaid:", error);
   }
 }
+
+
+// ============ PERMISSIONS FUNCTIONS ============
+
+export async function updateUserPermissions(userId: number, permissions: {
+  canCreateClient?: boolean;
+  canEditProcess?: boolean;
+  canDeleteProcess?: boolean;
+  canViewCalendar?: boolean;
+  canViewProcesses?: boolean;
+  canViewClients?: boolean;
+}) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot update user permissions: database not available");
+    return;
+  }
+
+  try {
+    const updateData: any = {};
+    if (permissions.canCreateClient !== undefined) updateData.canCreateClient = permissions.canCreateClient ? 1 : 0;
+    if (permissions.canEditProcess !== undefined) updateData.canEditProcess = permissions.canEditProcess ? 1 : 0;
+    if (permissions.canDeleteProcess !== undefined) updateData.canDeleteProcess = permissions.canDeleteProcess ? 1 : 0;
+    if (permissions.canViewCalendar !== undefined) updateData.canViewCalendar = permissions.canViewCalendar ? 1 : 0;
+    if (permissions.canViewProcesses !== undefined) updateData.canViewProcesses = permissions.canViewProcesses ? 1 : 0;
+    if (permissions.canViewClients !== undefined) updateData.canViewClients = permissions.canViewClients ? 1 : 0;
+
+    await db.update(users).set(updateData).where(eq(users.id, userId));
+  } catch (error) {
+    console.error("[Database] Failed to update user permissions:", error);
+  }
+}
+
+export async function getUserPermissions(userId: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user permissions: database not available");
+    return null;
+  }
+
+  try {
+    const result = await db.select({
+      canCreateClient: users.canCreateClient,
+      canEditProcess: users.canEditProcess,
+      canDeleteProcess: users.canDeleteProcess,
+      canViewCalendar: users.canViewCalendar,
+      canViewProcesses: users.canViewProcesses,
+      canViewClients: users.canViewClients,
+    }).from(users).where(eq(users.id, userId)).limit(1);
+
+    if (result.length > 0) {
+      return {
+        canCreateClient: result[0].canCreateClient === 1,
+        canEditProcess: result[0].canEditProcess === 1,
+        canDeleteProcess: result[0].canDeleteProcess === 1,
+        canViewCalendar: result[0].canViewCalendar === 1,
+        canViewProcesses: result[0].canViewProcesses === 1,
+        canViewClients: result[0].canViewClients === 1,
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error("[Database] Failed to get user permissions:", error);
+    return null;
+  }
+}
