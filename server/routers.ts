@@ -128,7 +128,14 @@ export const appRouter = router({
           contato: z.string().optional(),
         })
       )
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        // Verificar permissão
+        if (ctx.user?.role !== "admin") {
+          const permissions = await db.getUserPermissions(ctx.user?.id || 0);
+          if (!permissions?.canCreateClient) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Você não tem permissão para criar clientes" });
+          }
+        }
         const clienteId = await db.createCliente({
           nome: input.nome,
           cpfCnpj: input.cpfCnpj,
@@ -244,6 +251,13 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input, ctx }) => {
+        // Verificar permissão
+        if (ctx.user?.role !== "admin") {
+          const permissions = await db.getUserPermissions(ctx.user?.id || 0);
+          if (!permissions?.canEditProcess) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Você não tem permissão para editar processos" });
+          }
+        }
         await db.updateProcesso(input.id, {
           titulo: input.titulo,
           status: input.status,
@@ -267,6 +281,13 @@ export const appRouter = router({
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input, ctx }) => {
+        // Verificar permissão
+        if (ctx.user?.role !== "admin") {
+          const permissions = await db.getUserPermissions(ctx.user?.id || 0);
+          if (!permissions?.canDeleteProcess) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Você não tem permissão para deletar processos" });
+          }
+        }
         await db.deleteProcesso(input.id);
 
         // Registrar auditoria

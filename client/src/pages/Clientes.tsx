@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 export default function Clientes() {
   const [open, setOpen] = useState(false);
@@ -19,7 +20,11 @@ export default function Clientes() {
     contato: "",
   });
 
-  const { data: clientes, isLoading, refetch } = trpc.clientes.list.useQuery();
+  const { user } = useAuth();
+  const { data: permissions } = trpc.permissions.getMyPermissions.useQuery();
+  const { data: clientes, isLoading, refetch } = trpc.clientes.list.useQuery(undefined, {
+    enabled: user?.role === "admin" || permissions?.canViewClients,
+  });
   const createMutation = trpc.clientes.create.useMutation();
   const updateMutation = trpc.clientes.update.useMutation();
   const deleteMutation = trpc.clientes.delete.useMutation();
@@ -31,6 +36,11 @@ export default function Clientes() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (user?.role !== "admin" && !permissions?.canCreateClient) {
+      toast.error("Você não tem permissão para criar clientes");
+      return;
+    }
     
     if (!isValidCPFOrCNPJ(formData.cpfCnpj)) {
       toast.error("CPF ou CNPJ inválido");

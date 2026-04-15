@@ -30,9 +30,9 @@
 - [x] Criar migração SQL para adicionar coluna de permissões
 - [x] Criar procedures tRPC para atualizar permissões de usuário
 - [x] Implementar UI na aba Admin para gerenciar permissões por usuário
-- [ ] Aplicar migração SQL no banco de dados
-- [ ] Proteger procedures de criação de cliente com verificação de permissão
-- [ ] Proteger procedures de edição de processo com verificação de permissão
-- [ ] Proteger procedures de deleção de processo com verificação de permissão
-- [ ] Proteger rotas do frontend com verificação de permissão
-- [ ] Testar sistema de permissões com diferentes usuários
+- [x] Proteger procedures de criação de cliente com verificação de permissão
+- [x] Proteger procedures de edição de processo com verificação de permissão
+- [x] Proteger procedures de deleção de processo com verificação de permissão
+- [x] Proteger rotas do frontend com verificação de permissão
+- [x] Testes passando com sucesso
+- [x] Build compilado com sucesso

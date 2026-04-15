@@ -10,6 +10,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import ChecklistModal from "@/components/ChecklistModal";
 import ParcelasModal from "@/components/ParcelasModal";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 export default function Processos() {
   const [open, setOpen] = useState(false);
@@ -26,7 +27,12 @@ export default function Processos() {
     prazoVencimento: "",
   });
 
-  const { data: processos, isLoading, refetch } = trpc.processos.list.useQuery();
+  const { user } = useAuth();
+  const { data: permissions } = trpc.permissions.getMyPermissions.useQuery();
+
+  const { data: processos, isLoading, refetch } = trpc.processos.list.useQuery(undefined, {
+    enabled: user?.role === "admin" || permissions?.canViewProcesses,
+  });
   const { data: clientes } = trpc.clientes.list.useQuery();
   const createMutation = trpc.processos.create.useMutation();
   const deleteMutation = trpc.processos.delete.useMutation();
