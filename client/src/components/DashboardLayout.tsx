@@ -135,7 +135,11 @@ export default function DashboardLayout({
       </Sidebar>
       <SidebarInset>
         <header className="flex items-center justify-between border-b px-4 py-3">
-          <SidebarTrigger />
+          <div className="flex items-center gap-3">
+            <SidebarTrigger />
+            <img src="/favicon.ico" alt="DM Logo" className="h-6 w-6" />
+            <span className="font-semibold text-sm text-slate-900">DM Gestão de Protocolos</span>
+          </div>
           <div className="flex items-center gap-2">
             <PanelLeft className="h-4 w-4" />
           </div>

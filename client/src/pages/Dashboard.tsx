@@ -9,6 +9,7 @@ export default function Dashboard() {
   const [, navigate] = useLocation();
   const { data: stats, isLoading } = trpc.dashboard.stats.useQuery();
   const { data: processos } = trpc.processos.list.useQuery();
+  const { data: clientes } = trpc.clientes.list.useQuery();
 
   if (isLoading) {
     return <div className="p-6">Carregando...</div>;
@@ -156,6 +157,53 @@ export default function Dashboard() {
           )}
         </CardContent>
       </Card>
+
+      {/* Atividades Recentes */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Clientes Recentes */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Clientes Recentes</CardTitle>
+            <CardDescription>Últimos clientes cadastrados</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {clientes && clientes.length > 0 ? (
+              <div className="space-y-2">
+                {clientes.slice(0, 5).map((cliente) => (
+                  <div key={cliente.id} className="text-sm p-2 bg-slate-50 rounded border-l-2 border-blue-500">
+                    <p className="font-medium text-slate-900">{cliente.nome}</p>
+                    <p className="text-xs text-slate-600">{cliente.cpfCnpj}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-600">Nenhum cliente cadastrado</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Processos Recentes */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Processos Recentes</CardTitle>
+            <CardDescription>Últimos processos criados</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {processos && processos.length > 0 ? (
+              <div className="space-y-2">
+                {processos.slice(0, 5).map((processo) => (
+                  <div key={processo.id} className="text-sm p-2 bg-slate-50 rounded border-l-2 border-purple-500">
+                    <p className="font-medium text-slate-900">{processo.titulo}</p>
+                    <p className="text-xs text-slate-600">{processo.cliente?.nome}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-600">Nenhum processo cadastrado</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Info Card */}
       <Card>

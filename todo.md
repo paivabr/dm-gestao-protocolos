@@ -151,3 +151,9 @@
 - [x] Implementar UI para editar desconto na modal de parcelas
 - [x] Atualizar cálculo do resumo (total, pago, a pagar) considerando desconto
 - [ ] Testar desconto em parcelas
+
+
+## Melhorias Solicitadas - Logo e Filtros
+- [x] Adicionar/melhorar logo da DM no favicon
+- [x] Implementar filtro por nome de usuário na página Admin
+- [x] Adicionar seção de atividades recentes no Dashboard (clientes, processos recentes)
