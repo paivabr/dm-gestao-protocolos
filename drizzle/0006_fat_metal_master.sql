@@ -1,0 +1,1 @@
+ALTER TABLE `statusProtocolo` MODIFY COLUMN `clienteId` int;

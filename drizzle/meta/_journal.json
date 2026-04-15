@@ -43,6 +43,13 @@
       "when": 1776293107932,
       "tag": "0005_sturdy_kinsey_walden",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1776294047896,
+      "tag": "0006_fat_metal_master",
+      "breakpoints": true
     }
   ]
 }

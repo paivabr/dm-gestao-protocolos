@@ -149,6 +149,17 @@ export const appRouter = router({
           });
         }
 
+        // Registrar auditoria
+        if (ctx.user) {
+          await db.createAuditoria({
+            usuarioId: ctx.user.id,
+            tabela: 'clientes',
+            registroId: clienteId,
+            acao: 'criar',
+            alteracoes: `Criou cliente: ${input.nome}`,
+          });
+        }
+
         return await db.getClienteById(clienteId);
       }),
 
@@ -320,7 +331,7 @@ export const appRouter = router({
           item: z.string().min(1, "Item é obrigatório"),
         })
       )
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const itemId = await db.createChecklistItem({
           processoId: input.processoId,
           item: input.item,
@@ -330,6 +341,17 @@ export const appRouter = router({
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
             message: "Erro ao adicionar item",
+          });
+        }
+
+        // Registrar auditoria
+        if (ctx.user) {
+          await db.createAuditoria({
+            usuarioId: ctx.user.id,
+            tabela: 'checklist',
+            registroId: input.processoId,
+            acao: 'criar',
+            alteracoes: `Adicionou item no checklist: ${input.item}`,
           });
         }
 
@@ -343,18 +365,41 @@ export const appRouter = router({
           concluido: z.number(),
         })
       )
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         await db.updateChecklistItem(input.id, {
           concluido: input.concluido,
         });
+
+        // Registrar auditoria
+        if (ctx.user) {
+          await db.createAuditoria({
+            usuarioId: ctx.user.id,
+            tabela: 'checklist',
+            registroId: input.id,
+            acao: 'editar',
+            alteracoes: `Marcou item como ${input.concluido ? 'concluido' : 'nao concluido'}`,
+          });
+        }
 
         return { success: true };
       }),
 
     deleteItem: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         await db.deleteChecklistItem(input.id);
+        
+        // Registrar auditoria
+        if (ctx.user) {
+          await db.createAuditoria({
+            usuarioId: ctx.user.id,
+            tabela: 'checklist',
+            registroId: input.id,
+            acao: 'deletar',
+            alteracoes: 'Deletou item do checklist',
+          });
+        }
+        
         return { success: true };
       }),
   }),

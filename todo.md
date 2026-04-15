@@ -37,7 +37,6 @@
 - [x] Testes passando com sucesso
 - [x] Build compilado com sucesso
 
-
 ## Aba de Status de Protocolo do Registro de Imóveis
 - [x] Adicionar tabela de status de protocolo no banco de dados
 - [x] Criar procedures tRPC para CRUD de status de protocolo
@@ -48,10 +47,10 @@
 - [x] Integrar com auditoria para rastrear mudanças
 - [x] Testar aba de status de protocolo
 
-
-## Melhorias Futuras
-- [ ] Adicionar busca por nome do cliente na aba de Status de Protocolo
-- [ ] Permitir edição explícita da data de atualização na UI
-- [ ] Testar especificamente a aba de Status de Protocolo no navegador
-- [ ] Adicionar relatórios em PDF para protocolos
-- [ ] Integração com WhatsApp para notificações de vencimento
+## Correções Solicitadas
+- [x] Corrigir auditoria para registrar criação de clientes
+- [x] Corrigir auditoria para registrar criação de processos
+- [x] Adicionar auditoria para alterações no checklist
+- [x] Corrigir exibição de Meu Perfil no menu lateral
+- [x] Importar dados da planilha Google Sheets (76 registros importados com sucesso)
+- [x] Fazer upload final para GitHub
