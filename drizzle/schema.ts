@@ -125,3 +125,27 @@ export const parcelas = mysqlTable("parcelas", {
 
 export type Parcela = typeof parcelas.$inferSelect;
 export type InsertParcela = typeof parcelas.$inferInsert;
+
+/**
+ * Status de Protocolo table for tracking real estate registration protocols.
+ */
+export const statusProtocolo = mysqlTable("statusProtocolo", {
+  id: int("id").autoincrement().primaryKey(),
+  clienteId: int("clienteId").notNull(),
+  numeroProtocolo: varchar("numeroProtocolo", { length: 50 }).notNull().unique(),
+  tipoProcesso: mysqlEnum("tipoProcesso", [
+    "Georreferenciamento",
+    "Certidão de Localização",
+    "Averbação de Qualificação",
+  ]).notNull(),
+  dataAbertura: timestamp("dataAbertura").notNull(),
+  status: mysqlEnum("status", ["Pronto", "Reivindicado", "Vencido"]).default("Pronto").notNull(),
+  cartorio: varchar("cartorio", { length: 100 }).notNull(),
+  ultimaAtualizacao: timestamp("ultimaAtualizacao").defaultNow().onUpdateNow().notNull(),
+  observacoes: text("observacoes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type StatusProtocolo = typeof statusProtocolo.$inferSelect;
+export type InsertStatusProtocolo = typeof statusProtocolo.$inferInsert;

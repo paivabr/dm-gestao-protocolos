@@ -36,6 +36,13 @@
       "when": 1776292015160,
       "tag": "0004_awesome_zarda",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1776293107932,
+      "tag": "0005_sturdy_kinsey_walden",
+      "breakpoints": true
     }
   ]
 }

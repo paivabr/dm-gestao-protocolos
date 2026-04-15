@@ -36,3 +36,22 @@
 - [x] Proteger rotas do frontend com verificação de permissão
 - [x] Testes passando com sucesso
 - [x] Build compilado com sucesso
+
+
+## Aba de Status de Protocolo do Registro de Imóveis
+- [x] Adicionar tabela de status de protocolo no banco de dados
+- [x] Criar procedures tRPC para CRUD de status de protocolo
+- [x] Implementar aba de Status de Protocolo no frontend
+- [x] Adicionar filtros por tipo de processo, cartório e status
+- [x] Adicionar busca por protocolo e nome do cliente
+- [x] Implementar edição de status e data de atualização
+- [x] Integrar com auditoria para rastrear mudanças
+- [x] Testar aba de status de protocolo
+
+
+## Melhorias Futuras
+- [ ] Adicionar busca por nome do cliente na aba de Status de Protocolo
+- [ ] Permitir edição explícita da data de atualização na UI
+- [ ] Testar especificamente a aba de Status de Protocolo no navegador
+- [ ] Adicionar relatórios em PDF para protocolos
+- [ ] Integração com WhatsApp para notificações de vencimento

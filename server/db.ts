@@ -1,6 +1,6 @@
 import { eq, and, like } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, clientes, processos, checklistItens, auditoria, calendario, parcelas, Cliente, InsertCliente, Processo, InsertProcesso, ChecklistItem, InsertChecklistItem, Auditoria, InsertAuditoria, Calendario, InsertCalendario, Parcela, InsertParcela } from "../drizzle/schema";
+import { InsertUser, users, clientes, processos, checklistItens, auditoria, calendario, parcelas, statusProtocolo, Cliente, InsertCliente, Processo, InsertProcesso, ChecklistItem, InsertChecklistItem, Auditoria, InsertAuditoria, Calendario, InsertCalendario, Parcela, InsertParcela, StatusProtocolo, InsertStatusProtocolo } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -795,5 +795,116 @@ export async function getUserPermissions(userId: number) {
   } catch (error) {
     console.error("[Database] Failed to get user permissions:", error);
     return null;
+  }
+}
+
+
+// ============ STATUS PROTOCOLO FUNCTIONS ============
+
+export async function createStatusProtocolo(data: InsertStatusProtocolo): Promise<number | null> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot create status protocolo: database not available");
+    return null;
+  }
+
+  try {
+    const result = await db.insert(statusProtocolo).values(data);
+    return result[0].insertId as number;
+  } catch (error) {
+    console.error("[Database] Failed to create status protocolo:", error);
+    return null;
+  }
+}
+
+export async function getStatusProtocoloList() {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get status protocolo list: database not available");
+    return [];
+  }
+
+  try {
+    return await db.select().from(statusProtocolo);
+  } catch (error) {
+    console.error("[Database] Failed to get status protocolo list:", error);
+    return [];
+  }
+}
+
+export async function getStatusProtocoloById(id: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get status protocolo: database not available");
+    return undefined;
+  }
+
+  try {
+    const result = await db.select().from(statusProtocolo).where(eq(statusProtocolo.id, id)).limit(1);
+    return result.length > 0 ? result[0] : undefined;
+  } catch (error) {
+    console.error("[Database] Failed to get status protocolo:", error);
+    return undefined;
+  }
+}
+
+export async function updateStatusProtocolo(id: number, data: Partial<InsertStatusProtocolo>) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot update status protocolo: database not available");
+    return false;
+  }
+
+  try {
+    await db.update(statusProtocolo).set(data).where(eq(statusProtocolo.id, id));
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to update status protocolo:", error);
+    return false;
+  }
+}
+
+export async function deleteStatusProtocolo(id: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot delete status protocolo: database not available");
+    return false;
+  }
+
+  try {
+    await db.delete(statusProtocolo).where(eq(statusProtocolo.id, id));
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to delete status protocolo:", error);
+    return false;
+  }
+}
+
+export async function searchStatusProtocolo(numeroProtocolo?: string, clienteId?: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot search status protocolo: database not available");
+    return [];
+  }
+
+  try {
+    const conditions = [];
+
+    if (numeroProtocolo) {
+      conditions.push(like(statusProtocolo.numeroProtocolo, `%${numeroProtocolo}%`));
+    }
+
+    if (clienteId) {
+      conditions.push(eq(statusProtocolo.clienteId, clienteId));
+    }
+
+    if (conditions.length > 0) {
+      return await db.select().from(statusProtocolo).where(and(...conditions));
+    }
+
+    return await db.select().from(statusProtocolo);
+  } catch (error) {
+    console.error("[Database] Failed to search status protocolo:", error);
+    return [];
   }
 }

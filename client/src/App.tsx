@@ -12,6 +12,7 @@ import Admin from "./pages/Admin";
 import Calendario from "./pages/Calendario";
 import Perfil from "./pages/Perfil";
 import RecuperarSenha from "./pages/RecuperarSenha";
+import StatusProtocolo from "./pages/StatusProtocolo";
 import { useAuth } from "./_core/hooks/useAuth";
 import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger } from "@/components/ui/sidebar";
 import { LayoutDashboard, Users, FileText, LogOut, Menu, Settings, Calendar, User } from "lucide-react";
@@ -73,6 +74,13 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
             href="/processos"
             open={sidebarOpen}
             onClick={() => navigate("/processos")}
+          />
+          <NavItem
+            icon={FileText}
+            label="Status Protocolo"
+            href="/status-protocolo"
+            open={sidebarOpen}
+            onClick={() => navigate("/status-protocolo")}
           />
           <NavItem
             icon={Calendar}
@@ -202,6 +210,7 @@ function Router() {
         <Route path="/" component={Dashboard} />
         <Route path="/clientes" component={Clientes} />
         <Route path="/processos" component={Processos} />
+        <Route path="/status-protocolo" component={StatusProtocolo} />
         <Route path="/calendario" component={Calendario} />
         <Route path="/perfil" component={Perfil} />
         <Route path="/admin" component={Admin} />

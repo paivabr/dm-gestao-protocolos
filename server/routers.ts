@@ -583,6 +583,90 @@ export const appRouter = router({
         return await db.getUserPermissions(ctx.user.id);
       }),
   }),
+
+  statusProtocolo: router({
+    list: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        return await db.getStatusProtocoloList();
+      }),
+
+    create: protectedProcedure
+      .input(z.object({
+        clienteId: z.number(),
+        numeroProtocolo: z.string(),
+        tipoProcesso: z.enum(["Georreferenciamento", "Certidão de Localização", "Averbação de Qualificação"]),
+        dataAbertura: z.date(),
+        status: z.enum(["Pronto", "Reivindicado", "Vencido"]).default("Pronto"),
+        cartorio: z.string(),
+        observacoes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const id = await db.createStatusProtocolo(input);
+        if (id) {
+          await db.createAuditoria({
+            usuarioId: ctx.user.id,
+            tabela: "statusProtocolo",
+            registroId: id,
+            acao: "criar",
+            alteracoes: JSON.stringify(input),
+          });
+        }
+        return id;
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["Pronto", "Reivindicado", "Vencido"]).optional(),
+        observacoes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const success = await db.updateStatusProtocolo(input.id, {
+          status: input.status,
+          observacoes: input.observacoes,
+        });
+        if (success) {
+          await db.createAuditoria({
+            usuarioId: ctx.user.id,
+            tabela: "statusProtocolo",
+            registroId: input.id,
+            acao: "editar",
+            alteracoes: JSON.stringify(input),
+          });
+        }
+        return success;
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const success = await db.deleteStatusProtocolo(input.id);
+        if (success) {
+          await db.createAuditoria({
+            usuarioId: ctx.user.id,
+            tabela: "statusProtocolo",
+            registroId: input.id,
+            acao: "deletar",
+            alteracoes: null,
+          });
+        }
+        return success;
+      }),
+
+    search: protectedProcedure
+      .input(z.object({
+        numeroProtocolo: z.string().optional(),
+        clienteId: z.number().optional(),
+      }))
+      .query(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        return await db.searchStatusProtocolo(input.numeroProtocolo, input.clienteId);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
