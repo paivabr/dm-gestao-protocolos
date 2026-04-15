@@ -389,7 +389,7 @@ export async function getAuditoriaByUsuario(usuarioId: number): Promise<Auditori
   }
 }
 
-export async function getAllAuditoria(): Promise<Auditoria[]> {
+export async function getAllAuditoria(): Promise<(Auditoria & { nomeUsuario?: string })[]> {
   const db = await getDb();
   if (!db) {
     console.warn("[Database] Cannot get auditoria: database not available");
@@ -397,7 +397,20 @@ export async function getAllAuditoria(): Promise<Auditoria[]> {
   }
 
   try {
-    return await db.select().from(auditoria);
+    const auditoriaData = await db.select().from(auditoria);
+    
+    // Buscar nome do usuário para cada registro
+    const auditoriaComNomes = await Promise.all(
+      auditoriaData.map(async (item) => {
+        const usuario = await db.select().from(users).where(eq(users.id, item.usuarioId)).limit(1);
+        return {
+          ...item,
+          nomeUsuario: usuario.length > 0 ? usuario[0].username : `Usuário ${item.usuarioId}`,
+        };
+      })
+    );
+    
+    return auditoriaComNomes;
   } catch (error) {
     console.error("[Database] Failed to get auditoria:", error);
     return [];

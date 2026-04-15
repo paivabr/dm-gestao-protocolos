@@ -127,3 +127,7 @@
 - [x] Implementar UI para adicionar parcelas ao editar serviço
 - [x] Implementar marcação de parcelas como pagas
 - [x] Implementar visualização de status de pagamento
+
+## Melhorias Solicitadas
+- [ ] Melhorar filtro da aba Admin para mostrar nome do usuário ao invés de ID
+- [ ] Adicionar query para buscar nome do usuário na auditoria

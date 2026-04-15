@@ -13,6 +13,7 @@ export default function Admin() {
   const [, navigate] = useLocation();
   const [selectedTab, setSelectedTab] = useState("usuarios");
   const [filterUsuarioId, setFilterUsuarioId] = useState<string>("");
+  const [filterUsuarioNome, setFilterUsuarioNome] = useState<string>("");
   const [filterProcessoId, setFilterProcessoId] = useState<string>("");
 
   const auditoriaQuery = trpc.auditoria.getAll.useQuery(undefined, {
@@ -75,9 +76,25 @@ export default function Admin() {
     ? { [filterProcessoId]: auditoriaByProcesso[parseInt(filterProcessoId)] || [] }
     : auditoriaByProcesso;
 
-  // Obter lista de usuários únicos
+  // Obter lista de usuários únicos com nomes
   const usuariosUnicos = Array.from(new Set(auditoria.map((a) => a.usuarioId)));
+  const usuariosComNomes = usuariosUnicos.map((id) => {
+    const item = auditoria.find((a) => a.usuarioId === id);
+    return {
+      id,
+      nome: item?.nomeUsuario || `Usuário ${id}`,
+    };
+  });
   const processosUnicos = Array.from(new Set(auditoria.filter((a) => a.tabela === "processos").map((a) => a.registroId)));
+
+  // Filtrar por nome de usuário
+  const filteredByUsuarioNome = filterUsuarioNome
+    ? auditoriaByUsuario
+    : auditoriaByUsuario;
+
+  const auditoriaFiltrada = filterUsuarioNome
+    ? auditoria.filter((a) => a.nomeUsuario?.toLowerCase().includes(filterUsuarioNome.toLowerCase()))
+    : auditoria;
 
   return (
     <div className="space-y-6">
@@ -95,27 +112,28 @@ export default function Admin() {
         <TabsContent value="usuarios" className="space-y-4">
           <div className="flex gap-2 mb-4">
             <Input
-              placeholder="Filtrar por ID do usuário..."
-              value={filterUsuarioId}
-              onChange={(e) => setFilterUsuarioId(e.target.value)}
-              type="number"
+              placeholder="Filtrar por nome do usuário..."
+              value={filterUsuarioNome}
+              onChange={(e) => setFilterUsuarioNome(e.target.value)}
             />
-            {filterUsuarioId && (
+            {filterUsuarioNome && (
               <Button
                 variant="outline"
-                onClick={() => setFilterUsuarioId("")}
+                onClick={() => setFilterUsuarioNome("")}
               >
                 Limpar
               </Button>
             )}
           </div>
           <div className="text-sm text-gray-600 mb-4">
-            Usuários com ações: {usuariosUnicos.join(", ") || "Nenhum"}
+            Usuários com ações: {usuariosComNomes.map((u) => u.nome).join(", ") || "Nenhum"}
           </div>
-          {Object.entries(filteredByUsuario).map(([usuarioId, items]) => (
+          {Object.entries(filteredByUsuario).map(([usuarioId, items]) => {
+            const nomeUsuario = usuariosComNomes.find((u) => u.id === parseInt(usuarioId))?.nome || `Usuário ${usuarioId}`;
+            return (
             <Card key={usuarioId}>
               <CardHeader>
-                <CardTitle className="text-lg">Usuário ID: {usuarioId}</CardTitle>
+                <CardTitle className="text-lg">{nomeUsuario}</CardTitle>
                 <CardDescription>{items.length} ações registradas</CardDescription>
               </CardHeader>
               <CardContent>
@@ -145,7 +163,8 @@ export default function Admin() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </TabsContent>
 
         <TabsContent value="processos" className="space-y-4">
