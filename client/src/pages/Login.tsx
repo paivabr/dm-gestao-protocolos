@@ -38,6 +38,8 @@ export default function Login() {
           password: formData.password,
         });
         toast.success("Login realizado com sucesso!");
+        // Aguardar um pouco para garantir que o cookie foi definido
+        await new Promise(resolve => setTimeout(resolve, 500));
         navigate("/");
       } else {
         await registerMutation.mutateAsync({
@@ -47,6 +49,8 @@ export default function Login() {
           name: formData.name,
         });
         toast.success("Conta criada com sucesso!");
+        // Aguardar um pouco para garantir que o cookie foi definido
+        await new Promise(resolve => setTimeout(resolve, 500));
         navigate("/");
       }
     } catch (error) {
