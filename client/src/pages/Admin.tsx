@@ -1,0 +1,150 @@
+import { useAuth } from "@/_core/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
+import { useLocation } from "wouter";
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertCircle } from "lucide-react";
+
+export default function Admin() {
+  const { user } = useAuth();
+  const [, navigate] = useLocation();
+  const [selectedTab, setSelectedTab] = useState("usuarios");
+
+  const auditoriaQuery = trpc.auditoria.getAll.useQuery(undefined, {
+    enabled: user?.role === "admin",
+  });
+
+  useEffect(() => {
+    if (user && user.role !== "admin") {
+      navigate("/dashboard");
+    }
+  }, [user]);
+
+  if (!user || user.role !== "admin") {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Card className="w-full max-w-md border-red-200 bg-red-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-red-700">
+              <AlertCircle className="h-5 w-5" />
+              Acesso Negado
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-red-600">Apenas administradores podem acessar esta página.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const auditoria = auditoriaQuery.data || [];
+
+  // Agrupar auditoria por usuário
+  const auditoriaByUsuario = auditoria.reduce((acc, item) => {
+    if (!acc[item.usuarioId]) {
+      acc[item.usuarioId] = [];
+    }
+    acc[item.usuarioId].push(item);
+    return acc;
+  }, {} as Record<number, typeof auditoria>);
+
+  // Agrupar auditoria por processo
+  const auditoriaByProcesso = auditoria
+    .filter((item) => item.tabela === "processos")
+    .reduce((acc, item) => {
+      if (!acc[item.registroId]) {
+        acc[item.registroId] = [];
+      }
+      acc[item.registroId].push(item);
+      return acc;
+    }, {} as Record<number, typeof auditoria>);
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Administração</h1>
+        <p className="text-gray-600 mt-2">Gerenciar usuários e histórico de edições</p>
+      </div>
+
+      <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="usuarios">Histórico por Usuário</TabsTrigger>
+          <TabsTrigger value="processos">Histórico por Processo</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="usuarios" className="space-y-4">
+          {Object.entries(auditoriaByUsuario).map(([usuarioId, items]) => (
+            <Card key={usuarioId}>
+              <CardHeader>
+                <CardTitle className="text-lg">Usuário ID: {usuarioId}</CardTitle>
+                <CardDescription>{items.length} ações registradas</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {items.map((item) => (
+                    <div key={item.id} className="border-l-4 border-blue-500 pl-4 py-2">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-semibold text-gray-900">
+                            {item.acao.charAt(0).toUpperCase() + item.acao.slice(1)} - {item.tabela}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Registro ID: {item.registroId}
+                          </p>
+                          {item.alteracoes && (
+                            <p className="text-sm text-gray-700 mt-2 bg-gray-50 p-2 rounded">
+                              {item.alteracoes}
+                            </p>
+                          )}
+                        </div>
+                        <span className="text-xs text-gray-500 whitespace-nowrap ml-4">
+                          {new Date(item.criadoEm).toLocaleString("pt-BR")}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </TabsContent>
+
+        <TabsContent value="processos" className="space-y-4">
+          {Object.entries(auditoriaByProcesso).map(([processoId, items]) => (
+            <Card key={processoId}>
+              <CardHeader>
+                <CardTitle className="text-lg">Processo ID: {processoId}</CardTitle>
+                <CardDescription>{items.length} alterações registradas</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {items.map((item) => (
+                    <div key={item.id} className="border-l-4 border-green-500 pl-4 py-2">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-semibold text-gray-900">
+                            {item.acao.charAt(0).toUpperCase() + item.acao.slice(1)} por Usuário {item.usuarioId}
+                          </p>
+                          {item.alteracoes && (
+                            <p className="text-sm text-gray-700 mt-2 bg-gray-50 p-2 rounded">
+                              {item.alteracoes}
+                            </p>
+                          )}
+                        </div>
+                        <span className="text-xs text-gray-500 whitespace-nowrap ml-4">
+                          {new Date(item.criadoEm).toLocaleString("pt-BR")}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}

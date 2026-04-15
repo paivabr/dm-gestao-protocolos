@@ -73,3 +73,45 @@
 ## Deploy
 - [x] Criar checkpoint final
 - [x] Publicar aplicação
+
+## Novas Funcionalidades - Rastreamento e Calendário
+
+### Banco de Dados - Rastreamento
+- [ ] Criar tabela de auditoria para rastrear edições (usuário, processo, ação, data/hora)
+- [ ] Adicionar campos de rastreamento nas tabelas existentes (criado_por, editado_por, editado_em)
+
+### Banco de Dados - Calendário
+- [ ] Criar tabela de serviços do calendário (data, título, descrição, usuário)
+
+### Backend - Rastreamento
+- [ ] Criar procedure para registrar edições (auditoria)
+- [ ] Criar procedure para listar histórico de edições por processo
+- [ ] Criar procedure para listar histórico de edições por usuário
+- [ ] Modificar procedures de atualização para registrar quem editou
+
+### Backend - Calendário
+- [ ] Criar procedure para criar serviço no calendário
+- [ ] Criar procedure para listar serviços do calendário
+- [ ] Criar procedure para atualizar serviço do calendário
+- [ ] Criar procedure para deletar serviço do calendário
+- [ ] Criar procedure para listar serviços por mês
+
+### Frontend - Admin (Dmconsultoria)
+- [ ] Criar página de administração (apenas para admin)
+- [ ] Implementar gerenciamento de usuários
+- [ ] Implementar listagem de histórico de edições
+- [ ] Implementar filtros por usuário e processo
+- [ ] Implementar visualização de detalhes de edição
+
+### Frontend - Calendário
+- [ ] Criar página de calendário
+- [ ] Implementar calendário interativo com React Calendar ou similar
+- [ ] Implementar marcação de serviços em azul
+- [ ] Implementar painel de detalhes abaixo do calendário
+- [ ] Implementar formulário para adicionar serviço
+- [ ] Implementar opção de excluir serviço
+- [ ] Implementar visualização de informações adicionais
+
+### Testes
+- [ ] Escrever testes para rastreamento de edições
+- [ ] Escrever testes para calendário de serviços

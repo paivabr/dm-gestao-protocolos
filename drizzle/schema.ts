@@ -64,3 +64,36 @@ export const checklistItens = mysqlTable("checklistItens", {
 
 export type ChecklistItem = typeof checklistItens.$inferSelect;
 export type InsertChecklistItem = typeof checklistItens.$inferInsert;
+
+/**
+ * Auditoria table for tracking all edits and changes.
+ */
+export const auditoria = mysqlTable("auditoria", {
+  id: int("id").autoincrement().primaryKey(),
+  usuarioId: int("usuarioId").notNull(),
+  tabela: varchar("tabela", { length: 100 }).notNull(),
+  registroId: int("registroId").notNull(),
+  acao: mysqlEnum("acao", ["criar", "editar", "deletar"]).notNull(),
+  alteracoes: text("alteracoes"),
+  criadoEm: timestamp("criadoEm").defaultNow().notNull(),
+});
+
+export type Auditoria = typeof auditoria.$inferSelect;
+export type InsertAuditoria = typeof auditoria.$inferInsert;
+
+/**
+ * Calendario table for scheduling services.
+ */
+export const calendario = mysqlTable("calendario", {
+  id: int("id").autoincrement().primaryKey(),
+  usuarioId: int("usuarioId").notNull(),
+  titulo: varchar("titulo", { length: 255 }).notNull(),
+  descricao: text("descricao"),
+  data: timestamp("data").notNull(),
+  informacoesAdicionais: text("informacoesAdicionais"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Calendario = typeof calendario.$inferSelect;
+export type InsertCalendario = typeof calendario.$inferInsert;

@@ -280,6 +280,105 @@ export const appRouter = router({
         return { success: true };
       }),
   }),
+
+  // ============ AUDITORIA ROUTES ============
+  auditoria: router({
+    getByProcesso: protectedProcedure
+      .input(z.object({ processoId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getAuditoriaByProcesso(input.processoId);
+      }),
+
+    getByUsuario: protectedProcedure
+      .input(z.object({ usuarioId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        if (ctx.user?.role !== "admin" && ctx.user?.id !== input.usuarioId) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Acesso negado" });
+        }
+        return await db.getAuditoriaByUsuario(input.usuarioId);
+      }),
+
+    getAll: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (ctx.user?.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Apenas admin pode acessar" });
+        }
+        return await db.getAllAuditoria();
+      }),
+  }),
+
+  // ============ CALENDARIO ROUTES ============
+  calendario: router({
+    create: protectedProcedure
+      .input(
+        z.object({
+          titulo: z.string().min(1, "Título é obrigatório"),
+          descricao: z.string().optional(),
+          data: z.date(),
+          informacoesAdicionais: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const id = await db.createCalendario({
+          usuarioId: ctx.user.id,
+          titulo: input.titulo,
+          descricao: input.descricao,
+          data: input.data,
+          informacoesAdicionais: input.informacoesAdicionais,
+        });
+        return { id, success: id !== null };
+      }),
+
+    getByUsuario: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        return await db.getCalendarioByUsuario(ctx.user.id);
+      }),
+
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getCalendarioById(input.id);
+      }),
+
+    update: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          titulo: z.string().optional(),
+          descricao: z.string().optional(),
+          data: z.date().optional(),
+          informacoesAdicionais: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const cal = await db.getCalendarioById(input.id);
+        if (cal?.usuarioId !== ctx.user.id && ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Acesso negado" });
+        }
+        await db.updateCalendario(input.id, {
+          titulo: input.titulo,
+          descricao: input.descricao,
+          data: input.data,
+          informacoesAdicionais: input.informacoesAdicionais,
+        });
+        return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const cal = await db.getCalendarioById(input.id);
+        if (cal?.usuarioId !== ctx.user.id && ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Acesso negado" });
+        }
+        await db.deleteCalendario(input.id);
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

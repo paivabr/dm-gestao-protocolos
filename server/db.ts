@@ -1,6 +1,6 @@
 import { eq, and, like } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, clientes, processos, checklistItens, Cliente, InsertCliente, Processo, InsertProcesso, ChecklistItem, InsertChecklistItem } from "../drizzle/schema";
+import { InsertUser, users, clientes, processos, checklistItens, auditoria, calendario, Cliente, InsertCliente, Processo, InsertProcesso, ChecklistItem, InsertChecklistItem, Auditoria, InsertAuditoria, Calendario, InsertCalendario } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -333,5 +333,173 @@ export async function getProcessosDashboard() {
   } catch (error) {
     console.error("[Database] Failed to get dashboard data:", error);
     return { pendentes: 0, emAnalise: 0, protocolado: 0, finalizado: 0, vencendoHoje: 0 };
+  }
+}
+
+// ============ AUDITORIA FUNCTIONS ============
+
+export async function createAuditoria(audit: InsertAuditoria): Promise<number | null> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot create auditoria: database not available");
+    return null;
+  }
+
+  try {
+    const result = await db.insert(auditoria).values(audit);
+    return result[0].insertId as number;
+  } catch (error) {
+    console.error("[Database] Failed to create auditoria:", error);
+    return null;
+  }
+}
+
+export async function getAuditoriaByProcesso(processoId: number): Promise<Auditoria[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get auditoria: database not available");
+    return [];
+  }
+
+  try {
+    return await db.select().from(auditoria).where(
+      and(
+        eq(auditoria.tabela, "processos"),
+        eq(auditoria.registroId, processoId)
+      )
+    );
+  } catch (error) {
+    console.error("[Database] Failed to get auditoria:", error);
+    return [];
+  }
+}
+
+export async function getAuditoriaByUsuario(usuarioId: number): Promise<Auditoria[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get auditoria: database not available");
+    return [];
+  }
+
+  try {
+    return await db.select().from(auditoria).where(eq(auditoria.usuarioId, usuarioId));
+  } catch (error) {
+    console.error("[Database] Failed to get auditoria:", error);
+    return [];
+  }
+}
+
+export async function getAllAuditoria(): Promise<Auditoria[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get auditoria: database not available");
+    return [];
+  }
+
+  try {
+    return await db.select().from(auditoria);
+  } catch (error) {
+    console.error("[Database] Failed to get auditoria:", error);
+    return [];
+  }
+}
+
+// ============ CALENDARIO FUNCTIONS ============
+
+export async function createCalendario(cal: InsertCalendario): Promise<number | null> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot create calendario: database not available");
+    return null;
+  }
+
+  try {
+    const result = await db.insert(calendario).values(cal);
+    return result[0].insertId as number;
+  } catch (error) {
+    console.error("[Database] Failed to create calendario:", error);
+    return null;
+  }
+}
+
+export async function getCalendarioByUsuario(usuarioId: number): Promise<Calendario[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get calendario: database not available");
+    return [];
+  }
+
+  try {
+    return await db.select().from(calendario).where(eq(calendario.usuarioId, usuarioId));
+  } catch (error) {
+    console.error("[Database] Failed to get calendario:", error);
+    return [];
+  }
+}
+
+export async function getCalendarioById(id: number): Promise<Calendario | undefined> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get calendario: database not available");
+    return undefined;
+  }
+
+  try {
+    const result = await db.select().from(calendario).where(eq(calendario.id, id)).limit(1);
+    return result.length > 0 ? result[0] : undefined;
+  } catch (error) {
+    console.error("[Database] Failed to get calendario:", error);
+    return undefined;
+  }
+}
+
+export async function updateCalendario(id: number, updates: Partial<InsertCalendario>) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot update calendario: database not available");
+    return;
+  }
+
+  try {
+    await db.update(calendario).set(updates).where(eq(calendario.id, id));
+  } catch (error) {
+    console.error("[Database] Failed to update calendario:", error);
+  }
+}
+
+export async function deleteCalendario(id: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot delete calendario: database not available");
+    return;
+  }
+
+  try {
+    await db.delete(calendario).where(eq(calendario.id, id));
+  } catch (error) {
+    console.error("[Database] Failed to delete calendario:", error);
+  }
+}
+
+export async function getCalendarioByMes(usuarioId: number, mes: number, ano: number): Promise<Calendario[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get calendario: database not available");
+    return [];
+  }
+
+  try {
+    const startDate = new Date(ano, mes - 1, 1);
+    const endDate = new Date(ano, mes, 0, 23, 59, 59);
+
+    return await db.select().from(calendario).where(
+      and(
+        eq(calendario.usuarioId, usuarioId),
+        // Filtro por data entre o primeiro e último dia do mês
+      )
+    );
+  } catch (error) {
+    console.error("[Database] Failed to get calendario by mes:", error);
+    return [];
   }
 }
