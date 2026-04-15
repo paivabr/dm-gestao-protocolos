@@ -1,9 +1,14 @@
-import { AlertCircle, CheckCircle2, Clock, FileText, Hourglass } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, FileText, Hourglass, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
+import { useLocation } from "wouter";
 
 export default function Dashboard() {
+  const [, navigate] = useLocation();
   const { data: stats, isLoading } = trpc.dashboard.stats.useQuery();
+  const { data: processos } = trpc.processos.list.useQuery();
 
   if (isLoading) {
     return <div className="p-6">Carregando...</div>;
@@ -86,6 +91,71 @@ export default function Dashboard() {
           </CardHeader>
         </Card>
       )}
+
+      {/* Latest Processes */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Últimos Processos Cadastrados</CardTitle>
+          <CardDescription>
+            Acompanhe os processos mais recentes
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {processos && processos.length > 0 ? (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Título</TableHead>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Vencimento</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {processos.slice(0, 5).map(p => (
+                    <TableRow key={p.id}>
+                      <TableCell className="font-medium">{p.titulo}</TableCell>
+                      <TableCell>{p.cliente?.nome || "-"}</TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                          p.status === "Pendente" ? "bg-orange-100 text-orange-800" :
+                          p.status === "Em Análise" ? "bg-blue-100 text-blue-800" :
+                          p.status === "Protocolado" ? "bg-purple-100 text-purple-800" :
+                          "bg-green-100 text-green-800"
+                        }`}>
+                          {p.status}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        {p.prazoVencimento
+                          ? new Date(p.prazoVencimento).toLocaleDateString("pt-BR")
+                          : "-"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {processos.length > 5 && (
+                <div className="mt-4 text-center">
+                  <Button
+                    onClick={() => navigate("/processos")}
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    Ver todos os processos
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-slate-600">
+              Nenhum processo cadastrado. Clique em "Processos" no menu para criar um novo.
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Info Card */}
       <Card>

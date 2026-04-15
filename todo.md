@@ -66,10 +66,10 @@
 
 ## Testes
 - [x] Escrever testes unitários para autenticação
-- [ ] Escrever testes unitários para procedures de clientes
-- [ ] Escrever testes unitários para procedures de processos
-- [ ] Escrever testes unitários para procedures de checklists
+- [x] Escrever testes unitários para procedures de clientes
+- [x] Escrever testes unitários para procedures de processos
+- [x] Escrever testes unitários para procedures de checklists
 
 ## Deploy
-- [ ] Criar checkpoint final
-- [ ] Publicar aplicação
+- [x] Criar checkpoint final
+- [x] Publicar aplicação
