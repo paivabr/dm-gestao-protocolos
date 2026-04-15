@@ -117,13 +117,13 @@
 - [ ] Escrever testes para calendário de serviços
 
 ## Melhorias na Auditoria e Admin
-- [ ] Integrar registro de auditoria nas mutations de criação/edição de processos
-- [ ] Adicionar filtros interativos na aba Admin (por usuário e processo)
-- [ ] Implementar listagem de usuários na aba Admin
+- [x] Integrar registro de auditoria nas mutations de criação/edição de processos
+- [x] Adicionar filtros interativos na aba Admin (por usuário e processo)
+- [x] Implementar listagem de usuários na aba Admin
 
 ## Sistema de Parcelas de Pagamento
-- [ ] Criar tabela de parcelas no banco de dados
-- [ ] Criar procedures tRPC para gerenciar parcelas
-- [ ] Implementar UI para adicionar parcelas ao editar serviço
-- [ ] Implementar marcação de parcelas como pagas
-- [ ] Implementar visualização de status de pagamento
+- [x] Criar tabela de parcelas no banco de dados
+- [x] Criar procedures tRPC para gerenciar parcelas
+- [x] Implementar UI para adicionar parcelas ao editar serviço
+- [x] Implementar marcação de parcelas como pagas
+- [x] Implementar visualização de status de pagamento
