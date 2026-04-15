@@ -19,6 +19,7 @@ export default function Login() {
     name: "",
   });
 
+  const utils = trpc.useUtils();
   const loginMutation = trpc.auth.login.useMutation();
   const registerMutation = trpc.auth.register.useMutation();
 
@@ -38,6 +39,8 @@ export default function Login() {
           password: formData.password,
         });
         toast.success("Login realizado com sucesso!");
+        // Invalidar cache do tRPC para forçar recarregamento do usuário
+        await utils.auth.me.invalidate();
         // Aguardar um pouco para garantir que o cookie foi definido
         await new Promise(resolve => setTimeout(resolve, 500));
         navigate("/");
@@ -49,6 +52,8 @@ export default function Login() {
           name: formData.name,
         });
         toast.success("Conta criada com sucesso!");
+        // Invalidar cache do tRPC para forçar recarregamento do usuário
+        await utils.auth.me.invalidate();
         // Aguardar um pouco para garantir que o cookie foi definido
         await new Promise(resolve => setTimeout(resolve, 500));
         navigate("/");
