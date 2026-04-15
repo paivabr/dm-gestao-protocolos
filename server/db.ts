@@ -347,7 +347,10 @@ export async function createAuditoria(audit: InsertAuditoria): Promise<number | 
 
   try {
     const result = await db.insert(auditoria).values(audit);
-    return result[0].insertId as number;
+    console.log("[Database] Auditoria created:", result);
+    // Drizzle retorna um objeto com insertId
+    const insertId = (result as any).insertId || (result as any)[0]?.insertId;
+    return insertId as number;
   } catch (error) {
     console.error("[Database] Failed to create auditoria:", error);
     return null;

@@ -136,38 +136,38 @@ export default function Admin() {
           {Object.entries(filterUsuarioNome ? auditoriaByUsuarioFiltrada : filteredByUsuario).map(([usuarioId, items]) => {
             const nomeUsuario = usuariosComNomes.find((u) => u.id === parseInt(usuarioId))?.nome || `Usuário ${usuarioId}`;
             return (
-            <Card key={usuarioId}>
-              <CardHeader>
-                <CardTitle className="text-lg">{nomeUsuario}</CardTitle>
-                <CardDescription>{items.length} ações registradas</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {items.map((item) => (
-                    <div key={item.id} className="border-l-4 border-blue-500 pl-4 py-2">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-semibold text-gray-900">
-                            {item.acao.charAt(0).toUpperCase() + item.acao.slice(1)} - {item.tabela}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            Registro ID: {item.registroId}
-                          </p>
-                          {item.alteracoes && (
-                            <p className="text-sm text-gray-700 mt-2 bg-gray-50 p-2 rounded">
-                              {item.alteracoes}
+              <Card key={usuarioId}>
+                <CardHeader>
+                  <CardTitle className="text-lg">{nomeUsuario}</CardTitle>
+                  <CardDescription>{items.length} ações registradas</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {items.map((item) => (
+                      <div key={item.id} className="border-l-4 border-blue-500 pl-4 py-2">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-semibold text-gray-900">
+                              {item.acao.charAt(0).toUpperCase() + item.acao.slice(1)} - {item.tabela}
                             </p>
-                          )}
+                            <p className="text-sm text-gray-600">
+                              Registro ID: {item.registroId}
+                            </p>
+                            {item.alteracoes && (
+                              <p className="text-sm text-gray-700 mt-2 bg-gray-50 p-2 rounded">
+                                {item.alteracoes}
+                              </p>
+                            )}
+                          </div>
+                          <span className="text-xs text-gray-500 whitespace-nowrap ml-4">
+                            {new Date(item.criadoEm).toLocaleString("pt-BR")}
+                          </span>
                         </div>
-                        <span className="text-xs text-gray-500 whitespace-nowrap ml-4">
-                          {new Date(item.criadoEm).toLocaleString("pt-BR")}
-                        </span>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             );
           })}
         </TabsContent>
