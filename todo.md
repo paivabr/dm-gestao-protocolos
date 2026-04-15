@@ -129,5 +129,10 @@
 - [x] Implementar visualização de status de pagamento
 
 ## Melhorias Solicitadas
-- [ ] Melhorar filtro da aba Admin para mostrar nome do usuário ao invés de ID
-- [ ] Adicionar query para buscar nome do usuário na auditoria
+- [x] Melhorar filtro da aba Admin para mostrar nome do usuário ao invés de ID
+- [x] Adicionar query para buscar nome do usuário na auditoria
+
+## Correção - Integração de Auditoria
+- [x] Registrar auditoria quando um processo é criado
+- [ ] Registrar auditoria quando um cliente é criado
+- [x] Registrar auditoria quando um processo é editado

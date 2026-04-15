@@ -88,13 +88,18 @@ export default function Admin() {
   const processosUnicos = Array.from(new Set(auditoria.filter((a) => a.tabela === "processos").map((a) => a.registroId)));
 
   // Filtrar por nome de usuário
-  const filteredByUsuarioNome = filterUsuarioNome
-    ? auditoriaByUsuario
-    : auditoriaByUsuario;
-
   const auditoriaFiltrada = filterUsuarioNome
     ? auditoria.filter((a) => a.nomeUsuario?.toLowerCase().includes(filterUsuarioNome.toLowerCase()))
     : auditoria;
+
+  // Agrupar auditoria filtrada por usuário
+  const auditoriaByUsuarioFiltrada = auditoriaFiltrada.reduce((acc, item) => {
+    if (!acc[item.usuarioId]) {
+      acc[item.usuarioId] = [];
+    }
+    acc[item.usuarioId].push(item);
+    return acc;
+  }, {} as Record<number, typeof auditoria>);
 
   return (
     <div className="space-y-6">
@@ -128,7 +133,7 @@ export default function Admin() {
           <div className="text-sm text-gray-600 mb-4">
             Usuários com ações: {usuariosComNomes.map((u) => u.nome).join(", ") || "Nenhum"}
           </div>
-          {Object.entries(filteredByUsuario).map(([usuarioId, items]) => {
+          {Object.entries(filterUsuarioNome ? auditoriaByUsuarioFiltrada : filteredByUsuario).map(([usuarioId, items]) => {
             const nomeUsuario = usuariosComNomes.find((u) => u.id === parseInt(usuarioId))?.nome || `Usuário ${usuarioId}`;
             return (
             <Card key={usuarioId}>

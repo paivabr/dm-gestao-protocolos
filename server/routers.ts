@@ -159,7 +159,7 @@ export const appRouter = router({
           prazoVencimento: z.date().optional(),
         })
       )
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const processoId = await db.createProcesso({
           titulo: input.titulo,
           clienteId: input.clienteId,
@@ -171,6 +171,17 @@ export const appRouter = router({
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
             message: "Erro ao criar processo",
+          });
+        }
+
+        // Registrar auditoria
+        if (ctx.user) {
+          await db.createAuditoria({
+            usuarioId: ctx.user.id,
+            acao: "criar",
+            tabela: "processos",
+            registroId: processoId,
+            alteracoes: JSON.stringify(input),
           });
         }
 
@@ -186,20 +197,43 @@ export const appRouter = router({
           prazoVencimento: z.date().optional(),
         })
       )
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         await db.updateProcesso(input.id, {
           titulo: input.titulo,
           status: input.status,
           prazoVencimento: input.prazoVencimento,
         });
 
+        // Registrar auditoria
+        if (ctx.user) {
+          await db.createAuditoria({
+            usuarioId: ctx.user.id,
+            acao: "editar",
+            tabela: "processos",
+            registroId: input.id,
+            alteracoes: JSON.stringify(input),
+          });
+        }
+
         return await db.getProcessoById(input.id);
       }),
 
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         await db.deleteProcesso(input.id);
+
+        // Registrar auditoria
+        if (ctx.user) {
+          await db.createAuditoria({
+            usuarioId: ctx.user.id,
+            acao: "deletar",
+            tabela: "processos",
+            registroId: input.id,
+            alteracoes: null,
+          });
+        }
+
         return { success: true };
       }),
   }),
