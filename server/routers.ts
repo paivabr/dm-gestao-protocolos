@@ -119,12 +119,23 @@ export const appRouter = router({
           contato: z.string().optional(),
         })
       )
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         await db.updateCliente(input.id, {
           nome: input.nome,
           cpfCnpj: input.cpfCnpj,
           contato: input.contato,
         });
+
+        // Registrar auditoria
+        if (ctx.user) {
+          await db.createAuditoria({
+            usuarioId: ctx.user.id,
+            tabela: 'clientes',
+            registroId: input.id,
+            acao: 'editar',
+            alteracoes: `Editou cliente: ${input.nome || 'sem nome'}`,
+          });
+        }
 
         return await db.getClienteById(input.id);
       }),

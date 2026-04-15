@@ -136,3 +136,9 @@
 - [x] Registrar auditoria quando um processo é criado
 - [ ] Registrar auditoria quando um cliente é criado
 - [x] Registrar auditoria quando um processo é editado
+
+## Edição de Cadastro de Clientes
+- [x] Adicionar procedure tRPC para atualizar clientes
+- [x] Implementar UI para editar clientes (modal ou página)
+- [x] Integrar auditoria na edição de clientes
+- [ ] Testar edição de clientes
