@@ -18,7 +18,7 @@
 - [x] Implementar edição de email do usuário
 - [x] Implementar alteração de senha
 - [x] Implementar upload de foto de perfil
-- [ ] Testar recuperação de senha e perfil
+- [x] Testar recuperação de senha e perfil
 
 ## Melhorias Solicitadas - Logo e Filtros
 - [x] Adicionar/melhorar logo da DM no favicon
