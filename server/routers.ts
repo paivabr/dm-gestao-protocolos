@@ -77,6 +77,41 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true };
     }),
+
+    updateProfile: protectedProcedure
+      .input(
+        z.object({
+          name: z.string().optional(),
+          email: z.string().email().optional(),
+          fotoPerfil: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const success = await db.updateUserProfile(ctx.user.id, input);
+        return { success };
+      }),
+
+    updatePassword: protectedProcedure
+      .input(
+        z.object({
+          currentPassword: z.string().min(1, "Senha atual eh obrigatoria"),
+          newPassword: z.string().min(6, "Nova senha deve ter pelo menos 6 caracteres"),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        
+        const user = await db.getUserById(ctx.user.id);
+        if (!user) throw new TRPCError({ code: "NOT_FOUND", message: "Usuario nao encontrado" });
+        
+        const isValid = await auth.verifyPassword(input.currentPassword, user.passwordHash);
+        if (!isValid) throw new TRPCError({ code: "UNAUTHORIZED", message: "Senha atual incorreta" });
+        
+        const newPasswordHash = await auth.hashPassword(input.newPassword);
+        const success = await db.updateUserPassword(ctx.user.id, newPasswordHash);
+        return { success };
+      }),
   }),
 
   // ============ CLIENTE ROUTES ============

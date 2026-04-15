@@ -171,6 +171,19 @@ export default function Login() {
               </Button>
             </form>
 
+            {/* Forgot Password Link */}
+            {isLogin && (
+              <div className="mt-4 text-center">
+                <button
+                  type="button"
+                  onClick={() => navigate("/recuperar-senha")}
+                  className="text-sm text-blue-600 hover:text-blue-700 font-semibold"
+                >
+                  Esqueceu sua senha?
+                </button>
+              </div>
+            )}
+
             {/* Toggle between login and register */}
             <div className="mt-6 text-center">
               <p className="text-sm text-slate-600">

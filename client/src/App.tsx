@@ -10,9 +10,11 @@ import Clientes from "./pages/Clientes";
 import Processos from "./pages/Processos";
 import Admin from "./pages/Admin";
 import Calendario from "./pages/Calendario";
+import Perfil from "./pages/Perfil";
+import RecuperarSenha from "./pages/RecuperarSenha";
 import { useAuth } from "./_core/hooks/useAuth";
 import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger } from "@/components/ui/sidebar";
-import { LayoutDashboard, Users, FileText, LogOut, Menu, Settings, Calendar } from "lucide-react";
+import { LayoutDashboard, Users, FileText, LogOut, Menu, Settings, Calendar, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
@@ -78,6 +80,13 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
             href="/calendario"
             open={sidebarOpen}
             onClick={() => navigate("/calendario")}
+          />
+          <NavItem
+            icon={User}
+            label="Meu Perfil"
+            href="/perfil"
+            open={sidebarOpen}
+            onClick={() => navigate("/perfil")}
           />
           {user?.role === "admin" && (
             <NavItem
@@ -181,6 +190,7 @@ function Router() {
     return (
       <Switch>
         <Route path="/login" component={Login} />
+        <Route path="/recuperar-senha" component={RecuperarSenha} />
         <Route component={Login} />
       </Switch>
     );
@@ -193,6 +203,7 @@ function Router() {
         <Route path="/clientes" component={Clientes} />
         <Route path="/processos" component={Processos} />
         <Route path="/calendario" component={Calendario} />
+        <Route path="/perfil" component={Perfil} />
         <Route path="/admin" component={Admin} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />

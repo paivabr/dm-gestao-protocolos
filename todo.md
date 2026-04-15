@@ -143,7 +143,6 @@
 - [x] Integrar auditoria na edição de clientes
 - [ ] Testar edição de clientes
 
-
 ## Sistema de Desconto em Parcelas
 - [x] Adicionar campo `desconto` na tabela de parcelas (banco de dados)
 - [x] Criar migração SQL para adicionar coluna de desconto
@@ -152,8 +151,17 @@
 - [x] Atualizar cálculo do resumo (total, pago, a pagar) considerando desconto
 - [ ] Testar desconto em parcelas
 
-
 ## Melhorias Solicitadas - Logo e Filtros
 - [x] Adicionar/melhorar logo da DM no favicon
 - [x] Implementar filtro por nome de usuário na página Admin
 - [x] Adicionar seção de atividades recentes no Dashboard (clientes, processos recentes)
+
+## Recuperação de Senha e Perfil de Usuário
+- [x] Adicionar link de recuperação de senha na página de login
+- [x] Criar página de recuperação de senha
+- [x] Criar aba de perfil de usuário no dashboard
+- [x] Implementar edição de nome do usuário
+- [x] Implementar edição de email do usuário
+- [x] Implementar alteração de senha
+- [x] Implementar upload de foto de perfil
+- [ ] Testar recuperação de senha e perfil

@@ -72,6 +72,93 @@ export async function updateUserLastSignedIn(userId: number) {
   }
 }
 
+export async function updateUserProfile(userId: number, data: { name?: string; email?: string; fotoPerfil?: string }) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot update user profile: database not available");
+    return false;
+  }
+
+  try {
+    await db.update(users).set(data).where(eq(users.id, userId));
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to update user profile:", error);
+    return false;
+  }
+}
+
+export async function updateUserPassword(userId: number, passwordHash: string) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot update password: database not available");
+    return false;
+  }
+
+  try {
+    await db.update(users).set({ passwordHash }).where(eq(users.id, userId));
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to update password:", error);
+    return false;
+  }
+}
+
+export async function setResetPasswordToken(userId: number, token: string, expiresIn: number = 3600000) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot set reset token: database not available");
+    return false;
+  }
+
+  try {
+    const expiresAt = new Date(Date.now() + expiresIn);
+    await db.update(users).set({ resetPasswordToken: token, resetPasswordExpires: expiresAt }).where(eq(users.id, userId));
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to set reset token:", error);
+    return false;
+  }
+}
+
+export async function getUserByResetToken(token: string) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user by reset token: database not available");
+    return undefined;
+  }
+
+  try {
+    const result = await db.select().from(users).where(eq(users.resetPasswordToken, token)).limit(1);
+    if (result.length > 0) {
+      const user = result[0];
+      if (user.resetPasswordExpires && user.resetPasswordExpires > new Date()) {
+        return user;
+      }
+    }
+    return undefined;
+  } catch (error) {
+    console.error("[Database] Failed to get user by reset token:", error);
+    return undefined;
+  }
+}
+
+export async function clearResetPasswordToken(userId: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot clear reset token: database not available");
+    return false;
+  }
+
+  try {
+    await db.update(users).set({ resetPasswordToken: null, resetPasswordExpires: null }).where(eq(users.id, userId));
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to clear reset token:", error);
+    return false;
+  }
+}
+
 // ============ CLIENTE FUNCTIONS ============
 
 export async function createCliente(cliente: InsertCliente): Promise<number | null> {
