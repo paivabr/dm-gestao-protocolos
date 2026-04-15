@@ -26,8 +26,14 @@ export async function runMigrations() {
     await migrate(db, { migrationsFolder });
     
     console.log("[Migrations] Database migrations completed successfully");
-  } catch (error) {
+  } catch (error: any) {
+    // Ignore "table already exists" errors - this is expected when database is already initialized
+    if (error?.cause?.code === 'ER_TABLE_EXISTS_ERROR' || error?.code === 'ER_TABLE_EXISTS_ERROR') {
+      console.log("[Migrations] Database tables already exist, skipping migration");
+      return;
+    }
+    
     console.error("[Migrations] Failed to run migrations:", error);
-    // Don't throw, just log the error
+    // Don't throw, just log the error - allow server to continue
   }
 }
