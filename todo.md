@@ -142,3 +142,12 @@
 - [x] Implementar UI para editar clientes (modal ou página)
 - [x] Integrar auditoria na edição de clientes
 - [ ] Testar edição de clientes
+
+
+## Sistema de Desconto em Parcelas
+- [x] Adicionar campo `desconto` na tabela de parcelas (banco de dados)
+- [x] Criar migração SQL para adicionar coluna de desconto
+- [x] Atualizar procedures tRPC para gerenciar desconto nas parcelas
+- [x] Implementar UI para editar desconto na modal de parcelas
+- [x] Atualizar cálculo do resumo (total, pago, a pagar) considerando desconto
+- [ ] Testar desconto em parcelas

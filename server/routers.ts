@@ -398,6 +398,13 @@ export const appRouter = router({
         await db.deleteParcela(input.id);
         return { success: true };
       }),
+
+    updateDesconto: protectedProcedure
+      .input(z.object({ id: z.number(), desconto: z.string() }))
+      .mutation(async ({ input }) => {
+        await db.updateParcela(input.id, { desconto: input.desconto });
+        return { success: true };
+      }),
   }),
 
   // ============ CALENDARIO ROUTES ============

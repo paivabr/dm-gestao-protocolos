@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Trash2, Check, X } from "lucide-react";
+import { Plus, Trash2, Check, X, Edit2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface ParcelasModalProps {
@@ -19,6 +19,8 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
     numeroParcelas: "1",
     valorTotal: "",
   });
+  const [editandoDescontoId, setEditandoDescontoId] = useState<number | null>(null);
+  const [descontoEditando, setDescontoEditando] = useState("");
 
   const { data: parcelas = [], refetch } = trpc.parcelas.getByProcesso.useQuery(
     { processoId },
@@ -54,6 +56,18 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
     onSuccess: () => {
       refetch();
       toast.success("Parcela deletada com sucesso!");
+    },
+  });
+
+  const updateDescontoMutation = trpc.parcelas.updateDesconto.useMutation({
+    onSuccess: () => {
+      refetch();
+      setEditandoDescontoId(null);
+      setDescontoEditando("");
+      toast.success("Desconto atualizado com sucesso!");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Erro ao atualizar desconto");
     },
   });
 
@@ -96,15 +110,44 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
     }
   };
 
+  const handleSalvarDesconto = async (parcelaId: number) => {
+    if (descontoEditando === "" || parseFloat(descontoEditando) < 0) {
+      toast.error("Desconto inválido");
+      return;
+    }
+    
+    const parcela = parcelas.find(p => p.id === parcelaId);
+    if (!parcela) {
+      toast.error("Parcela não encontrada");
+      return;
+    }
+    
+    const desconto = parseFloat(descontoEditando);
+    const valor = parseFloat(parcela.valorParcela);
+    
+    if (desconto > valor) {
+      toast.error(`Desconto não pode ser maior que R$ ${valor.toFixed(2)}`);
+      return;
+    }
+    
+    await updateDescontoMutation.mutateAsync({
+      id: parcelaId,
+      desconto: descontoEditando,
+    });
+  };
+
+  const totalDesconto = parcelas.reduce((sum, p) => sum + parseFloat(p.desconto || "0"), 0);
+
   const totalPago = parcelas
     .filter((p) => p.pago === 1)
-    .reduce((sum, p) => sum + parseFloat(p.valorParcela), 0);
+    .reduce((sum, p) => sum + (parseFloat(p.valorParcela) - parseFloat(p.desconto || "0")), 0);
 
   const totalAPagar = parcelas
     .filter((p) => p.pago === 0)
-    .reduce((sum, p) => sum + parseFloat(p.valorParcela), 0);
+    .reduce((sum, p) => sum + (parseFloat(p.valorParcela) - parseFloat(p.desconto || "0")), 0);
 
   const totalGeral = parcelas.reduce((sum, p) => sum + parseFloat(p.valorParcela), 0);
+  const totalGeralComDesconto = totalGeral - totalDesconto;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -169,7 +212,7 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
           ) : (
             <>
               {/* Resumo de pagamentos */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-4 gap-4">
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium text-gray-600">Total Geral</CardTitle>
@@ -177,6 +220,16 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
                   <CardContent>
                     <p className="text-2xl font-bold text-gray-900">
                       R$ {totalGeral.toFixed(2)}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-red-50 border-red-200">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-red-700">Desconto</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-bold text-red-700">
+                      -R$ {totalDesconto.toFixed(2)}
                     </p>
                   </CardContent>
                 </Card>
@@ -231,11 +284,69 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
                         <p className="font-semibold text-gray-900">
                           Parcela {parcela.numeroParcela}
                         </p>
-                        <p className="text-sm text-gray-600">
-                          R$ {parseFloat(parcela.valorParcela).toFixed(2)}
-                        </p>
+                        {editandoDescontoId === parcela.id ? (
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="text-sm text-gray-600">R$ {parseFloat(parcela.valorParcela).toFixed(2)}</span>
+                            <span className="text-sm">-</span>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={descontoEditando}
+                              onChange={(e) => setDescontoEditando(e.target.value)}
+                              placeholder="0.00"
+                              className="w-20 h-8 text-xs"
+                            />
+                            <span className="text-sm">=</span>
+                            <span className="text-sm font-semibold">
+                              R$ {(parseFloat(parcela.valorParcela) - parseFloat(descontoEditando || "0")).toFixed(2)}
+                            </span>
+                            <Button
+                              size="sm"
+                              className="h-8 text-xs ml-2"
+                              onClick={() => handleSalvarDesconto(parcela.id)}
+                              disabled={updateDescontoMutation.isPending}
+                            >
+                              Salvar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 text-xs"
+                              onClick={() => {
+                                setEditandoDescontoId(null);
+                                setDescontoEditando("");
+                              }}
+                            >
+                              Cancelar
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
+                            <span>R$ {parseFloat(parcela.valorParcela).toFixed(2)}</span>
+                            {parseFloat(parcela.desconto || "0") > 0 && (
+                              <>
+                                <span>-</span>
+                                <span className="text-red-600 font-semibold">R$ {parseFloat(parcela.desconto).toFixed(2)}</span>
+                                <span>=</span>
+                                <span className="font-semibold text-gray-900">
+                                  R$ {(parseFloat(parcela.valorParcela) - parseFloat(parcela.desconto || "0")).toFixed(2)}
+                                </span>
+                              </>
+                            )}
+                            <button
+                              onClick={() => {
+                                setEditandoDescontoId(parcela.id);
+                                setDescontoEditando(parcela.desconto || "0");
+                              }}
+                              className="text-blue-600 hover:text-blue-700 ml-2"
+                              title="Editar desconto"
+                            >
+                              <Edit2 className="h-3 w-3" />
+                            </button>
+                          </div>
+                        )}
                         {parcela.pago === 1 && parcela.dataPagamento && (
-                          <p className="text-xs text-green-600">
+                          <p className="text-xs text-green-600 mt-1">
                             Pago em {new Date(parcela.dataPagamento).toLocaleDateString("pt-BR")}
                           </p>
                         )}
