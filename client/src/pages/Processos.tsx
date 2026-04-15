@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Trash2, Plus, Search, CheckCircle2, AlertCircle } from "lucide-react";
+import { Trash2, Plus, Search, CheckCircle2, AlertCircle, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,10 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import ChecklistModal from "@/components/ChecklistModal";
+import ParcelasModal from "@/components/ParcelasModal";
 
 export default function Processos() {
   const [open, setOpen] = useState(false);
   const [checklistOpen, setChecklistOpen] = useState(false);
+  const [parcelasOpen, setParcelasOpen] = useState(false);
   const [selectedProcessoId, setSelectedProcessoId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -271,6 +273,18 @@ export default function Processos() {
                           size="sm"
                           onClick={() => {
                             setSelectedProcessoId(processo.id);
+                            setParcelasOpen(true);
+                          }}
+                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                          title="Gerenciar parcelas"
+                        >
+                          <CreditCard className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedProcessoId(processo.id);
                             setChecklistOpen(true);
                           }}
                           className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
@@ -298,6 +312,15 @@ export default function Processos() {
           )}
         </CardContent>
       </Card>
+
+      {/* Parcelas Modal */}
+      {selectedProcessoId && (
+        <ParcelasModal
+          processoId={selectedProcessoId}
+          open={parcelasOpen}
+          onOpenChange={setParcelasOpen}
+        />
+      )}
 
       {/* Checklist Modal */}
       {selectedProcessoId && (

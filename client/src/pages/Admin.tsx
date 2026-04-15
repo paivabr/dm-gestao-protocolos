@@ -5,11 +5,15 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export default function Admin() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
   const [selectedTab, setSelectedTab] = useState("usuarios");
+  const [filterUsuarioId, setFilterUsuarioId] = useState<string>("");
+  const [filterProcessoId, setFilterProcessoId] = useState<string>("");
 
   const auditoriaQuery = trpc.auditoria.getAll.useQuery(undefined, {
     enabled: user?.role === "admin",
@@ -61,6 +65,20 @@ export default function Admin() {
       return acc;
     }, {} as Record<number, typeof auditoria>);
 
+  // Filtrar por usuário
+  const filteredByUsuario = filterUsuarioId
+    ? { [filterUsuarioId]: auditoriaByUsuario[parseInt(filterUsuarioId)] || [] }
+    : auditoriaByUsuario;
+
+  // Filtrar por processo
+  const filteredByProcesso = filterProcessoId
+    ? { [filterProcessoId]: auditoriaByProcesso[parseInt(filterProcessoId)] || [] }
+    : auditoriaByProcesso;
+
+  // Obter lista de usuários únicos
+  const usuariosUnicos = Array.from(new Set(auditoria.map((a) => a.usuarioId)));
+  const processosUnicos = Array.from(new Set(auditoria.filter((a) => a.tabela === "processos").map((a) => a.registroId)));
+
   return (
     <div className="space-y-6">
       <div>
@@ -75,7 +93,26 @@ export default function Admin() {
         </TabsList>
 
         <TabsContent value="usuarios" className="space-y-4">
-          {Object.entries(auditoriaByUsuario).map(([usuarioId, items]) => (
+          <div className="flex gap-2 mb-4">
+            <Input
+              placeholder="Filtrar por ID do usuário..."
+              value={filterUsuarioId}
+              onChange={(e) => setFilterUsuarioId(e.target.value)}
+              type="number"
+            />
+            {filterUsuarioId && (
+              <Button
+                variant="outline"
+                onClick={() => setFilterUsuarioId("")}
+              >
+                Limpar
+              </Button>
+            )}
+          </div>
+          <div className="text-sm text-gray-600 mb-4">
+            Usuários com ações: {usuariosUnicos.join(", ") || "Nenhum"}
+          </div>
+          {Object.entries(filteredByUsuario).map(([usuarioId, items]) => (
             <Card key={usuarioId}>
               <CardHeader>
                 <CardTitle className="text-lg">Usuário ID: {usuarioId}</CardTitle>
@@ -112,7 +149,26 @@ export default function Admin() {
         </TabsContent>
 
         <TabsContent value="processos" className="space-y-4">
-          {Object.entries(auditoriaByProcesso).map(([processoId, items]) => (
+          <div className="flex gap-2 mb-4">
+            <Input
+              placeholder="Filtrar por ID do processo..."
+              value={filterProcessoId}
+              onChange={(e) => setFilterProcessoId(e.target.value)}
+              type="number"
+            />
+            {filterProcessoId && (
+              <Button
+                variant="outline"
+                onClick={() => setFilterProcessoId("")}
+              >
+                Limpar
+              </Button>
+            )}
+          </div>
+          <div className="text-sm text-gray-600 mb-4">
+            Processos com alterações: {processosUnicos.join(", ") || "Nenhum"}
+          </div>
+          {Object.entries(filteredByProcesso).map(([processoId, items]) => (
             <Card key={processoId}>
               <CardHeader>
                 <CardTitle className="text-lg">Processo ID: {processoId}</CardTitle>

@@ -97,3 +97,20 @@ export const calendario = mysqlTable("calendario", {
 
 export type Calendario = typeof calendario.$inferSelect;
 export type InsertCalendario = typeof calendario.$inferInsert;
+
+/**
+ * Parcelas table for payment installments.
+ */
+export const parcelas = mysqlTable("parcelas", {
+  id: int("id").autoincrement().primaryKey(),
+  processoId: int("processoId").notNull(),
+  numeroParcela: int("numeroParcela").notNull(),
+  valorParcela: varchar("valorParcela", { length: 20 }).notNull(),
+  dataPagamento: timestamp("dataPagamento"),
+  pago: int("pago").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Parcela = typeof parcelas.$inferSelect;
+export type InsertParcela = typeof parcelas.$inferInsert;

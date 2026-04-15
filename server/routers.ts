@@ -307,6 +307,54 @@ export const appRouter = router({
       }),
   }),
 
+  // ============ PARCELAS ROUTES ============
+  parcelas: router({
+    create: protectedProcedure
+      .input(
+        z.object({
+          processoId: z.number(),
+          numeroParcela: z.number(),
+          valorParcela: z.string(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const id = await db.createParcela({
+          processoId: input.processoId,
+          numeroParcela: input.numeroParcela,
+          valorParcela: input.valorParcela,
+          pago: 0,
+        });
+        return { id, success: id !== null };
+      }),
+
+    getByProcesso: protectedProcedure
+      .input(z.object({ processoId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getParcelasByProcesso(input.processoId);
+      }),
+
+    marcarComoPaga: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.marcarParcelaComoPaga(input.id, new Date());
+        return { success: true };
+      }),
+
+    marcarComoNaoPaga: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.marcarParcelaComoNaoPaga(input.id);
+        return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteParcela(input.id);
+        return { success: true };
+      }),
+  }),
+
   // ============ CALENDARIO ROUTES ============
   calendario: router({
     create: protectedProcedure

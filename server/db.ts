@@ -1,6 +1,6 @@
 import { eq, and, like } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, clientes, processos, checklistItens, auditoria, calendario, Cliente, InsertCliente, Processo, InsertProcesso, ChecklistItem, InsertChecklistItem, Auditoria, InsertAuditoria, Calendario, InsertCalendario } from "../drizzle/schema";
+import { InsertUser, users, clientes, processos, checklistItens, auditoria, calendario, parcelas, Cliente, InsertCliente, Processo, InsertProcesso, ChecklistItem, InsertChecklistItem, Auditoria, InsertAuditoria, Calendario, InsertCalendario, Parcela, InsertParcela } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -501,5 +501,130 @@ export async function getCalendarioByMes(usuarioId: number, mes: number, ano: nu
   } catch (error) {
     console.error("[Database] Failed to get calendario by mes:", error);
     return [];
+  }
+}
+
+// ============ PARCELAS FUNCTIONS ============
+
+export async function createParcela(parcela: InsertParcela): Promise<number | null> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot create parcela: database not available");
+    return null;
+  }
+
+  try {
+    const result = await db.insert(parcelas).values(parcela);
+    return result[0].insertId as number;
+  } catch (error) {
+    console.error("[Database] Failed to create parcela:", error);
+    return null;
+  }
+}
+
+export async function getParcelasByProcesso(processoId: number): Promise<Parcela[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get parcelas: database not available");
+    return [];
+  }
+
+  try {
+    return await db.select().from(parcelas).where(eq(parcelas.processoId, processoId));
+  } catch (error) {
+    console.error("[Database] Failed to get parcelas:", error);
+    return [];
+  }
+}
+
+export async function getParcelaById(id: number): Promise<Parcela | undefined> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get parcela: database not available");
+    return undefined;
+  }
+
+  try {
+    const result = await db.select().from(parcelas).where(eq(parcelas.id, id)).limit(1);
+    return result.length > 0 ? result[0] : undefined;
+  } catch (error) {
+    console.error("[Database] Failed to get parcela:", error);
+    return undefined;
+  }
+}
+
+export async function updateParcela(id: number, updates: Partial<InsertParcela>) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot update parcela: database not available");
+    return;
+  }
+
+  try {
+    await db.update(parcelas).set(updates).where(eq(parcelas.id, id));
+  } catch (error) {
+    console.error("[Database] Failed to update parcela:", error);
+  }
+}
+
+export async function deleteParcela(id: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot delete parcela: database not available");
+    return;
+  }
+
+  try {
+    await db.delete(parcelas).where(eq(parcelas.id, id));
+  } catch (error) {
+    console.error("[Database] Failed to delete parcela:", error);
+  }
+}
+
+export async function deleteParcelasByProcesso(processoId: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot delete parcelas: database not available");
+    return;
+  }
+
+  try {
+    await db.delete(parcelas).where(eq(parcelas.processoId, processoId));
+  } catch (error) {
+    console.error("[Database] Failed to delete parcelas:", error);
+  }
+}
+
+export async function marcarParcelaComoPaga(id: number, dataPagamento: Date) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot update parcela: database not available");
+    return;
+  }
+
+  try {
+    await db.update(parcelas).set({
+      pago: 1,
+      dataPagamento: dataPagamento,
+    }).where(eq(parcelas.id, id));
+  } catch (error) {
+    console.error("[Database] Failed to mark parcela as paid:", error);
+  }
+}
+
+export async function marcarParcelaComoNaoPaga(id: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot update parcela: database not available");
+    return;
+  }
+
+  try {
+    await db.update(parcelas).set({
+      pago: 0,
+      dataPagamento: null,
+    }).where(eq(parcelas.id, id));
+  } catch (error) {
+    console.error("[Database] Failed to mark parcela as unpaid:", error);
   }
 }
