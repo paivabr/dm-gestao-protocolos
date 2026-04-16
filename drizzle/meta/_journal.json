@@ -50,6 +50,13 @@
       "when": 1776294047896,
       "tag": "0006_fat_metal_master",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1776337987713,
+      "tag": "0007_true_champions",
+      "breakpoints": true
     }
   ]
 }

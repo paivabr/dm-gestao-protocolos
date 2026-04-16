@@ -697,7 +697,7 @@ export const appRouter = router({
         numeroProtocolo: z.string(),
         tipoProcesso: z.enum(["Georreferenciamento", "Certidão de Localização", "Averbação de Qualificação"]),
         dataAbertura: z.date(),
-        status: z.enum(["Pronto", "Reivindicado", "Vencido"]).default("Pronto"),
+        status: z.enum(["Pronto", "Reingressado", "Reingressado pós pagamento", "Nota de Pagamento", "Exigência", "Protocolado", "Vencido"]).default("Pronto"),
         cartorio: z.string(),
         observacoes: z.string().optional(),
       }))
@@ -723,7 +723,7 @@ export const appRouter = router({
         numeroProtocolo: z.string().optional(),
         tipoProcesso: z.enum(["Georreferenciamento", "Certidão de Localização", "Averbação de Qualificação"]).optional(),
         dataAbertura: z.date().optional(),
-        status: z.enum(["Pronto", "Reivindicado", "Vencido"]).optional(),
+        status: z.enum(["Pronto", "Reingressado", "Reingressado pós pagamento", "Nota de Pagamento", "Exigência", "Protocolado", "Vencido"]).optional(),
         cartorio: z.string().optional(),
         observacoes: z.string().optional(),
       }))

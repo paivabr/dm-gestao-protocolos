@@ -83,3 +83,10 @@
 ## Bugs Encontrados - Abril 2026
 - [x] Botão de cadastrar cliente novo não funciona (não abre diálogo) - CORRIGIDO
 - [x] Erro ao fechar diálogo de criar protocolo: "NotFoundError: Failed to execute 'removeChild' on 'Node'" - CORRIGIDO
+
+
+## Bugs e Features - Abril 2026 (Lote 2)
+- [x] Corrigir erro de seleção de status em vermelho (Reingressado pós pagamento, Nota de Pagamento, Exigência) - CORRIGIDO
+- [x] Renomear status "Reinvindicado" para "Reingressado" - CORRIGIDO
+- [x] Criar novo status "Protocolado" - CRIADO
+- [x] Expandir visualização da aba de Pagamentos (aumentar tamanho dos cards de valores) - EXPANDIDO

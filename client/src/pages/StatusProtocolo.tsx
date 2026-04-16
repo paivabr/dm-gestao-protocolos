@@ -53,7 +53,7 @@ export default function StatusProtocolo() {
     observacoes: "",
   });
 
-  const STATUS_OPTIONS = ["Pronto", "Reivindicado", "Reingressado pós pagamento", "Nota de Pagamento", "Exigência", "Vencido"];
+  const STATUS_OPTIONS = ["Pronto", "Reingressado", "Reingressado pós pagamento", "Nota de Pagamento", "Exigência", "Protocolado", "Vencido"];
 
   // Ordenar protocolos pelos mais recentes
   const protocolosOrdenados = useMemo(() => {
@@ -106,7 +106,7 @@ export default function StatusProtocolo() {
         clienteId: parseInt(formData.clienteId.toString()),
         dataAbertura: new Date(formData.dataAbertura),
         tipoProcesso: formData.tipoProcesso as "Georreferenciamento" | "Certidão de Localização" | "Averbação de Qualificação",
-        status: formData.status as "Pronto" | "Reivindicado" | "Vencido",
+        status: formData.status as "Pronto" | "Reingressado" | "Reingressado pós pagamento" | "Nota de Pagamento" | "Exigência" | "Protocolado" | "Vencido",
       });
       setOpen(false);
       setFormData({
@@ -133,7 +133,7 @@ export default function StatusProtocolo() {
         numeroProtocolo: formData.numeroProtocolo,
         tipoProcesso: formData.tipoProcesso as "Georreferenciamento" | "Certidão de Localização" | "Averbação de Qualificação",
         dataAbertura: new Date(formData.dataAbertura),
-        status: formData.status as "Pronto" | "Reivindicado" | "Vencido",
+        status: formData.status as "Pronto" | "Reingressado" | "Reingressado pós pagamento" | "Nota de Pagamento" | "Exigência" | "Protocolado" | "Vencido",
         cartorio: formData.cartorio,
         observacoes: formData.observacoes,
       });
@@ -217,10 +217,18 @@ export default function StatusProtocolo() {
     switch (status) {
       case "Pronto":
         return "bg-green-100 text-green-800";
-      case "Reivindicado":
-        return "bg-orange-100 text-orange-800";
-      case "Vencido":
+      case "Reingressado":
+        return "bg-blue-100 text-blue-800";
+      case "Reingressado pós pagamento":
+        return "bg-purple-100 text-purple-800";
+      case "Nota de Pagamento":
+        return "bg-yellow-100 text-yellow-800";
+      case "Exigência":
         return "bg-red-100 text-red-800";
+      case "Protocolado":
+        return "bg-indigo-100 text-indigo-800";
+      case "Vencido":
+        return "bg-red-200 text-red-900";
       default:
         return "bg-gray-100 text-gray-800";
     }
