@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `canManageParcelas` tinyint DEFAULT 0 NOT NULL;

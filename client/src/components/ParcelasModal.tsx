@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,12 @@ interface ParcelasModalProps {
 }
 
 export default function ParcelasModal({ open, onOpenChange, processoId }: ParcelasModalProps) {
+  const { user } = useAuth();
+  const { data: permissions } = trpc.permissions.getMyPermissions.useQuery();
+  
+  // Verificar se o usuário tem permissão para gerenciar parcelas
+  const canManageParcelas = user?.role === "admin" || permissions?.canManageParcelas;
+  
   const [formData, setFormData] = useState({
     numeroParcelas: "1",
     valorTotal: "",
@@ -184,6 +191,22 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
 
   const totalGeral = parcelas.reduce((sum, p) => sum + parseFloat(p.valorParcela), 0);
   const totalGeralComDesconto = totalGeral - totalDesconto;
+
+  if (!canManageParcelas) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-full max-h-[95vh] overflow-y-auto w-screen">
+          <DialogHeader>
+            <DialogTitle>Acesso Negado</DialogTitle>
+            <DialogDescription>Você não tem permissão para gerenciar parcelas de pagamento</DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-center py-8">
+            <p className="text-center text-gray-600">Entre em contato com um administrador para obter acesso a esta funcionalidade.</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

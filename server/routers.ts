@@ -621,6 +621,7 @@ export const appRouter = router({
         canViewCalendar: z.boolean().optional(),
         canViewProcesses: z.boolean().optional(),
         canViewClients: z.boolean().optional(),
+        canManageParcelas: z.boolean().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         // Only admins can update permissions
@@ -635,6 +636,7 @@ export const appRouter = router({
           canViewCalendar: input.canViewCalendar,
           canViewProcesses: input.canViewProcesses,
           canViewClients: input.canViewClients,
+          canManageParcelas: input.canManageParcelas,
         });
 
         return { success: true };

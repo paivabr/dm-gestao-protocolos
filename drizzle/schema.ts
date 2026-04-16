@@ -23,6 +23,7 @@ export const users = mysqlTable("users", {
   canViewCalendar: tinyint("canViewCalendar").default(0).notNull(),
   canViewProcesses: tinyint("canViewProcesses").default(0).notNull(),
   canViewClients: tinyint("canViewClients").default(0).notNull(),
+  canManageParcelas: tinyint("canManageParcelas").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn"),

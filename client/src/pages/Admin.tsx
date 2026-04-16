@@ -264,6 +264,7 @@ function PermissionsManager({ userId, userName }: { userId: number; userName: st
     canViewCalendar: false,
     canViewProcesses: false,
     canViewClients: false,
+    canManageParcelas: false,
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -360,6 +361,15 @@ function PermissionsManager({ userId, userName }: { userId: number; userName: st
               className="w-4 h-4"
             />
             <span className="text-sm font-medium">Ver Aba de Calendário</span>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-blue-100 transition-colors">
+            <input
+              type="checkbox"
+              checked={permissions.canManageParcelas}
+              onChange={() => handlePermissionChange("canManageParcelas")}
+              className="w-4 h-4"
+            />
+            <span className="text-sm font-medium">Gerenciar Parcelas de Pagamento</span>
           </label>
         </div>
         <Button onClick={handleSave} disabled={isSaving} className="w-full">

@@ -90,3 +90,11 @@
 - [x] Renomear status "Reinvindicado" para "Reingressado" - CORRIGIDO
 - [x] Criar novo status "Protocolado" - CRIADO
 - [x] Expandir visualização da aba de Pagamentos (aumentar tamanho dos cards de valores) - EXPANDIDO
+
+
+## Permiss\u00e3o de Gere## Permissão de Gerenciar Parcelas - Abril 2026
+- [x] Adicionar coluna `canManageParcelas` na tabela `users` - ADICIONADO
+- [x] Criar rota tRPC para atualizar permissão de parcelas - CRIADO
+- [x] Adicionar checkbox na aba Admin para gerenciar permissão - ADICIONADO
+- [x] Bloquear acesso a parcelas para usuários sem permissão - IMPLEMENTADO
+- [x] Testar funcionalidade completa - TESTES PASSANDO

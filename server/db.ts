@@ -758,6 +758,7 @@ export async function updateUserPermissions(userId: number, permissions: {
   canViewCalendar?: boolean;
   canViewProcesses?: boolean;
   canViewClients?: boolean;
+  canManageParcelas?: boolean;
 }) {
   const db = await getDb();
   if (!db) {
@@ -773,6 +774,7 @@ export async function updateUserPermissions(userId: number, permissions: {
     if (permissions.canViewCalendar !== undefined) updateData.canViewCalendar = permissions.canViewCalendar ? 1 : 0;
     if (permissions.canViewProcesses !== undefined) updateData.canViewProcesses = permissions.canViewProcesses ? 1 : 0;
     if (permissions.canViewClients !== undefined) updateData.canViewClients = permissions.canViewClients ? 1 : 0;
+    if (permissions.canManageParcelas !== undefined) updateData.canManageParcelas = permissions.canManageParcelas ? 1 : 0;
 
     await db.update(users).set(updateData).where(eq(users.id, userId));
   } catch (error) {
@@ -795,6 +797,7 @@ export async function getUserPermissions(userId: number) {
       canViewCalendar: users.canViewCalendar,
       canViewProcesses: users.canViewProcesses,
       canViewClients: users.canViewClients,
+      canManageParcelas: users.canManageParcelas,
     }).from(users).where(eq(users.id, userId)).limit(1);
 
     if (result.length > 0) {
@@ -805,6 +808,7 @@ export async function getUserPermissions(userId: number) {
         canViewCalendar: result[0].canViewCalendar === 1,
         canViewProcesses: result[0].canViewProcesses === 1,
         canViewClients: result[0].canViewClients === 1,
+        canManageParcelas: result[0].canManageParcelas === 1,
       };
     }
     return null;
