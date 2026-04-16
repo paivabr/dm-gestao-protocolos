@@ -20,6 +20,7 @@ export default function StatusProtocolo() {
   const deleteMutation = trpc.statusProtocolo.delete.useMutation();
 
   const [open, setOpen] = useState(false);
+  const [openEdit, setOpenEdit] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [searchProtocolo, setSearchProtocolo] = useState("");
   const [filterTipo, setFilterTipo] = useState("");
@@ -180,6 +181,7 @@ export default function StatusProtocolo() {
   };
 
   const handleCloseEditDialog = (newOpen: boolean) => {
+    setOpenEdit(newOpen);
     if (!newOpen) {
       setEditingId(null);
       setFormData({
@@ -192,7 +194,7 @@ export default function StatusProtocolo() {
         observacoes: "",
       });
     }
-  };
+  }
 
   // Bloquear acesso se não tem permissão
   if (user?.role !== "admin" && !permissions?.canViewProcesses) {
@@ -493,7 +495,7 @@ export default function StatusProtocolo() {
       </Card>
 
       {editingId && (
-        <Dialog open={!!editingId} onOpenChange={handleCloseEditDialog}>
+        <Dialog open={openEdit} onOpenChange={handleCloseEditDialog}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Editar Protocolo</DialogTitle>
