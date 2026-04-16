@@ -304,7 +304,7 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
               </Card>
 
               {/* Resumo de pagamentos */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
                 <Card className="border-2 shadow-lg">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-semibold text-gray-700">Total Geral</CardTitle>
