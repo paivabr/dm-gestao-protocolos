@@ -78,3 +78,8 @@
 - [x] Adicionada validação de tamanho de arquivo (máximo 5MB)
 - [x] Foto agora é salva em S3 e a URL é persistida no banco de dados
 - [x] Testes passando com sucesso
+
+
+## Bugs Encontrados - Abril 2026
+- [x] Botão de cadastrar cliente novo não funciona (não abre diálogo) - CORRIGIDO
+- [x] Erro ao fechar diálogo de criar protocolo: "NotFoundError: Failed to execute 'removeChild' on 'Node'" - CORRIGIDO

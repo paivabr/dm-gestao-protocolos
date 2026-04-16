@@ -179,6 +179,21 @@ export default function StatusProtocolo() {
     });
   };
 
+  const handleCloseEditDialog = (newOpen: boolean) => {
+    if (!newOpen) {
+      setEditingId(null);
+      setFormData({
+        clienteId: 0,
+        numeroProtocolo: "",
+        tipoProcesso: "",
+        dataAbertura: new Date().toISOString().split("T")[0],
+        status: "Pronto",
+        cartorio: "",
+        observacoes: "",
+      });
+    }
+  };
+
   // Bloquear acesso se não tem permissão
   if (user?.role !== "admin" && !permissions?.canViewProcesses) {
     return (
@@ -218,7 +233,7 @@ export default function StatusProtocolo() {
           <h1 className="text-3xl font-bold">Status de Protocolo</h1>
           <p className="text-gray-600">Gerenciar protocolos de registro de imóveis</p>
         </div>
-        <Dialog open={open && !editingId} onOpenChange={setOpen}>
+        <Dialog open={open && !editingId} onOpenChange={(newOpen) => setOpen(newOpen)}>
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="w-4 h-4" />
@@ -470,7 +485,7 @@ export default function StatusProtocolo() {
       </Card>
 
       {editingId && (
-        <Dialog open={!!editingId} onOpenChange={() => setEditingId(null)}>
+        <Dialog open={!!editingId} onOpenChange={handleCloseEditDialog}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Editar Protocolo</DialogTitle>

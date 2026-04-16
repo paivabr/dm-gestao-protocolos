@@ -86,10 +86,12 @@ export default function Clientes() {
     setOpen(true);
   };
 
-  const handleCloseDialog = () => {
-    setOpen(false);
-    setEditingId(null);
-    setFormData({ nome: "", cpfCnpj: "", contato: "" });
+  const handleCloseDialog = (newOpen: boolean) => {
+    setOpen(newOpen);
+    if (!newOpen) {
+      setEditingId(null);
+      setFormData({ nome: "", cpfCnpj: "", contato: "" });
+    }
   };
 
   // Bloquear acesso se não tem permissão
