@@ -125,6 +125,17 @@ const SelectSeparator = React.forwardRef<
 ))
 SelectSeparator.displayName = SelectPrimitive.Separator.displayName
 
+// Exports with NoPortal naming for compatibility
+const SelectNoPortal = Select
+const SelectNoPortalGroup = SelectGroup
+const SelectNoPortalValue = SelectValue
+const SelectNoPortalTrigger = SelectTrigger
+const SelectNoPortalContent = SelectContent
+const SelectNoPortalItem = SelectItem
+const SelectNoPortalSeparator = SelectSeparator
+const SelectNoPortalScrollUpButton = SelectScrollUpButton
+const SelectNoPortalScrollDownButton = SelectScrollDownButton
+
 export {
   Select,
   SelectGroup,
@@ -135,4 +146,13 @@ export {
   SelectSeparator,
   SelectScrollUpButton,
   SelectScrollDownButton,
+  SelectNoPortal,
+  SelectNoPortalGroup,
+  SelectNoPortalValue,
+  SelectNoPortalTrigger,
+  SelectNoPortalContent,
+  SelectNoPortalItem,
+  SelectNoPortalSeparator,
+  SelectNoPortalScrollUpButton,
+  SelectNoPortalScrollDownButton,
 }
