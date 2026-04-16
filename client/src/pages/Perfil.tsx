@@ -6,19 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { User, Upload, Lock, Mail } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-const useToast = () => ({
-  toast: ({ title, description, variant }: any) => {
-    console.log(`${title}: ${description}`);
-  },
-});
+import { toast } from "sonner";
 
 export default function Perfil() {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [editingName, setEditingName] = useState(false);
   const [editingEmail, setEditingEmail] = useState(false);
   const [editingPassword, setEditingPassword] = useState(false);
+  const [editingPhoto, setEditingPhoto] = useState(false);
   
   const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
@@ -26,34 +21,41 @@ export default function Perfil() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [fotoPerfil, setFotoPerfil] = useState(user?.fotoPerfil || "");
+  const [fotoPerfilTemp, setFotoPerfilTemp] = useState<string | null>(null);
 
   const updateProfileMutation = trpc.auth.updateProfile.useMutation({
-    onSuccess: () => {
-      toast({ title: "Sucesso", description: "Perfil atualizado com sucesso!" });
+    onSuccess: (data: any) => {
+      toast.success("Perfil atualizado com sucesso!");
       setEditingName(false);
       setEditingEmail(false);
+      setEditingPhoto(false);
+      setFotoPerfilTemp(null);
+      // Update the fotoPerfil state with the returned URL from S3
+      if (data.fotoPerfil) {
+        setFotoPerfil(data.fotoPerfil);
+      }
     },
     onError: (error: any) => {
-      toast({ title: "Erro", description: error.message || "Erro ao atualizar perfil", variant: "destructive" });
+      toast.error(error.message || "Erro ao atualizar perfil");
     },
   });
 
   const updatePasswordMutation = trpc.auth.updatePassword.useMutation({
     onSuccess: () => {
-      toast({ title: "Sucesso", description: "Senha alterada com sucesso!" });
+      toast.success("Senha alterada com sucesso!");
       setEditingPassword(false);
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     },
     onError: (error: any) => {
-      toast({ title: "Erro", description: error.message || "Erro ao alterar senha", variant: "destructive" });
+      toast.error(error.message || "Erro ao alterar senha");
     },
   });
 
   const handleUpdateName = async () => {
     if (!name.trim()) {
-      toast({ title: "Erro", description: "Nome não pode estar vazio", variant: "destructive" });
+      toast.error("Nome não pode estar vazio");
       return;
     }
     await updateProfileMutation.mutateAsync({ name });
@@ -61,7 +63,7 @@ export default function Perfil() {
 
   const handleUpdateEmail = async () => {
     if (!email.trim()) {
-      toast({ title: "Erro", description: "Email não pode estar vazio", variant: "destructive" });
+      toast.error("Email não pode estar vazio");
       return;
     }
     await updateProfileMutation.mutateAsync({ email });
@@ -69,11 +71,11 @@ export default function Perfil() {
 
   const handleUpdatePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
-      toast({ title: "Erro", description: "Preencha todos os campos", variant: "destructive" });
+      toast.error("Preencha todos os campos");
       return;
     }
     if (newPassword !== confirmPassword) {
-      toast({ title: "Erro", description: "As senhas não coincidem", variant: "destructive" });
+      toast.error("As senhas não coincidem");
       return;
     }
     await updatePasswordMutation.mutateAsync({ currentPassword, newPassword });
@@ -83,13 +85,29 @@ export default function Perfil() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Arquivo muito grande. Máximo 5MB");
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = async (event) => {
       const base64 = event.target?.result as string;
-      setFotoPerfil(base64);
-      await updateProfileMutation.mutateAsync({ fotoPerfil: base64 });
+      setFotoPerfilTemp(base64);
+      setEditingPhoto(true);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleSavePhoto = async () => {
+    if (!fotoPerfilTemp) return;
+    await updateProfileMutation.mutateAsync({ fotoPerfil: fotoPerfilTemp });
+  };
+
+  const handleCancelPhoto = () => {
+    setFotoPerfilTemp(null);
+    setEditingPhoto(false);
   };
 
   if (!user) {
@@ -114,26 +132,50 @@ export default function Perfil() {
         <CardContent className="space-y-4">
           <div className="flex items-center gap-6">
             <Avatar className="h-24 w-24">
-              <AvatarImage src={fotoPerfil || undefined} />
+              <AvatarImage src={fotoPerfilTemp || fotoPerfil || undefined} />
               <AvatarFallback>{user.name?.charAt(0) || "U"}</AvatarFallback>
             </Avatar>
-            <div>
-              <label htmlFor="photo-upload" className="cursor-pointer">
-                <Button variant="outline" className="gap-2" asChild>
-                  <span>
-                    <Upload className="h-4 w-4" />
-                    Alterar Foto
-                  </span>
-                </Button>
-              </label>
-              <input
-                id="photo-upload"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handlePhotoUpload}
-              />
-              <p className="text-xs text-gray-500 mt-2">PNG, JPG até 5MB</p>
+            <div className="flex-1">
+              {!editingPhoto ? (
+                <>
+                  <label htmlFor="photo-upload" className="cursor-pointer">
+                    <Button variant="outline" className="gap-2" asChild>
+                      <span>
+                        <Upload className="h-4 w-4" />
+                        Alterar Foto
+                      </span>
+                    </Button>
+                  </label>
+                  <input
+                    id="photo-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handlePhotoUpload}
+                  />
+                  <p className="text-xs text-gray-500 mt-2">PNG, JPG até 5MB</p>
+                </>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-gray-600">Foto selecionada. Clique em "Salvar" para confirmar.</p>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleSavePhoto}
+                      disabled={updateProfileMutation.isPending}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      Salvar Foto
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleCancelPhoto}
+                      disabled={updateProfileMutation.isPending}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>

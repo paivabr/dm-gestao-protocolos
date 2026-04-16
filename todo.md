@@ -66,3 +66,15 @@
 - [x] Impedir exclusão do usuário DMconsultoria
 - [x] Criar testes para a funcionalidade de exclusão de usuários
 - [x] Testes passando com sucesso
+
+
+## Salvamento de Foto de Perfil
+- [x] Coluna `fotoPerfil` já existe na tabela `users` para armazenar URL da foto
+- [x] Função `updateUserProfile` em db.ts já suporta atualização de foto
+- [x] Rota tRPC `auth.updateProfile` no backend modificada para fazer upload para S3
+- [x] Implementado upload de foto para S3 no backend (storagePut)
+- [x] Adicionado estado `fotoPerfilTemp` para preview antes de salvar
+- [x] Implementado botão "Salvar Foto" explícito no Meu Perfil
+- [x] Adicionada validação de tamanho de arquivo (máximo 5MB)
+- [x] Foto agora é salva em S3 e a URL é persistida no banco de dados
+- [x] Testes passando com sucesso

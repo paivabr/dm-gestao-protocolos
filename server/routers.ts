@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as auth from "./auth";
 import * as db from "./db";
+import { storagePut } from "./storage";
 import { COOKIE_NAME } from "../shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
@@ -88,8 +89,28 @@ export const appRouter = router({
       )
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
-        const success = await db.updateUserProfile(ctx.user.id, input);
-        return { success };
+        
+        // If fotoPerfil is provided as base64, upload to S3
+        let updateData: any = { ...input };
+        if (input.fotoPerfil && input.fotoPerfil.startsWith('data:')) {
+          try {
+            // Convert base64 to buffer
+            const base64Data = input.fotoPerfil.split(',')[1];
+            const buffer = Buffer.from(base64Data, 'base64');
+            
+            // Upload to S3
+            const fileKey = `users/${ctx.user.id}/profile-photo-${Date.now()}.jpg`;
+            const { url } = await storagePut(fileKey, buffer, 'image/jpeg');
+            
+            updateData.fotoPerfil = url;
+          } catch (error) {
+            console.error('[Upload] Failed to upload profile photo:', error);
+            throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Falha ao fazer upload da foto' });
+          }
+        }
+        
+        const success = await db.updateUserProfile(ctx.user.id, updateData);
+        return { success, fotoPerfil: updateData.fotoPerfil };
       }),
 
     updatePassword: protectedProcedure
