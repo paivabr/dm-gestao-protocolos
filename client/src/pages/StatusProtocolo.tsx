@@ -109,7 +109,8 @@ export default function StatusProtocolo() {
         tipoProcesso: formData.tipoProcesso as "Georreferenciamento" | "Certidão de Localização" | "Averbação de Qualificação",
         status: formData.status as "Pronto" | "Reingressado" | "Reingressado pós pagamento" | "Nota de Pagamento" | "Exigência" | "Protocolado" | "Vencido",
       });
-      setOpen(false);
+      // Pequeno delay para evitar erro de removeChild do Radix Dialog
+      setTimeout(() => setOpen(false), 100);
       setFormData({
         clienteId: 0,
         numeroProtocolo: "",
