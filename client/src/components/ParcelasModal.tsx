@@ -187,7 +187,7 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto w-[95vw]">
+      <DialogContent className="max-w-full max-h-[95vh] overflow-y-auto w-screen">
         <DialogHeader>
           <DialogTitle>Gerenciar Parcelas de Pagamento</DialogTitle>
           <DialogDescription>Adicione e controle as parcelas de pagamento do serviço</DialogDescription>
