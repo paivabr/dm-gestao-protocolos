@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Trash2, Plus, Search, CheckCircle2, AlertCircle, CreditCard } from "lucide-react";
+import { Trash2, Plus, Search, CheckCircle2, AlertCircle, CreditCard, Edit2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,11 +14,13 @@ import { useAuth } from "@/_core/hooks/useAuth";
 
 export default function Processos() {
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [checklistOpen, setChecklistOpen] = useState(false);
   const [parcelasOpen, setParcelasOpen] = useState(false);
   const [selectedProcessoId, setSelectedProcessoId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [editingProcesso, setEditingProcesso] = useState<any>(null);
 
   const [formData, setFormData] = useState({
     titulo: "",
@@ -35,6 +37,7 @@ export default function Processos() {
   });
   const { data: clientes } = trpc.clientes.list.useQuery();
   const createMutation = trpc.processos.create.useMutation();
+  const updateMutation = trpc.processos.update.useMutation();
   const deleteMutation = trpc.processos.delete.useMutation();
 
   // Filter and search
@@ -58,20 +61,44 @@ export default function Processos() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await createMutation.mutateAsync({
-        titulo: formData.titulo,
-        clienteId: parseInt(formData.clienteId),
-        status: formData.status as "Pendente" | "Em Análise" | "Protocolado" | "Finalizado",
-        prazoVencimento: formData.prazoVencimento ? new Date(formData.prazoVencimento) : undefined,
-      });
-      toast.success("Processo criado com sucesso!");
+      if (editingProcesso) {
+        await updateMutation.mutateAsync({
+          id: editingProcesso.id,
+          titulo: formData.titulo,
+          clienteId: parseInt(formData.clienteId),
+          status: formData.status as "Pendente" | "Em Análise" | "Protocolado" | "Finalizado",
+          prazoVencimento: formData.prazoVencimento ? new Date(formData.prazoVencimento) : undefined,
+        });
+        toast.success("Processo atualizado com sucesso!");
+        setEditingProcesso(null);
+        setEditOpen(false);
+      } else {
+        await createMutation.mutateAsync({
+          titulo: formData.titulo,
+          clienteId: parseInt(formData.clienteId),
+          status: formData.status as "Pendente" | "Em Análise" | "Protocolado" | "Finalizado",
+          prazoVencimento: formData.prazoVencimento ? new Date(formData.prazoVencimento) : undefined,
+        });
+        toast.success("Processo criado com sucesso!");
+        setOpen(false);
+      }
       setFormData({ titulo: "", clienteId: "", status: "Pendente", prazoVencimento: "" });
-      setOpen(false);
       refetch();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Erro ao criar processo";
+      const message = error instanceof Error ? error.message : "Erro ao salvar processo";
       toast.error(message);
     }
+  };
+
+  const handleEdit = (processo: any) => {
+    setEditingProcesso(processo);
+    setFormData({
+      titulo: processo.titulo,
+      clienteId: processo.clienteId.toString(),
+      status: processo.status,
+      prazoVencimento: processo.prazoVencimento ? new Date(processo.prazoVencimento).toISOString().split("T")[0] : "",
+    });
+    setEditOpen(true);
   };
 
   const handleDelete = async (id: number) => {
@@ -218,7 +245,86 @@ export default function Processos() {
                 />
               </div>
               <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">
-                Criar Processo
+                {editingProcesso ? "Atualizar Processo" : "Criar Processo"}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog de Editar */}
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar Processo</DialogTitle>
+              <DialogDescription>
+                Atualize os dados do processo
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Título do Processo
+                </label>
+                <Input
+                  type="text"
+                  name="titulo"
+                  value={formData.titulo}
+                  onChange={handleChange}
+                  placeholder="Ex: Registro de Compra e Venda"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Cliente
+                </label>
+                <select
+                  name="clienteId"
+                  value={formData.clienteId}
+                  onChange={e => setFormData(prev => ({ ...prev, clienteId: e.target.value }))}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-md"
+                  required
+                >
+                  <option value="">Selecione um cliente</option>
+                  {clientes?.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Status
+                </label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={e => setFormData(prev => ({ ...prev, status: e.target.value }))}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-md"
+                >
+                  <option value="Pendente">Pendente</option>
+                  <option value="Em Análise">Em Análise</option>
+                  <option value="Protocolado">Protocolado</option>
+                  <option value="Finalizado">Finalizado</option>
+                  <option value="Campo">Campo</option>
+                  <option value="Análise/Escritório">Análise/Escritório</option>
+                  <option value="Pendente documento">Pendente documento</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Prazo de Vencimento
+                </label>
+                <Input
+                  type="date"
+                  name="prazoVencimento"
+                  value={formData.prazoVencimento}
+                  onChange={handleChange}
+                />
+              </div>
+              <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700">
+                Atualizar Processo
               </Button>
             </form>
           </DialogContent>
@@ -324,6 +430,15 @@ export default function Processos() {
                           className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                         >
                           <CheckCircle2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(processo)}
+                          className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                          title="Editar processo"
+                        >
+                          <Edit2 className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
