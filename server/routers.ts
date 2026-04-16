@@ -117,7 +117,14 @@ export const appRouter = router({
 
   // ============ CLIENTE ROUTES ============
   clientes: router({
-    list: protectedProcedure.query(async () => {
+    list: protectedProcedure.query(async ({ ctx }) => {
+      // Verificar permissão
+      if (ctx.user?.role !== "admin") {
+        const permissions = await db.getUserPermissions(ctx.user?.id || 0);
+        if (!permissions?.canViewClients) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Você não tem permissão para visualizar clientes" });
+        }
+      }
       return await db.getClientes();
     }),
 
@@ -674,15 +681,18 @@ export const appRouter = router({
     update: protectedProcedure
       .input(z.object({
         id: z.number(),
+        clienteId: z.number().optional(),
+        numeroProtocolo: z.string().optional(),
+        tipoProcesso: z.enum(["Georreferenciamento", "Certidão de Localização", "Averbação de Qualificação"]).optional(),
+        dataAbertura: z.date().optional(),
         status: z.enum(["Pronto", "Reivindicado", "Vencido"]).optional(),
+        cartorio: z.string().optional(),
         observacoes: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
-        const success = await db.updateStatusProtocolo(input.id, {
-          status: input.status,
-          observacoes: input.observacoes,
-        });
+        const { id, ...updateData } = input;
+        const success = await db.updateStatusProtocolo(id, updateData);
         if (success) {
           await db.createAuditoria({
             usuarioId: ctx.user.id,
