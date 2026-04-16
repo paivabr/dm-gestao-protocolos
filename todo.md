@@ -104,3 +104,11 @@
 - [x] Alterar Perfil.tsx para aceitar URL em vez de upload - CONCLUÍDO
 - [x] Salvar URL da foto no banco de dados - FUNCIONA COM BACKEND EXISTENTE
 - [x] Exibir foto a partir da URL - CONCLUÍDO
+
+
+## Auditoria Completa - Abril 2026
+- [ ] Corrigir erro de removeChild ao selecionar status
+- [ ] Sincronizar schema Drizzle com banco de dados
+- [ ] Verificar todos os SelectItem no código
+- [ ] Testar criação de protocolo com todos os status
+- [ ] Testar filtro de status

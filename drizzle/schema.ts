@@ -136,7 +136,7 @@ export const statusProtocolo = mysqlTable("statusProtocolo", {
   id: int("id").autoincrement().primaryKey(),
   clienteId: int("clienteId"),
   numeroProtocolo: varchar("numeroProtocolo", { length: 50 }).notNull().unique(),
-  tipoProcesso: mysqlEnum("tipoprocesso", [
+  tipoProcesso: mysqlEnum("tipoProcesso", [
     "Georreferenciamento",
     "Certidão de Localização",
     "Averbação de Qualificação",
