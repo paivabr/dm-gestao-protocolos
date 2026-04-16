@@ -5,11 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Trash2, AlertCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 export default function Calendario() {
   const { user } = useAuth();
+  const { data: permissions } = trpc.permissions.getMyPermissions.useQuery();
   const [currentDate, setCurrentDate] = useState(new Date(2026, 3, 15)); // Abril 15, 2026
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -84,6 +85,25 @@ export default function Calendario() {
   const selectedServicos = selectedDateStr ? servicosByDate[selectedDateStr] || [] : [];
 
   const monthName = currentDate.toLocaleString("pt-BR", { month: "long", year: "numeric" });
+
+  // Bloquear acesso se não tem permissão
+  if (user?.role !== "admin" && !permissions?.canViewCalendar) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Card className="w-full max-w-md border-red-200 bg-red-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-red-700">
+              <AlertCircle className="h-5 w-5" />
+              Acesso Negado
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-red-600">Você não tem permissão para acessar esta página. Solicite ao administrador.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
