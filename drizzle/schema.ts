@@ -38,7 +38,7 @@ export type InsertUser = typeof users.$inferInsert;
 export const clientes = mysqlTable("clientes", {
   id: int("id").autoincrement().primaryKey(),
   nome: varchar("nome", { length: 255 }).notNull(),
-  cpfCnpj: varchar("cpfcnpj", { length: 20 }).notNull().unique(),
+  cpfcnpj: varchar("cpfcnpj", { length: 20 }).notNull().unique(),
   contato: varchar("contato", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -136,7 +136,7 @@ export const statusProtocolo = mysqlTable("statusProtocolo", {
   id: int("id").autoincrement().primaryKey(),
   clienteId: int("clienteId"),
   numeroProtocolo: varchar("numeroProtocolo", { length: 50 }).notNull().unique(),
-  tipoProcesso: mysqlEnum("tipoProcesso", [
+  tipoprocesso: mysqlEnum("tipoprocesso", [
     "Georreferenciamento",
     "Certidão de Localização",
     "Averbação de Qualificação",

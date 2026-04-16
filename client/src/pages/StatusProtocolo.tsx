@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SelectInline, SelectInlineContent, SelectInlineItem, SelectInlineTrigger, SelectInlineValue } from "@/components/ui/select-inline";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
@@ -73,7 +74,7 @@ export default function StatusProtocolo() {
       const matchesProtocolo = p.numeroProtocolo
         .toLowerCase()
         .includes(searchProtocolo.toLowerCase());
-      const matchesTipo = !filterTipo || p.tipoProcesso === filterTipo;
+      const matchesTipo = !filterTipo || p.tipoprocesso === filterTipo;
       const matchesStatus = !filterStatus || p.status === filterStatus;
       const matchesCartorio = !filterCartorio || p.cartorio === filterCartorio;
       return matchesProtocolo && matchesTipo && matchesStatus && matchesCartorio;
@@ -132,7 +133,7 @@ export default function StatusProtocolo() {
         ...formData,
         clienteId: parseInt(formData.clienteId.toString()),
         dataAbertura: new Date(formData.dataAbertura),
-        tipoProcesso: formData.tipoProcesso as "Georreferenciamento" | "Certidão de Localização" | "Averbação de Qualificação",
+        tipoprocesso: formData.tipoProcesso as "Georreferenciamento" | "Certidão de Localização" | "Averbação de Qualificação",
         status: formData.status as "Pronto" | "Reingressado" | "Reingressado pós pagamento" | "Nota de Pagamento" | "Exigência" | "Protocolado" | "Vencido",
       });
       toast.success("Protocolo criado com sucesso!");
@@ -151,7 +152,7 @@ export default function StatusProtocolo() {
         id: editingId,
         clienteId: formData.clienteId,
         numeroProtocolo: formData.numeroProtocolo,
-        tipoProcesso: formData.tipoProcesso as "Georreferenciamento" | "Certidão de Localização" | "Averbação de Qualificação",
+        tipoprocesso: formData.tipoProcesso as "Georreferenciamento" | "Certidão de Localização" | "Averbação de Qualificação",
         dataAbertura: new Date(formData.dataAbertura),
         status: formData.status as "Pronto" | "Reingressado" | "Reingressado pós pagamento" | "Nota de Pagamento" | "Exigência" | "Protocolado" | "Vencido",
         cartorio: formData.cartorio,
@@ -181,7 +182,7 @@ export default function StatusProtocolo() {
     setFormData({
       clienteId: protocolo.clienteId || 0,
       numeroProtocolo: protocolo.numeroProtocolo || "",
-      tipoProcesso: protocolo.tipoProcesso || "",
+      tipoProcesso: protocolo.tipoprocesso || "",
       dataAbertura: protocolo.dataAbertura ? new Date(protocolo.dataAbertura).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
       status: protocolo.status || "Pronto",
       cartorio: protocolo.cartorio || "",
@@ -256,18 +257,18 @@ export default function StatusProtocolo() {
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium">Cliente *</label>
-              <Select value={formData.clienteId.toString()} onValueChange={(value) => setFormData({ ...formData, clienteId: parseInt(value) })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um cliente" />
-                </SelectTrigger>
-                <SelectContent>
+              <SelectInline value={formData.clienteId.toString()} onValueChange={(value) => setFormData({ ...formData, clienteId: parseInt(value) })}>
+                <SelectInlineTrigger>
+                  <SelectInlineValue placeholder="Selecione um cliente" />
+                </SelectInlineTrigger>
+                <SelectInlineContent>
                   {clientes.map((cliente: any) => (
-                    <SelectItem key={cliente.id} value={cliente.id.toString()}>
+                    <SelectInlineItem key={cliente.id} value={cliente.id.toString()}>
                       {cliente.nome}
-                    </SelectItem>
+                    </SelectInlineItem>
                   ))}
-                </SelectContent>
-              </Select>
+                </SelectInlineContent>
+              </SelectInline>
             </div>
 
             <div>
@@ -282,18 +283,18 @@ export default function StatusProtocolo() {
             <div>
               <label className="text-sm font-medium">Tipo de Processo *</label>
               <div className="flex gap-2">
-                <Select value={formData.tipoProcesso} onValueChange={(value) => setFormData({ ...formData, tipoProcesso: value })}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
+                <SelectInline value={formData.tipoProcesso} onValueChange={(value) => setFormData({ ...formData, tipoProcesso: value })}>
+                  <SelectInlineTrigger className="flex-1">
+                    <SelectInlineValue placeholder="Selecione" />
+                  </SelectInlineTrigger>
+                  <SelectInlineContent>
                     {tiposProcesso.map((tipo) => (
-                      <SelectItem key={tipo} value={tipo}>
+                      <SelectInlineItem key={tipo} value={tipo}>
                         {tipo}
-                      </SelectItem>
+                      </SelectInlineItem>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </SelectInlineContent>
+                </SelectInline>
                 <Input
                   placeholder="Novo tipo"
                   value={novoTipo}
@@ -317,35 +318,35 @@ export default function StatusProtocolo() {
 
             <div>
               <label className="text-sm font-medium">Status</label>
-              <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
+              <SelectInline value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+                <SelectInlineTrigger>
+                  <SelectInlineValue />
+                </SelectInlineTrigger>
+                <SelectInlineContent>
                   {STATUS_OPTIONS.map((status) => (
-                    <SelectItem key={status} value={status}>
+                    <SelectInlineItem key={status} value={status}>
                       {status}
-                    </SelectItem>
+                    </SelectInlineItem>
                   ))}
-                </SelectContent>
-              </Select>
+                </SelectInlineContent>
+              </SelectInline>
             </div>
 
             <div>
               <label className="text-sm font-medium">Cartório *</label>
               <div className="flex gap-2">
-                <Select value={formData.cartorio} onValueChange={(value) => setFormData({ ...formData, cartorio: value })}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
+                <SelectInline value={formData.cartorio} onValueChange={(value) => setFormData({ ...formData, cartorio: value })}>
+                  <SelectInlineTrigger className="flex-1">
+                    <SelectInlineValue placeholder="Selecione" />
+                  </SelectInlineTrigger>
+                  <SelectInlineContent>
                     {cartorios.map((cartorio) => (
-                      <SelectItem key={cartorio} value={cartorio}>
+                      <SelectInlineItem key={cartorio} value={cartorio}>
                         {cartorio}
-                      </SelectItem>
+                      </SelectInlineItem>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </SelectInlineContent>
+                </SelectInline>
                 <Input
                   placeholder="Novo cartório"
                   value={novoCartorio}

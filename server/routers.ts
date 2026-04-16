@@ -153,7 +153,7 @@ export const appRouter = router({
       .input(
         z.object({
           nome: z.string().min(1, "Nome é obrigatório"),
-          cpfCnpj: z.string().min(1, "CPF/CNPJ é obrigatório"),
+          cpfcnpj: z.string().min(1, "CPF/CNPJ é obrigatório"),
           contato: z.string().optional(),
         })
       )
@@ -167,7 +167,7 @@ export const appRouter = router({
         }
         const clienteId = await db.createCliente({
           nome: input.nome,
-          cpfCnpj: input.cpfCnpj,
+          cpfcnpj: input.cpfcnpj,
           contato: input.contato,
         });
 
@@ -197,14 +197,14 @@ export const appRouter = router({
         z.object({
           id: z.number(),
           nome: z.string().optional(),
-          cpfCnpj: z.string().optional(),
+          cpfcnpj: z.string().optional(),
           contato: z.string().optional(),
         })
       )
       .mutation(async ({ input, ctx }) => {
         await db.updateCliente(input.id, {
           nome: input.nome,
-          cpfCnpj: input.cpfCnpj,
+          cpfcnpj: input.cpfcnpj,
           contato: input.contato,
         });
 
@@ -697,7 +697,7 @@ export const appRouter = router({
       .input(z.object({
         clienteId: z.number(),
         numeroProtocolo: z.string(),
-        tipoProcesso: z.enum(["Georreferenciamento", "Certidão de Localização", "Averbação de Qualificação"]),
+        tipoprocesso: z.enum(["Georreferenciamento", "Certidão de Localização", "Averbação de Qualificação"]),
         dataAbertura: z.date(),
         status: z.enum(["Pronto", "Reingressado", "Reingressado pós pagamento", "Nota de Pagamento", "Exigência", "Protocolado", "Vencido"]).default("Pronto"),
         cartorio: z.string(),
@@ -723,7 +723,7 @@ export const appRouter = router({
         id: z.number(),
         clienteId: z.number().optional(),
         numeroProtocolo: z.string().optional(),
-        tipoProcesso: z.enum(["Georreferenciamento", "Certidão de Localização", "Averbação de Qualificação"]).optional(),
+        tipoprocesso: z.enum(["Georreferenciamento", "Certidão de Localização", "Averbação de Qualificação"]).optional(),
         dataAbertura: z.date().optional(),
         status: z.enum(["Pronto", "Reingressado", "Reingressado pós pagamento", "Nota de Pagamento", "Exigência", "Protocolado", "Vencido"]).optional(),
         cartorio: z.string().optional(),

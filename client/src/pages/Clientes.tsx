@@ -16,7 +16,7 @@ export default function Clientes() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     nome: "",
-    cpfCnpj: "",
+    cpfcnpj: "",
     contato: "",
   });
 
@@ -42,7 +42,7 @@ export default function Clientes() {
       return;
     }
     
-    if (!isValidCPFOrCNPJ(formData.cpfCnpj)) {
+    if (!isValidCPFOrCNPJ(formData.cpfcnpj)) {
       toast.error("CPF ou CNPJ inválido");
       return;
     }
@@ -53,20 +53,20 @@ export default function Clientes() {
         await updateMutation.mutateAsync({
           id: editingId,
           nome: formData.nome || undefined,
-          cpfCnpj: formData.cpfCnpj || undefined,
+          cpfcnpj: formData.cpfcnpj || undefined,
           contato: formData.contato || undefined,
         });
         toast.success("Cliente atualizado com sucesso!");
       } else {
         // Criar novo cliente
-        await createMutation.mutateAsync({
-          nome: formData.nome,
-          cpfCnpj: formData.cpfCnpj,
-          contato: formData.contato,
-        });
+      await createMutation.mutateAsync({
+        nome: formData.nome,
+        cpfcnpj: formData.cpfcnpj,
+        contato: formData.contato,
+      });
         toast.success("Cliente cadastrado com sucesso!");
       }
-      setFormData({ nome: "", cpfCnpj: "", contato: "" });
+      setFormData({ nome: "", cpfcnpj: "", contato: "" });
       setEditingId(null);
       setOpen(false);
       refetch();
@@ -79,7 +79,7 @@ export default function Clientes() {
   const handleEdit = (cliente: Cliente) => {
     setFormData({
       nome: cliente.nome,
-      cpfCnpj: cliente.cpfCnpj,
+      cpfcnpj: cliente.cpfcnpj,
       contato: cliente.contato || "",
     });
     setEditingId(cliente.id);
@@ -90,7 +90,7 @@ export default function Clientes() {
     setOpen(newOpen);
     if (!newOpen) {
       setEditingId(null);
-      setFormData({ nome: "", cpfCnpj: "", contato: "" });
+      setFormData({ nome: "", cpfcnpj: "", contato: "" });
     }
   };
 

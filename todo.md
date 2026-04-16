@@ -107,8 +107,8 @@
 
 
 ## Auditoria Completa - Abril 2026
-- [ ] Corrigir erro de removeChild ao selecionar status
-- [ ] Sincronizar schema Drizzle com banco de dados
-- [ ] Verificar todos os SelectItem no código
-- [ ] Testar criação de protocolo com todos os status
-- [ ] Testar filtro de status
+- [x] Corrigir erro de removeChild ao selecionar status - CORRIGIDO com SelectInline
+- [x] Sincronizar schema Drizzle com banco de dados - SINCRONIZADO
+- [x] Verificar todos os SelectItem no código - VERIFICADO
+- [x] Testar criação de protocolo com todos os status - TESTADO COM SUCESSO
+- [x] Testar filtro de status - TESTADO COM SUCESSO
