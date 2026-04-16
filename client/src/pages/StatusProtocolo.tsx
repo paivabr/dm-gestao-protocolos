@@ -151,7 +151,7 @@ export default function StatusProtocolo() {
         id: editingId,
         clienteId: parseInt(formData.clienteId),
         numeroProtocolo: formData.numeroProtocolo,
-        tipoProcesso: formData.tipoProcesso as "Georreferenciamento" | "Certidão de Localização" | "Averbação de Qualificação",
+        tipoprocesso: formData.tipoProcesso as "Georreferenciamento" | "Certidão de Localização" | "Averbação de Qualificação",
         dataAbertura: new Date(formData.dataAbertura),
         status: formData.status as "Pronto" | "Reingressado" | "Reingressado pós pagamento" | "Nota de Pagamento" | "Exigência" | "Protocolado" | "Vencido",
         cartorio: formData.cartorio,

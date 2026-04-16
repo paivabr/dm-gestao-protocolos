@@ -286,6 +286,7 @@ export const appRouter = router({
         z.object({
           id: z.number(),
           titulo: z.string().optional(),
+          clienteId: z.number().optional(),
           status: z.enum(["Pendente", "Em Análise", "Protocolado", "Finalizado"]).optional(),
           prazoVencimento: z.date().optional(),
         })
