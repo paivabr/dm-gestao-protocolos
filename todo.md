@@ -98,3 +98,9 @@
 - [x] Adicionar checkbox na aba Admin para gerenciar permissão - ADICIONADO
 - [x] Bloquear acesso a parcelas para usuários sem permissão - IMPLEMENTADO
 - [x] Testar funcionalidade completa - TESTES PASSANDO
+
+
+## Foto de Perfil - Abril 2026
+- [x] Alterar Perfil.tsx para aceitar URL em vez de upload - CONCLUÍDO
+- [x] Salvar URL da foto no banco de dados - FUNCIONA COM BACKEND EXISTENTE
+- [x] Exibir foto a partir da URL - CONCLUÍDO

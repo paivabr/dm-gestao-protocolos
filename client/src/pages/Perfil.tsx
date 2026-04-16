@@ -4,7 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { User, Upload, Lock, Mail } from "lucide-react";
+import { User, Lock, Mail, Link as LinkIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 
@@ -21,7 +21,7 @@ export default function Perfil() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [fotoPerfil, setFotoPerfil] = useState(user?.fotoPerfil || "");
-  const [fotoPerfilTemp, setFotoPerfilTemp] = useState<string | null>(null);
+  const [fotoPerfilTemp, setFotoPerfilTemp] = useState<string>("");
 
   const updateProfileMutation = trpc.auth.updateProfile.useMutation({
     onSuccess: (data: any) => {
@@ -29,8 +29,8 @@ export default function Perfil() {
       setEditingName(false);
       setEditingEmail(false);
       setEditingPhoto(false);
-      setFotoPerfilTemp(null);
-      // Update the fotoPerfil state with the returned URL from S3
+      setFotoPerfilTemp("");
+      // Update the fotoPerfil state with the returned URL
       if (data.fotoPerfil) {
         setFotoPerfil(data.fotoPerfil);
       }
@@ -81,32 +81,25 @@ export default function Perfil() {
     await updatePasswordMutation.mutateAsync({ currentPassword, newPassword });
   };
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validate file size (5MB max)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Arquivo muito grande. Máximo 5MB");
+  const handleSavePhoto = async () => {
+    if (!fotoPerfilTemp.trim()) {
+      toast.error("Cole um link válido");
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const base64 = event.target?.result as string;
-      setFotoPerfilTemp(base64);
-      setEditingPhoto(true);
-    };
-    reader.readAsDataURL(file);
-  };
+    // Validar se é uma URL válida
+    try {
+      new URL(fotoPerfilTemp);
+    } catch {
+      toast.error("URL inválida. Verifique o link");
+      return;
+    }
 
-  const handleSavePhoto = async () => {
-    if (!fotoPerfilTemp) return;
     await updateProfileMutation.mutateAsync({ fotoPerfil: fotoPerfilTemp });
   };
 
   const handleCancelPhoto = () => {
-    setFotoPerfilTemp(null);
+    setFotoPerfilTemp("");
     setEditingPhoto(false);
   };
 
@@ -132,36 +125,36 @@ export default function Perfil() {
         <CardContent className="space-y-4">
           <div className="flex items-center gap-6">
             <Avatar className="h-24 w-24">
-              <AvatarImage src={fotoPerfilTemp || fotoPerfil || undefined} />
+              <AvatarImage src={fotoPerfilTemp || fotoPerfil || ""} alt={user.name || "Foto de perfil"} />
               <AvatarFallback>{user.name?.charAt(0) || "U"}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
               {!editingPhoto ? (
                 <>
-                  <label htmlFor="photo-upload" className="cursor-pointer">
-                    <Button variant="outline" className="gap-2" asChild>
-                      <span>
-                        <Upload className="h-4 w-4" />
-                        Alterar Foto
-                      </span>
-                    </Button>
-                  </label>
-                  <input
-                    id="photo-upload"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handlePhotoUpload}
-                  />
-                  <p className="text-xs text-gray-500 mt-2">PNG, JPG até 5MB</p>
+                  <Button 
+                    variant="outline" 
+                    className="gap-2"
+                    onClick={() => setEditingPhoto(true)}
+                  >
+                    <LinkIcon className="h-4 w-4" />
+                    Alterar Foto
+                  </Button>
+                  <p className="text-xs text-gray-500 mt-2">Cole o link da sua foto (PNG, JPG, GIF, etc)</p>
                 </>
               ) : (
                 <div className="space-y-3">
-                  <p className="text-sm text-gray-600">Foto selecionada. Clique em "Salvar" para confirmar.</p>
+                  <Input
+                    type="url"
+                    placeholder="https://exemplo.com/foto.jpg"
+                    value={fotoPerfilTemp}
+                    onChange={(e) => setFotoPerfilTemp(e.target.value)}
+                    className="w-full"
+                  />
+                  <p className="text-xs text-gray-500">Cole a URL completa da imagem</p>
                   <div className="flex gap-2">
                     <Button
                       onClick={handleSavePhoto}
-                      disabled={updateProfileMutation.isPending}
+                      disabled={updateProfileMutation.isPending || !fotoPerfilTemp.trim()}
                       className="bg-blue-600 hover:bg-blue-700"
                     >
                       Salvar Foto
@@ -199,17 +192,28 @@ export default function Perfil() {
               </Button>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Seu nome"
+                placeholder="Seu nome completo"
               />
               <div className="flex gap-2">
-                <Button onClick={handleUpdateName} disabled={updateProfileMutation.isPending}>
+                <Button
+                  onClick={handleUpdateName}
+                  disabled={updateProfileMutation.isPending}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
                   Salvar
                 </Button>
-                <Button variant="outline" onClick={() => setEditingName(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setEditingName(false);
+                    setName(user?.name || "");
+                  }}
+                  disabled={updateProfileMutation.isPending}
+                >
                   Cancelar
                 </Button>
               </div>
@@ -236,7 +240,7 @@ export default function Perfil() {
               </Button>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <Input
                 type="email"
                 value={email}
@@ -244,10 +248,21 @@ export default function Perfil() {
                 placeholder="seu.email@exemplo.com"
               />
               <div className="flex gap-2">
-                <Button onClick={handleUpdateEmail} disabled={updateProfileMutation.isPending}>
+                <Button
+                  onClick={handleUpdateEmail}
+                  disabled={updateProfileMutation.isPending}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
                   Salvar
                 </Button>
-                <Button variant="outline" onClick={() => setEditingEmail(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setEditingEmail(false);
+                    setEmail(user?.email || "");
+                  }}
+                  disabled={updateProfileMutation.isPending}
+                >
                   Cancelar
                 </Button>
               </div>
@@ -263,76 +278,59 @@ export default function Perfil() {
             <Lock className="h-5 w-5" />
             Segurança
           </CardTitle>
-          <CardDescription>Altere sua senha regularmente para manter sua conta segura</CardDescription>
+          <CardDescription>Altere sua senha</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {!editingPassword ? (
-            <Button variant="outline" onClick={() => setEditingPassword(true)}>
+            <Button
+              variant="outline"
+              onClick={() => setEditingPassword(true)}
+            >
               Alterar Senha
             </Button>
           ) : (
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Senha Atual</label>
-                <Input
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder="Digite sua senha atual"
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Nova Senha</label>
-                <Input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Digite sua nova senha"
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Confirmar Nova Senha</label>
-                <Input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirme sua nova senha"
-                  className="mt-1"
-                />
-              </div>
+            <div className="space-y-3">
+              <Input
+                type="password"
+                placeholder="Senha atual"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+              />
+              <Input
+                type="password"
+                placeholder="Nova senha"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+              <Input
+                type="password"
+                placeholder="Confirme a nova senha"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
               <div className="flex gap-2">
-                <Button onClick={handleUpdatePassword} disabled={updatePasswordMutation.isPending}>
+                <Button
+                  onClick={handleUpdatePassword}
+                  disabled={updatePasswordMutation.isPending}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
                   Salvar Senha
                 </Button>
-                <Button variant="outline" onClick={() => setEditingPassword(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setEditingPassword(false);
+                    setCurrentPassword("");
+                    setNewPassword("");
+                    setConfirmPassword("");
+                  }}
+                  disabled={updatePasswordMutation.isPending}
+                >
                   Cancelar
                 </Button>
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Informações da Conta */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Informações da Conta</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-gray-600">Usuário:</span>
-            <span className="font-medium">{user.username}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Função:</span>
-            <span className="font-medium">{user.role === "admin" ? "Administrador" : "Usuário"}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Membro desde:</span>
-            <span className="font-medium">{new Date(user.createdAt).toLocaleDateString("pt-BR")}</span>
-          </div>
         </CardContent>
       </Card>
     </div>
