@@ -19,8 +19,7 @@ export default function StatusProtocolo() {
   const updateMutation = trpc.statusProtocolo.update.useMutation();
   const deleteMutation = trpc.statusProtocolo.delete.useMutation();
 
-  const [open, setOpen] = useState(false);
-  const [openEdit, setOpenEdit] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [searchProtocolo, setSearchProtocolo] = useState("");
   const [filterTipo, setFilterTipo] = useState("");
@@ -95,6 +94,29 @@ export default function StatusProtocolo() {
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      clienteId: 0,
+      numeroProtocolo: "",
+      tipoProcesso: "",
+      dataAbertura: new Date().toISOString().split("T")[0],
+      status: "Pronto",
+      cartorio: "",
+      observacoes: "",
+    });
+    setEditingId(null);
+  };
+
+  const handleOpenDialog = () => {
+    resetForm();
+    setDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    resetForm();
+  };
+
   const handleCreate = async () => {
     if (!formData.clienteId || !formData.numeroProtocolo || !formData.tipoProcesso || !formData.cartorio) {
       toast.error("Preencha todos os campos obrigatórios");
@@ -109,28 +131,20 @@ export default function StatusProtocolo() {
         tipoProcesso: formData.tipoProcesso as "Georreferenciamento" | "Certidão de Localização" | "Averbação de Qualificação",
         status: formData.status as "Pronto" | "Reingressado" | "Reingressado pós pagamento" | "Nota de Pagamento" | "Exigência" | "Protocolado" | "Vencido",
       });
-      // Pequeno delay para evitar erro de removeChild do Radix Dialog
-      setTimeout(() => setOpen(false), 100);
-      setFormData({
-        clienteId: 0,
-        numeroProtocolo: "",
-        tipoProcesso: "",
-        dataAbertura: new Date().toISOString().split("T")[0],
-        status: "Pronto",
-        cartorio: "",
-        observacoes: "",
-      });
-      refetch();
       toast.success("Protocolo criado com sucesso!");
+      handleCloseDialog();
+      refetch();
     } catch (error: any) {
       toast.error(error.message || "Erro ao criar protocolo");
     }
   };
 
-  const handleUpdate = async (id: number) => {
+  const handleUpdate = async () => {
+    if (!editingId) return;
+    
     try {
       await updateMutation.mutateAsync({
-        id,
+        id: editingId,
         clienteId: formData.clienteId,
         numeroProtocolo: formData.numeroProtocolo,
         tipoProcesso: formData.tipoProcesso as "Georreferenciamento" | "Certidão de Localização" | "Averbação de Qualificação",
@@ -139,18 +153,9 @@ export default function StatusProtocolo() {
         cartorio: formData.cartorio,
         observacoes: formData.observacoes,
       });
-      setEditingId(null);
-      setFormData({
-        clienteId: 0,
-        numeroProtocolo: "",
-        tipoProcesso: "",
-        dataAbertura: new Date().toISOString().split("T")[0],
-        status: "Pronto",
-        cartorio: "",
-        observacoes: "",
-      });
-      refetch();
       toast.success("Protocolo atualizado com sucesso!");
+      handleCloseDialog();
+      refetch();
     } catch (error: any) {
       toast.error(error.message || "Erro ao atualizar protocolo");
     }
@@ -169,7 +174,6 @@ export default function StatusProtocolo() {
   };
 
   const handleEdit = (protocolo: any) => {
-    setEditingId(protocolo.id);
     setFormData({
       clienteId: protocolo.clienteId || 0,
       numeroProtocolo: protocolo.numeroProtocolo || "",
@@ -179,23 +183,9 @@ export default function StatusProtocolo() {
       cartorio: protocolo.cartorio || "",
       observacoes: protocolo.observacoes || "",
     });
+    setEditingId(protocolo.id);
+    setDialogOpen(true);
   };
-
-  const handleCloseEditDialog = (newOpen: boolean) => {
-    setOpenEdit(newOpen);
-    if (!newOpen) {
-      setEditingId(null);
-      setFormData({
-        clienteId: 0,
-        numeroProtocolo: "",
-        tipoProcesso: "",
-        dataAbertura: new Date().toISOString().split("T")[0],
-        status: "Pronto",
-        cartorio: "",
-        observacoes: "",
-      });
-    }
-  }
 
   // Bloquear acesso se não tem permissão
   if (user?.role !== "admin" && !permissions?.canViewProcesses) {
@@ -244,156 +234,166 @@ export default function StatusProtocolo() {
           <h1 className="text-3xl font-bold">Status de Protocolo</h1>
           <p className="text-gray-600">Gerenciar protocolos de registro de imóveis</p>
         </div>
-        <Dialog open={open && !editingId} onOpenChange={(newOpen) => setOpen(newOpen)}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="w-4 h-4" />
-              Novo Protocolo
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Novo Protocolo</DialogTitle>
-              <DialogDescription>Adicione um novo protocolo de registro</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Cliente *</label>
-                <Select value={formData.clienteId.toString()} onValueChange={(value) => setFormData({ ...formData, clienteId: parseInt(value) })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clientes.map((cliente: any) => (
-                      <SelectItem key={cliente.id} value={cliente.id.toString()}>
-                        {cliente.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-sm font-medium">Número do Protocolo *</label>
-                <Input
-                  value={formData.numeroProtocolo}
-                  onChange={(e) => setFormData({ ...formData, numeroProtocolo: e.target.value })}
-                  placeholder="Ex: 156514"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Tipo de Processo *</label>
-                <div className="space-y-2">
-                  <Select value={formData.tipoProcesso} onValueChange={(value) => setFormData({ ...formData, tipoProcesso: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tiposProcesso.map((tipo) => (
-                        <SelectItem key={tipo} value={tipo}>
-                          {tipo}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <div className="flex gap-2">
-                    <Input
-                      value={novoTipo}
-                      onChange={(e) => setNovoTipo(e.target.value)}
-                      placeholder="Ou crie um novo tipo"
-                      onKeyPress={(e) => e.key === "Enter" && handleAddTipo()}
-                    />
-                    <Button onClick={handleAddTipo} variant="outline" size="sm">
-                      Adicionar
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium">Data de Abertura</label>
-                <Input
-                  type="date"
-                  value={formData.dataAbertura}
-                  onChange={(e) => setFormData({ ...formData, dataAbertura: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Cartório *</label>
-                <div className="space-y-2">
-                  <Select value={formData.cartorio} onValueChange={(value) => setFormData({ ...formData, cartorio: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o cartório" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cartorios.map((cartorio) => (
-                        <SelectItem key={cartorio} value={cartorio}>
-                          {cartorio}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <div className="flex gap-2">
-                    <Input
-                      value={novoCartorio}
-                      onChange={(e) => setNovoCartorio(e.target.value)}
-                      placeholder="Ou crie um novo cartório"
-                      onKeyPress={(e) => e.key === "Enter" && handleAddCartorio()}
-                    />
-                    <Button onClick={handleAddCartorio} variant="outline" size="sm">
-                      Adicionar
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium">Status</label>
-                <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUS_OPTIONS.map((status) => (
-                      <SelectItem key={status} value={status}>
-                        {status}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-sm font-medium">Observações</label>
-                <Input
-                  value={formData.observacoes}
-                  onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
-                  placeholder="Adicione observações"
-                />
-              </div>
-              <Button onClick={handleCreate} className="w-full" disabled={createMutation.isPending}>
-                Criar Protocolo
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={handleOpenDialog} className="gap-2">
+          <Plus className="w-4 h-4" />
+          Novo Protocolo
+        </Button>
       </div>
 
+      {/* Dialog único para criar e editar */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingId ? "Editar Protocolo" : "Novo Protocolo"}</DialogTitle>
+            <DialogDescription>
+              {editingId ? "Atualize as informações do protocolo" : "Adicione um novo protocolo de registro"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Cliente *</label>
+              <Select value={formData.clienteId.toString()} onValueChange={(value) => setFormData({ ...formData, clienteId: parseInt(value) })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clientes.map((cliente: any) => (
+                    <SelectItem key={cliente.id} value={cliente.id.toString()}>
+                      {cliente.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Número do Protocolo *</label>
+              <Input
+                value={formData.numeroProtocolo}
+                onChange={(e) => setFormData({ ...formData, numeroProtocolo: e.target.value })}
+                placeholder="Ex: 123456"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Tipo de Processo *</label>
+              <div className="flex gap-2">
+                <Select value={formData.tipoProcesso} onValueChange={(value) => setFormData({ ...formData, tipoProcesso: value })}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tiposProcesso.map((tipo) => (
+                      <SelectItem key={tipo} value={tipo}>
+                        {tipo}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  placeholder="Novo tipo"
+                  value={novoTipo}
+                  onChange={(e) => setNovoTipo(e.target.value)}
+                  className="w-32"
+                />
+                <Button onClick={handleAddTipo} variant="outline" size="sm">
+                  Adicionar
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Data de Abertura</label>
+              <Input
+                type="date"
+                value={formData.dataAbertura}
+                onChange={(e) => setFormData({ ...formData, dataAbertura: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Status</label>
+              <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_OPTIONS.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Cartório *</label>
+              <div className="flex gap-2">
+                <Select value={formData.cartorio} onValueChange={(value) => setFormData({ ...formData, cartorio: value })}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cartorios.map((cartorio) => (
+                      <SelectItem key={cartorio} value={cartorio}>
+                        {cartorio}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  placeholder="Novo cartório"
+                  value={novoCartorio}
+                  onChange={(e) => setNovoCartorio(e.target.value)}
+                  className="w-32"
+                />
+                <Button onClick={handleAddCartorio} variant="outline" size="sm">
+                  Adicionar
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Observações</label>
+              <Input
+                value={formData.observacoes}
+                onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
+                placeholder="Observações adicionais"
+              />
+            </div>
+
+            <div className="flex gap-2 justify-end pt-4">
+              <Button variant="outline" onClick={handleCloseDialog}>
+                Cancelar
+              </Button>
+              <Button onClick={editingId ? handleUpdate : handleCreate}>
+                {editingId ? "Atualizar" : "Criar"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Filtros */}
       <Card>
         <CardHeader>
           <CardTitle>Filtros</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="flex gap-2">
-              <Search className="w-4 h-4 mt-3 text-gray-400" />
-              <Input
-                placeholder="Buscar protocolo..."
-                value={searchProtocolo}
-                onChange={(e) => setSearchProtocolo(e.target.value)}
-              />
-            </div>
-            <Select value={filterTipo || ""} onValueChange={setFilterTipo}>
-              <SelectTrigger>
+          <div className="flex gap-4 flex-wrap">
+            <Input
+              placeholder="Buscar protocolo..."
+              value={searchProtocolo}
+              onChange={(e) => setSearchProtocolo(e.target.value)}
+              className="flex-1 min-w-64"
+            />
+            <Select value={filterTipo} onValueChange={setFilterTipo}>
+              <SelectTrigger className="w-48">
                 <SelectValue placeholder="Tipo de Processo" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="">Todos</SelectItem>
                 {tiposProcesso.map((tipo) => (
                   <SelectItem key={tipo} value={tipo}>
                     {tipo}
@@ -401,11 +401,12 @@ export default function StatusProtocolo() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={filterStatus || ""} onValueChange={setFilterStatus}>
-              <SelectTrigger>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-48">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="">Todos</SelectItem>
                 {STATUS_OPTIONS.map((status) => (
                   <SelectItem key={status} value={status}>
                     {status}
@@ -413,11 +414,12 @@ export default function StatusProtocolo() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={filterCartorio || ""} onValueChange={setFilterCartorio}>
-              <SelectTrigger>
+            <Select value={filterCartorio} onValueChange={setFilterCartorio}>
+              <SelectTrigger className="w-48">
                 <SelectValue placeholder="Cartório" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="">Todos</SelectItem>
                 {cartorios.map((cartorio) => (
                   <SelectItem key={cartorio} value={cartorio}>
                     {cartorio}
@@ -429,6 +431,7 @@ export default function StatusProtocolo() {
         </CardContent>
       </Card>
 
+      {/* Tabela de Protocolos */}
       <Card>
         <CardHeader>
           <CardTitle>Protocolos ({filteredProtocolos.length})</CardTitle>
@@ -436,9 +439,9 @@ export default function StatusProtocolo() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <p>Carregando...</p>
+            <div className="text-center py-8">Carregando...</div>
           ) : filteredProtocolos.length === 0 ? (
-            <p className="text-gray-500">Nenhum protocolo encontrado</p>
+            <div className="text-center py-8 text-gray-500">Nenhum protocolo encontrado</div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
@@ -447,7 +450,6 @@ export default function StatusProtocolo() {
                     <TableHead>Protocolo</TableHead>
                     <TableHead>Cliente</TableHead>
                     <TableHead>Tipo</TableHead>
-                    <TableHead>Data Abertura</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Cartório</TableHead>
                     <TableHead>Ações</TableHead>
@@ -459,32 +461,30 @@ export default function StatusProtocolo() {
                       <TableCell className="font-medium">{protocolo.numeroProtocolo}</TableCell>
                       <TableCell>{clientes.find((c: any) => c.id === protocolo.clienteId)?.nome || "N/A"}</TableCell>
                       <TableCell>{protocolo.tipoProcesso}</TableCell>
-                      <TableCell>{new Date(protocolo.dataAbertura).toLocaleDateString("pt-BR")}</TableCell>
                       <TableCell>
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(protocolo.status)}`}>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(protocolo.status)}`}>
                           {protocolo.status}
                         </span>
                       </TableCell>
                       <TableCell>{protocolo.cartorio}</TableCell>
-                      <TableCell className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(protocolo)}
-                          className="gap-1"
-                        >
-                          <Edit2 className="w-3 h-3" />
-                          Editar
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDelete(protocolo.id)}
-                          className="gap-1"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                          Deletar
-                        </Button>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(protocolo)}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(protocolo.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -494,106 +494,6 @@ export default function StatusProtocolo() {
           )}
         </CardContent>
       </Card>
-
-      {editingId && (
-        <Dialog open={openEdit} onOpenChange={handleCloseEditDialog}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Editar Protocolo</DialogTitle>
-              <DialogDescription>Atualize as informações do protocolo</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Cliente *</label>
-                <Select value={formData.clienteId.toString()} onValueChange={(value) => setFormData({ ...formData, clienteId: parseInt(value) })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clientes.map((cliente: any) => (
-                      <SelectItem key={cliente.id} value={cliente.id.toString()}>
-                        {cliente.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-sm font-medium">Número do Protocolo *</label>
-                <Input
-                  value={formData.numeroProtocolo}
-                  onChange={(e) => setFormData({ ...formData, numeroProtocolo: e.target.value })}
-                  placeholder="Ex: 156514"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Tipo de Processo *</label>
-                <Select value={formData.tipoProcesso} onValueChange={(value) => setFormData({ ...formData, tipoProcesso: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {tiposProcesso.map((tipo) => (
-                      <SelectItem key={tipo} value={tipo}>
-                        {tipo}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-sm font-medium">Data de Abertura</label>
-                <Input
-                  type="date"
-                  value={formData.dataAbertura}
-                  onChange={(e) => setFormData({ ...formData, dataAbertura: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Cartório *</label>
-                <Select value={formData.cartorio} onValueChange={(value) => setFormData({ ...formData, cartorio: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o cartório" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {cartorios.map((cartorio) => (
-                      <SelectItem key={cartorio} value={cartorio}>
-                        {cartorio}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-sm font-medium">Status</label>
-                <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUS_OPTIONS.map((status) => (
-                      <SelectItem key={status} value={status}>
-                        {status}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-sm font-medium">Observações</label>
-                <Input
-                  value={formData.observacoes}
-                  onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
-                  placeholder="Adicione observações"
-                />
-              </div>
-              <Button onClick={() => handleUpdate(editingId)} className="w-full" disabled={updateMutation.isPending}>
-                Salvar Alterações
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   );
 }
