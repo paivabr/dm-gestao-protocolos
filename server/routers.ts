@@ -728,6 +728,58 @@ export const appRouter = router({
         await db.deleteUser(input.userId);
         return { success: true };
       }),
+
+    promoteToAdmin: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user?.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Apenas administradores podem promover usuários" });
+        }
+
+        if (input.userId === ctx.user.id) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Você já é um administrador" });
+        }
+
+        await db.updateUserRole(input.userId, "admin");
+        
+        if (ctx.user) {
+          await db.createAuditoria({
+            usuarioId: ctx.user.id,
+            tabela: 'users',
+            registroId: input.userId,
+            acao: 'editar',
+            alteracoes: 'Promovido para administrador',
+          });
+        }
+
+        return { success: true };
+      }),
+
+    demoteFromAdmin: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user?.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Apenas administradores podem rebaixar usuários" });
+        }
+
+        if (input.userId === ctx.user.id) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Você não pode rebaixar a si mesmo" });
+        }
+
+        await db.updateUserRole(input.userId, "user");
+        
+        if (ctx.user) {
+          await db.createAuditoria({
+            usuarioId: ctx.user.id,
+            tabela: 'users',
+            registroId: input.userId,
+            acao: 'editar',
+            alteracoes: 'Rebaixado para usuário comum',
+          });
+        }
+
+        return { success: true };
+      }),
   }),
 
   statusProtocolo: router({

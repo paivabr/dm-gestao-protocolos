@@ -992,3 +992,22 @@ export async function createChecklistTemplate(data: {
     return null;
   }
 }
+
+
+// ============ USER ROLE FUNCTIONS ============
+
+export async function updateUserRole(userId: number, role: "admin" | "user") {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot update user role: database not available");
+    return false;
+  }
+
+  try {
+    await db.update(users).set({ role }).where(eq(users.id, userId));
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to update user role:", error);
+    return false;
+  }
+}

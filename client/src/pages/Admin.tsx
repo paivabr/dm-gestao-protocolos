@@ -1,4 +1,3 @@
-import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
@@ -8,6 +7,8 @@ import { AlertCircle, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
+import { TRPCError } from "@trpc/server";
 
 export default function Admin() {
   const { user } = useAuth();
@@ -30,6 +31,26 @@ export default function Admin() {
     },
     onError: (error: any) => {
       toast.error(error.message || "Erro ao excluir usuário");
+    },
+  });
+
+  const promoteToAdminMutation = trpc.permissions.promoteToAdmin.useMutation({
+    onSuccess: () => {
+      toast.success("Usuário promovido a administrador!");
+      void getAllUsersQuery.refetch();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Erro ao promover usuário");
+    },
+  });
+
+  const demoteFromAdminMutation = trpc.permissions.demoteFromAdmin.useMutation({
+    onSuccess: () => {
+      toast.success("Usuário rebaixado para usuário comum!");
+      void getAllUsersQuery.refetch();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Erro ao rebaixar usuário");
     },
   });
 
@@ -101,113 +122,78 @@ export default function Admin() {
         </TabsList>
 
         <TabsContent value="usuarios" className="space-y-4">
-          <div className="flex gap-2 mb-4">
-            <Input
-              placeholder="Filtrar por nome do usuário..."
-              value={filterUsuarioNome}
-              onChange={(e) => setFilterUsuarioNome(e.target.value)}
-            />
-          </div>
-
-          {auditoriaFiltrada.length === 0 ? (
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-gray-500">Nenhum registro encontrado</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {Object.entries(auditoriaAgrupada).map(([usuario, registros]) => (
-                <Card key={usuario}>
-                  <CardHeader>
-                    <CardTitle className="text-lg">{usuario}</CardTitle>
-                    <CardDescription>{registros.length} ações</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2 max-h-96 overflow-y-auto">
-                      {registros.map((registro, idx) => (
-                        <div key={idx} className="text-sm p-2 border rounded-lg">
-                          <p className="font-medium">{registro.acao}</p>
-                          <p className="text-gray-600">
-                            {new Date(registro.criadoEm).toLocaleString("pt-BR")}
-                          </p>
-                          {registro.alteracoes && (
-                            <p className="text-gray-500 text-xs mt-1">{registro.alteracoes}</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+          <Card>
+            <CardHeader>
+              <CardTitle>Histórico por Usuário</CardTitle>
+              <CardDescription>Filtre o histórico de edições por usuário</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Input
+                placeholder="Buscar por nome do usuário..."
+                value={filterUsuarioNome}
+                onChange={(e) => setFilterUsuarioNome(e.target.value)}
+              />
+              <div className="space-y-2 max-h-96 overflow-y-auto border rounded-lg p-2">
+                {auditoriaFiltrada.map((item) => (
+                  <div key={item.id} className="p-3 border rounded-lg text-sm">
+                    <p className="font-medium text-gray-900">{item.nomeUsuario}</p>
+                    <p className="text-gray-600">{item.acao} em {item.tabela}</p>
+                    <p className="text-gray-500 text-xs">{new Date(item.dataHora).toLocaleString()}</p>
+                    {item.alteracoes && <p className="text-gray-600 text-xs mt-1">{item.alteracoes}</p>}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="processos" className="space-y-4">
-          <div className="flex gap-2 mb-4">
-            <Input
-              placeholder="Filtrar por ID do processo..."
-              value={filterProcessoId}
-              onChange={(e) => setFilterProcessoId(e.target.value)}
-            />
-          </div>
-
-          {auditoriaFiltradaPorProcesso.length === 0 ? (
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-gray-500">Nenhum registro encontrado</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {auditoriaFiltradaPorProcesso.map((registro, idx) => (
-                <Card key={idx}>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Processo #{registro.registroId}</CardTitle>
-                    <CardDescription>{registro.nomeUsuario}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <p className="font-medium">{registro.acao}</p>
-                      <p className="text-gray-600">
-                        {new Date(registro.criadoEm).toLocaleString("pt-BR")}
-                      </p>
-                      {registro.alteracoes && (
-                        <p className="text-gray-500 text-sm">{registro.alteracoes}</p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+          <Card>
+            <CardHeader>
+              <CardTitle>Histórico por Processo</CardTitle>
+              <CardDescription>Filtre o histórico de edições por processo</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Input
+                placeholder="Buscar por ID do processo..."
+                value={filterProcessoId}
+                onChange={(e) => setFilterProcessoId(e.target.value)}
+              />
+              <div className="space-y-2 max-h-96 overflow-y-auto border rounded-lg p-2">
+                {auditoriaFiltradaPorProcesso.map((item) => (
+                  <div key={item.id} className="p-3 border rounded-lg text-sm">
+                    <p className="font-medium text-gray-900">{item.nomeUsuario}</p>
+                    <p className="text-gray-600">{item.acao} em {item.tabela} (ID: {item.registroId})</p>
+                    <p className="text-gray-500 text-xs">{new Date(item.dataHora).toLocaleString()}</p>
+                    {item.alteracoes && <p className="text-gray-600 text-xs mt-1">{item.alteracoes}</p>}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="permissoes" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Gerenciar Permissões de Usuários</CardTitle>
-              <CardDescription>Configure as permissões para cada usuário</CardDescription>
+              <CardTitle>Gerenciar Permissões</CardTitle>
+              <CardDescription>Selecione um usuário para gerenciar suas permissões</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Selecione um usuário:</label>
-                <div className="space-y-2 max-h-96 overflow-y-auto border rounded-lg p-2">
-                  {usuariosComNomes.map((usuario) => (
-                    <button
-                      key={usuario.id}
-                      onClick={() => setSelectedUserForPermissions(usuario.id)}
-                      className={`w-full text-left px-4 py-2 rounded-lg border-2 transition-colors ${
-                        selectedUserForPermissions === usuario.id
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-200 hover:border-gray-300"
-                      }`}
-                    >
-                      {usuario.name || usuario.username}
-                    </button>
-                  ))}
-                </div>
+            <CardContent className="space-y-4">
+              <div className="space-y-2 max-h-96 overflow-y-auto border rounded-lg p-2">
+                {usuariosComNomes.map((usuario) => (
+                  <button
+                    key={usuario.id}
+                    onClick={() => setSelectedUserForPermissions(usuario.id)}
+                    className={`w-full text-left px-4 py-2 rounded-lg border-2 transition-colors ${
+                      selectedUserForPermissions === usuario.id
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    {usuario.name || usuario.username}
+                  </button>
+                ))}
               </div>
               {selectedUserForPermissions && (
                 <PermissionsManager userId={selectedUserForPermissions} userName={usuariosComNomes.find(u => u.id === selectedUserForPermissions)?.name || usuariosComNomes.find(u => u.id === selectedUserForPermissions)?.username || ""} />
@@ -220,30 +206,64 @@ export default function Admin() {
           <Card>
             <CardHeader>
               <CardTitle>Gerenciar Usuários</CardTitle>
-              <CardDescription>Exclua usuários do sistema</CardDescription>
+              <CardDescription>Promova, rebaixe ou exclua usuários do sistema</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2 max-h-96 overflow-y-auto border rounded-lg p-2">
                 {usuariosComNomes.map((usuario) => (
                   <div key={usuario.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
-                    <span className="font-medium text-gray-900">{usuario.name || usuario.username}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="font-medium text-gray-900">{usuario.name || usuario.username}</span>
+                      <span className={`text-xs px-2 py-1 rounded ${usuario.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}`}>
+                        {usuario.role === 'admin' ? 'Admin' : 'Usuário'}
+                      </span>
+                    </div>
                     {usuario.id !== user?.id && (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => {
-                          if (window.confirm(`Tem certeza que deseja excluir ${usuario.name || usuario.username}? Esta ação não pode ser desfeita.`)) {
-                            deletarUsuarioMutation.mutate({ userId: usuario.id });
-                          }
-                        }}
-                        disabled={deletarUsuarioMutation.isPending}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Excluir
-                      </Button>
+                      <div className="flex gap-2">
+                        {usuario.role !== 'admin' ? (
+                          <Button
+                            size="sm"
+                            className="bg-purple-600 hover:bg-purple-700"
+                            onClick={() => {
+                              if (window.confirm(`Promover ${usuario.name || usuario.username} a administrador?`)) {
+                                promoteToAdminMutation.mutate({ userId: usuario.id });
+                              }
+                            }}
+                            disabled={promoteToAdminMutation.isPending}
+                          >
+                            Promover
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            className="bg-yellow-600 hover:bg-yellow-700"
+                            onClick={() => {
+                              if (window.confirm(`Rebaixar ${usuario.name || usuario.username} para usuário comum?`)) {
+                                demoteFromAdminMutation.mutate({ userId: usuario.id });
+                              }
+                            }}
+                            disabled={demoteFromAdminMutation.isPending}
+                          >
+                            Rebaixar
+                          </Button>
+                        )}
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => {
+                            if (window.confirm(`Tem certeza que deseja excluir ${usuario.name || usuario.username}? Esta ação não pode ser desfeita.`)) {
+                              deletarUsuarioMutation.mutate({ userId: usuario.id });
+                            }
+                          }}
+                          disabled={deletarUsuarioMutation.isPending}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Excluir
+                        </Button>
+                      </div>
                     )}
                     {usuario.id === user?.id && (
-                      <span className="text-xs text-gray-500">Você não pode excluir sua própria conta</span>
+                      <span className="text-xs text-gray-500">Você não pode alterar sua própria conta</span>
                     )}
                   </div>
                 ))}
@@ -351,7 +371,7 @@ function PermissionsManager({ userId, userName }: { userId: number; userName: st
               onChange={() => handlePermissionChange("canDeleteProcess")}
               className="w-4 h-4"
             />
-            <span className="text-sm font-medium">Excluir Processo</span>
+            <span className="text-sm font-medium">Deletar Processo</span>
           </label>
           <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-blue-100 transition-colors">
             <input
@@ -360,7 +380,7 @@ function PermissionsManager({ userId, userName }: { userId: number; userName: st
               onChange={() => handlePermissionChange("canViewCalendar")}
               className="w-4 h-4"
             />
-            <span className="text-sm font-medium">Ver Aba de Calendário</span>
+            <span className="text-sm font-medium">Ver Calendário</span>
           </label>
           <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-blue-100 transition-colors">
             <input
@@ -369,10 +389,14 @@ function PermissionsManager({ userId, userName }: { userId: number; userName: st
               onChange={() => handlePermissionChange("canManageParcelas")}
               className="w-4 h-4"
             />
-            <span className="text-sm font-medium">Gerenciar Parcelas de Pagamento</span>
+            <span className="text-sm font-medium">Gerenciar Parcelas</span>
           </label>
         </div>
-        <Button onClick={handleSave} disabled={isSaving} className="w-full">
+        <Button
+          onClick={handleSave}
+          disabled={isSaving}
+          className="w-full bg-blue-600 hover:bg-blue-700"
+        >
           {isSaving ? "Salvando..." : "Salvar Permissões"}
         </Button>
       </CardContent>
