@@ -309,8 +309,8 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-semibold text-gray-700">Total Geral</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-3xl lg:text-5xl font-bold text-gray-900 break-words">
+                  <CardContent className="flex items-center justify-center min-h-[120px]">
+                    <p className="text-4xl lg:text-6xl font-bold text-gray-900 whitespace-nowrap">
                       R$ {totalGeral.toFixed(2)}
                     </p>
                   </CardContent>
@@ -319,8 +319,8 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-semibold text-red-700">Desconto</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-3xl lg:text-5xl font-bold text-red-700 break-words">
+                  <CardContent className="flex items-center justify-center min-h-[120px]">
+                    <p className="text-4xl lg:text-6xl font-bold text-red-700 whitespace-nowrap">
                       -R$ {totalDesconto.toFixed(2)}
                     </p>
                   </CardContent>
@@ -329,8 +329,8 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-semibold text-green-700">Pago</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-3xl lg:text-5xl font-bold text-green-700 break-words">
+                  <CardContent className="flex items-center justify-center min-h-[120px]">
+                    <p className="text-4xl lg:text-6xl font-bold text-green-700 whitespace-nowrap">
                       R$ {totalPago.toFixed(2)}
                     </p>
                   </CardContent>
@@ -339,8 +339,8 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-semibold text-orange-700">A Pagar</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-3xl lg:text-5xl font-bold text-orange-700 break-words">
+                  <CardContent className="flex items-center justify-center min-h-[120px]">
+                    <p className="text-4xl lg:text-6xl font-bold text-orange-700 whitespace-nowrap">
                       R$ {totalAPagar.toFixed(2)}
                     </p>
                   </CardContent>
