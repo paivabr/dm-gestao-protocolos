@@ -271,10 +271,11 @@ export default function ChecklistModal({
             <Button
               type="button"
               onClick={() => setShowSaveTemplate(!showSaveTemplate)}
-              className="bg-purple-600 hover:bg-purple-700"
+              className="bg-purple-600 hover:bg-purple-700 flex items-center gap-2"
               title="Salvar checklist como template"
             >
               <Save className="h-4 w-4" />
+              <span className="hidden sm:inline">Salvar</span>
             </Button>
           </form>
 

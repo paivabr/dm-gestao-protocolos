@@ -310,7 +310,7 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
                     <CardTitle className="text-xs font-semibold text-gray-700">Total Geral</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-lg lg:text-xl font-bold text-gray-900 break-words">
+                    <p className="text-sm lg:text-base font-bold text-gray-900 break-words">
                       R$ {totalGeral.toFixed(2)}
                     </p>
                   </CardContent>
@@ -320,7 +320,7 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
                     <CardTitle className="text-xs font-semibold text-red-700">Desconto</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-lg lg:text-xl font-bold text-red-700 break-words">
+                    <p className="text-sm lg:text-base font-bold text-red-700 break-words">
                       -R$ {totalDesconto.toFixed(2)}
                     </p>
                   </CardContent>
@@ -330,7 +330,7 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
                     <CardTitle className="text-xs font-semibold text-green-700">Pago</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-lg lg:text-xl font-bold text-green-700 break-words">
+                    <p className="text-sm lg:text-base font-bold text-green-700 break-words">
                       R$ {totalPago.toFixed(2)}
                     </p>
                   </CardContent>
@@ -340,7 +340,7 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
                     <CardTitle className="text-xs font-semibold text-orange-700">A Pagar</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-lg lg:text-xl font-bold text-orange-700 break-words">
+                    <p className="text-sm lg:text-base font-bold text-orange-700 break-words">
                       R$ {totalAPagar.toFixed(2)}
                     </p>
                   </CardContent>
