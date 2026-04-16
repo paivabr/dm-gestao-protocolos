@@ -107,6 +107,25 @@ export default function Processos() {
     return new Date(prazo) < new Date();
   };
 
+  // Bloquear acesso se não tem permissão
+  if (user?.role !== "admin" && !permissions?.canViewProcesses) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Card className="w-full max-w-md border-red-200 bg-red-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-red-700">
+              <AlertCircle className="h-5 w-5" />
+              Acesso Negado
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-red-600">Você não tem permissão para acessar esta página. Solicite ao administrador.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}

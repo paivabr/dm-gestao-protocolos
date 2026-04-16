@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Search, Edit2, Trash2, Filter, X } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, Filter, X, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import { toast } from "sonner";
 
 export default function StatusProtocolo() {
   const { user } = useAuth();
+  const { data: permissions } = trpc.permissions.getMyPermissions.useQuery();
   const { data: protocolos = [], isLoading, refetch } = trpc.statusProtocolo.list.useQuery();
   const { data: clientes = [] } = trpc.clientes.list.useQuery();
   const createMutation = trpc.statusProtocolo.create.useMutation();
@@ -52,7 +53,7 @@ export default function StatusProtocolo() {
     observacoes: "",
   });
 
-  const STATUS_OPTIONS = ["Pronto", "Reivindicado", "Vencido"];
+  const STATUS_OPTIONS = ["Pronto", "Reivindicado", "Reingressado pós pagamento", "Nota de Pagamento", "Exigência", "Vencido"];
 
   // Ordenar protocolos pelos mais recentes
   const protocolosOrdenados = useMemo(() => {
@@ -177,6 +178,25 @@ export default function StatusProtocolo() {
       observacoes: protocolo.observacoes || "",
     });
   };
+
+  // Bloquear acesso se não tem permissão
+  if (user?.role !== "admin" && !permissions?.canViewProcesses) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Card className="w-full max-w-md border-red-200 bg-red-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-red-700">
+              <AlertCircle className="h-5 w-5" />
+              Acesso Negado
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-red-600">Você não tem permissão para acessar esta página. Solicite ao administrador.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
