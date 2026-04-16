@@ -21,6 +21,8 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
   });
   const [editandoDescontoId, setEditandoDescontoId] = useState<number | null>(null);
   const [descontoEditando, setDescontoEditando] = useState("");
+  const [descontoUnico, setDescontoUnico] = useState("");
+  const [aplicandoDescontoUnico, setAplicandoDescontoUnico] = useState(false);
 
   const { data: parcelas = [], refetch } = trpc.parcelas.getByProcesso.useQuery(
     { processoId },
@@ -136,6 +138,40 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
     });
   };
 
+  const handleAplicarDescontoUnico = async () => {
+    if (descontoUnico === "" || parseFloat(descontoUnico) <= 0) {
+      toast.error("Desconto inválido");
+      return;
+    }
+
+    const descontoTotal = parseFloat(descontoUnico);
+    const totalGeral = parcelas.reduce((sum, p) => sum + parseFloat(p.valorParcela), 0);
+
+    if (descontoTotal > totalGeral) {
+      toast.error(`Desconto não pode ser maior que R$ ${totalGeral.toFixed(2)}`);
+      return;
+    }
+
+    setAplicandoDescontoUnico(true);
+    try {
+      const descontoPorParcela = (descontoTotal / parcelas.length).toFixed(2);
+      
+      for (const parcela of parcelas) {
+        await updateDescontoMutation.mutateAsync({
+          id: parcela.id,
+          desconto: descontoPorParcela,
+        });
+      }
+      
+      setDescontoUnico("");
+      toast.success(`Desconto de R$ ${descontoTotal.toFixed(2)} aplicado a todas as parcelas!`);
+    } catch (error) {
+      console.error("Erro ao aplicar desconto:", error);
+    } finally {
+      setAplicandoDescontoUnico(false);
+    }
+  };
+
   const totalDesconto = parcelas.reduce((sum, p) => sum + parseFloat(p.desconto || "0"), 0);
 
   const totalPago = parcelas
@@ -211,6 +247,39 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
             </Card>
           ) : (
             <>
+              {/* Campo de desconto único */}
+              <Card className="bg-purple-50 border-purple-200">
+                <CardHeader>
+                  <CardTitle className="text-lg">Aplicar Desconto Único</CardTitle>
+                  <CardDescription>Distribui o desconto igualmente entre todas as parcelas</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex gap-3">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={descontoUnico}
+                      onChange={(e) => setDescontoUnico(e.target.value)}
+                      placeholder="Ex: 1000.00"
+                      className="flex-1"
+                    />
+                    <Button
+                      onClick={handleAplicarDescontoUnico}
+                      disabled={aplicandoDescontoUnico || !descontoUnico}
+                      className="bg-purple-600 hover:bg-purple-700"
+                    >
+                      Aplicar
+                    </Button>
+                  </div>
+                  {descontoUnico && parcelas.length > 0 && (
+                    <p className="text-xs text-gray-600 mt-2">
+                      Cada parcela receberá: R$ {(parseFloat(descontoUnico) / parcelas.length).toFixed(2)}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+
               {/* Resumo de pagamentos */}
               <div className="grid grid-cols-4 gap-4">
                 <Card>
