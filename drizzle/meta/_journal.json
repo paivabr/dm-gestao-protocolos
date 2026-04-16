@@ -64,6 +64,13 @@
       "when": 1776339170504,
       "tag": "0008_slim_queen_noir",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1776357348367,
+      "tag": "0009_supreme_karen_page",
+      "breakpoints": true
     }
   ]
 }

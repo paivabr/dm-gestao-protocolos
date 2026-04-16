@@ -152,3 +152,33 @@ export const statusProtocolo = mysqlTable("statusProtocolo", {
 
 export type StatusProtocolo = typeof statusProtocolo.$inferSelect;
 export type InsertStatusProtocolo = typeof statusProtocolo.$inferInsert;
+
+
+/**
+ * Tabela de templates de checklists para reutilização em múltiplos processos
+ */
+export const checklistTemplates = mysqlTable("checklistTemplates", {
+  id: int("id").autoincrement().primaryKey(),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  descricao: text("descricao"),
+  criadoPor: int("criadoPor").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ChecklistTemplate = typeof checklistTemplates.$inferSelect;
+export type InsertChecklistTemplate = typeof checklistTemplates.$inferInsert;
+
+/**
+ * Tabela de itens de templates de checklists
+ */
+export const checklistTemplateItems = mysqlTable("checklistTemplateItems", {
+  id: int("id").autoincrement().primaryKey(),
+  templateId: int("templateId").notNull(),
+  descricao: varchar("descricao", { length: 255 }).notNull(),
+  ordem: int("ordem").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ChecklistTemplateItem = typeof checklistTemplateItems.$inferSelect;
+export type InsertChecklistTemplateItem = typeof checklistTemplateItems.$inferInsert;

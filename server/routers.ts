@@ -772,6 +772,40 @@ export const appRouter = router({
         return await db.searchStatusProtocolo(input.numeroProtocolo, input.clienteId);
       }),
   }),
+
+  // ============ CHECKLIST TEMPLATES ROUTES ============
+  checklistTemplates: router({
+    getAll: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        return await db.getChecklistTemplates();
+      }),
+
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        return await db.getChecklistTemplateById(input.id);
+      }),
+
+    create: protectedProcedure
+      .input(z.object({
+        nome: z.string().min(1, "Nome é obrigatório"),
+        descricao: z.string().optional(),
+        itens: z.array(z.string()).min(1, "Adicione pelo menos um item"),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        return await db.createChecklistTemplate(input.nome, input.descricao, input.itens, ctx.user.id);
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        return await db.deleteChecklistTemplate(input.id);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
