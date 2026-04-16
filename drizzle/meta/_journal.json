@@ -64,13 +64,6 @@
       "when": 1776339170504,
       "tag": "0008_slim_queen_noir",
       "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "5",
-      "when": 1776343219428,
-      "tag": "0009_wandering_zaladane",
-      "breakpoints": true
     }
   ]
 }
