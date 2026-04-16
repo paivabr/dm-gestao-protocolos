@@ -265,12 +265,11 @@ export default function StatusProtocolo() {
                 onChange={(e) => setSearchProtocolo(e.target.value)}
               />
             </div>
-            <Select value={filterTipo} onValueChange={setFilterTipo}>
+            <Select value={filterTipo || ""} onValueChange={setFilterTipo}>
               <SelectTrigger>
                 <SelectValue placeholder="Tipo de Processo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
                 {TIPOS_PROCESSO.map((tipo) => (
                   <SelectItem key={tipo} value={tipo}>
                     {tipo}
@@ -278,12 +277,11 @@ export default function StatusProtocolo() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <Select value={filterStatus || ""} onValueChange={setFilterStatus}>
               <SelectTrigger>
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
                 {STATUS_OPTIONS.map((status) => (
                   <SelectItem key={status} value={status}>
                     {status}
@@ -291,12 +289,11 @@ export default function StatusProtocolo() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={filterCartorio} onValueChange={setFilterCartorio}>
+            <Select value={filterCartorio || ""} onValueChange={setFilterCartorio}>
               <SelectTrigger>
                 <SelectValue placeholder="Cartório" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
                 {CARTORIOS.map((cartorio) => (
                   <SelectItem key={cartorio} value={cartorio}>
                     {cartorio}
