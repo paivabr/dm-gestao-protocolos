@@ -77,9 +77,19 @@ export default function Admin() {
     ? { [filterProcessoId]: auditoriaByProcesso[parseInt(filterProcessoId)] || [] }
     : auditoriaByProcesso;
 
-  // Obter lista de usuários únicos com nomes
+  // Obter lista de todos os usuários
+  const getAllUsersQuery = trpc.permissions.getAllUsers.useQuery(undefined, {
+    enabled: user?.role === "admin",
+  });
+  
+  const usuariosComNomes = (getAllUsersQuery.data || []).map((user) => ({
+    id: user.id,
+    nome: user.username || `Usuário ${user.id}`,
+  }));
+  
+  // Obter lista de usuários únicos com nomes (para auditoria)
   const usuariosUnicos = Array.from(new Set(auditoria.map((a) => a.usuarioId)));
-  const usuariosComNomes = usuariosUnicos.map((id) => {
+  const usuariosAuditoriaComNomes = usuariosUnicos.map((id) => {
     const item = auditoria.find((a) => a.usuarioId === id);
     return {
       id,
@@ -133,7 +143,7 @@ export default function Admin() {
             )}
           </div>
           <div className="text-sm text-gray-600 mb-4">
-            Usuários com ações: {usuariosComNomes.map((u) => u.nome).join(", ") || "Nenhum"}
+            Usuários com ações: {usuariosAuditoriaComNomes.map((u) => u.nome).join(", ") || "Nenhum"}
           </div>
           {Object.entries(filterUsuarioNome ? auditoriaByUsuarioFiltrada : filteredByUsuario).map(([usuarioId, items]) => {
             const nomeUsuario = usuariosComNomes.find((u) => u.id === parseInt(usuarioId))?.nome || `Usuário ${usuarioId}`;

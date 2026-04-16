@@ -384,9 +384,9 @@ export default function StatusProtocolo() {
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium">Status</label>
-                <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+                <Select value={formData.status || "Pronto"} onValueChange={(value) => setFormData({ ...formData, status: value })}>
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Selecione o status" />
                   </SelectTrigger>
                   <SelectContent>
                     {STATUS_OPTIONS.map((status) => (

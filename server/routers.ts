@@ -104,8 +104,9 @@ export const appRouter = router({
         
         const user = await db.getUserById(ctx.user.id);
         if (!user) throw new TRPCError({ code: "NOT_FOUND", message: "Usuario nao encontrado" });
+        if (!user.passwordHash) throw new TRPCError({ code: "UNAUTHORIZED", message: "Usuário não tem senha" });
         
-        const isValid = await auth.verifyPassword(input.currentPassword, user.passwordHash);
+        const isValid = auth.verifyPassword(input.currentPassword, user.passwordHash);
         if (!isValid) throw new TRPCError({ code: "UNAUTHORIZED", message: "Senha atual incorreta" });
         
         const newPasswordHash = await auth.hashPassword(input.newPassword);
@@ -626,6 +627,15 @@ export const appRouter = router({
       .query(async ({ ctx }) => {
         if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
         return await db.getUserPermissions(ctx.user.id);
+      }),
+
+    getAllUsers: protectedProcedure
+      .query(async ({ ctx }) => {
+        // Only admins can view all users
+        if (ctx.user?.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Apenas administradores podem ver todos os usuários" });
+        }
+        return await db.getAllUsers();
       }),
   }),
 

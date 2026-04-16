@@ -60,6 +60,9 @@ export async function loginUser(username: string, password: string) {
   if (!user) {
     return { success: false, error: "Usuário não encontrado" };
   }
+  if (!user.passwordHash) {
+    return { success: false, error: "Usuário não tem senha configurada" };
+  }
 
   const isPasswordValid = verifyPassword(password, user.passwordHash);
   if (!isPasswordValid) {

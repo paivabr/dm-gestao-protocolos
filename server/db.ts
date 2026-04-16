@@ -42,6 +42,22 @@ export async function getUserById(id: number) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+export async function getAllUsers() {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get users: database not available");
+    return [];
+  }
+
+  try {
+    const result = await db.select().from(users);
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to get all users:", error);
+    return [];
+  }
+}
+
 export async function createUser(user: InsertUser): Promise<number | null> {
   const db = await getDb();
   if (!db) {
@@ -112,7 +128,7 @@ export async function setResetPasswordToken(userId: number, token: string, expir
   }
 
   try {
-    const expiresAt = new Date(Date.now() + expiresIn);
+    const expiresAt = String(Date.now() + expiresIn);
     await db.update(users).set({ resetPasswordToken: token, resetPasswordExpires: expiresAt }).where(eq(users.id, userId));
     return true;
   } catch (error) {
@@ -132,7 +148,7 @@ export async function getUserByResetToken(token: string) {
     const result = await db.select().from(users).where(eq(users.resetPasswordToken, token)).limit(1);
     if (result.length > 0) {
       const user = result[0];
-      if (user.resetPasswordExpires && user.resetPasswordExpires > new Date()) {
+      if (user.resetPasswordExpires && Number(user.resetPasswordExpires) > Date.now()) {
         return user;
       }
     }
@@ -479,7 +495,7 @@ export async function getAuditoriaByUsuario(usuarioId: number): Promise<Auditori
   }
 }
 
-export async function getAllAuditoria(): Promise<(Auditoria & { nomeUsuario?: string })[]> {
+export async function getAllAuditoria(): Promise<(Auditoria & { nomeUsuario: string })[]> {
   const db = await getDb();
   if (!db) {
     console.warn("[Database] Cannot get auditoria: database not available");
@@ -495,7 +511,7 @@ export async function getAllAuditoria(): Promise<(Auditoria & { nomeUsuario?: st
         const usuario = await db.select().from(users).where(eq(users.id, item.usuarioId)).limit(1);
         return {
           ...item,
-          nomeUsuario: usuario.length > 0 ? usuario[0].username : `Usuário ${item.usuarioId}`,
+          nomeUsuario: usuario.length > 0 && usuario[0].username ? usuario[0].username : `Usuário ${item.usuarioId}`,
         };
       })
     );

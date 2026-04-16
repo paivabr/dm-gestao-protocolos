@@ -13,6 +13,9 @@ export const users = mysqlTable("users", {
   name: text("name"),
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  fotoPerfil: varchar("fotoPerfil", { length: 255 }),
+  resetPasswordToken: varchar("resetPasswordToken", { length: 255 }),
+  resetPasswordExpires: varchar("resetPasswordExpires", { length: 20 }),
   // Permissões de funcionalidades
   canCreateClient: tinyint("canCreateClient").default(0).notNull(),
   canEditProcess: tinyint("canEditProcess").default(0).notNull(),
