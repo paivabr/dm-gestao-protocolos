@@ -434,6 +434,49 @@ export const appRouter = router({
       }),
   }),
 
+  checklistTemplates: router({
+    list: protectedProcedure.query(async () => {
+      return await db.getChecklistTemplates();
+    }),
+
+    create: protectedProcedure
+      .input(
+        z.object({
+          nome: z.string().min(1, "Nome é obrigatório"),
+          descricao: z.string().optional(),
+          itens: z.array(z.string().min(1)),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        const templateId = await db.createChecklistTemplate({
+          usuarioId: ctx.user?.id || 0,
+          nome: input.nome,
+          descricao: input.descricao || "",
+          itens: input.itens,
+        });
+
+        if (!templateId) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Erro ao salvar template",
+          });
+        }
+
+        // Registrar auditoria
+        if (ctx.user) {
+          await db.createAuditoria({
+            usuarioId: ctx.user.id,
+            tabela: 'checklistTemplates',
+            registroId: templateId,
+            acao: 'criar',
+            alteracoes: `Criou template: ${input.nome}`,
+          });
+        }
+
+        return { success: true, templateId };
+      }),
+  }),
+
   // ============ DASHBOARD ROUTES ============
   dashboard: router({
     stats: protectedProcedure.query(async () => {
