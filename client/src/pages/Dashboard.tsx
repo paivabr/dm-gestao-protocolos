@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, Clock, FileText, Hourglass, ExternalLink } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, FileText, Hourglass, ExternalLink, MapPin, Briefcase } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,27 @@ export default function Dashboard() {
       icon: CheckCircle2,
       color: "bg-green-50 text-green-600",
       borderColor: "border-green-200",
+    },
+    {
+      title: "Campo",
+      value: stats?.campo || 0,
+      icon: MapPin,
+      color: "bg-orange-50 text-orange-600",
+      borderColor: "border-orange-200",
+    },
+    {
+      title: "Análise/Escritório",
+      value: stats?.analiseEscritorio || 0,
+      icon: Briefcase,
+      color: "bg-cyan-50 text-cyan-600",
+      borderColor: "border-cyan-200",
+    },
+    {
+      title: "Pendente Documento",
+      value: stats?.pendenteDocumento || 0,
+      icon: AlertCircle,
+      color: "bg-amber-50 text-amber-600",
+      borderColor: "border-amber-200",
     },
   ];
 

@@ -55,7 +55,7 @@ export default function StatusProtocolo() {
     observacoes: "",
   });
 
-  const STATUS_OPTIONS = ["Pronto", "Reingressado", "Reingressado pós pagamento", "Nota de Pagamento", "Exigência", "Protocolado", "Vencido"];
+  const STATUS_OPTIONS = ["Pronto", "Reingressado", "Reingressado pós pagamento", "Nota de Pagamento", "Exigência", "Protocolado", "Vencido", "Campo", "Análise/Escritório", "Pendente documento"];
 
   // Ordenar protocolos pelos mais recentes
   const protocolosOrdenados = useMemo(() => {
@@ -226,6 +226,12 @@ export default function StatusProtocolo() {
         return "bg-indigo-100 text-indigo-800";
       case "Vencido":
         return "bg-red-200 text-red-900";
+      case "Campo":
+        return "bg-orange-100 text-orange-800";
+      case "Análise/Escritório":
+        return "bg-cyan-100 text-cyan-800";
+      case "Pendente documento":
+        return "bg-amber-100 text-amber-800";
       default:
         return "bg-gray-100 text-gray-800";
     }

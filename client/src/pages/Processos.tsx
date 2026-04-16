@@ -97,6 +97,12 @@ export default function Processos() {
         return "bg-purple-100 text-purple-800";
       case "Finalizado":
         return "bg-green-100 text-green-800";
+      case "Campo":
+        return "bg-orange-100 text-orange-800";
+      case "Análise/Escritório":
+        return "bg-cyan-100 text-cyan-800";
+      case "Pendente documento":
+        return "bg-amber-100 text-amber-800";
       default:
         return "bg-slate-100 text-slate-800";
     }
@@ -195,6 +201,9 @@ export default function Processos() {
                   <option value="Em Análise">Em Análise</option>
                   <option value="Protocolado">Protocolado</option>
                   <option value="Finalizado">Finalizado</option>
+                  <option value="Campo">Campo</option>
+                  <option value="Análise/Escritório">Análise/Escritório</option>
+                  <option value="Pendente documento">Pendente documento</option>
                 </select>
               </div>
               <div>

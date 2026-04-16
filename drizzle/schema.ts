@@ -142,7 +142,7 @@ export const statusProtocolo = mysqlTable("statusProtocolo", {
     "Averbação de Qualificação",
   ]).notNull(),
   dataAbertura: timestamp("dataAbertura").notNull(),
-  status: mysqlEnum("status", ["Pronto", "Reingressado", "Reingressado pós pagamento", "Nota de Pagamento", "Exigência", "Protocolado", "Vencido"]).default("Pronto").notNull(),
+  status: mysqlEnum("status", ["Pronto", "Reingressado", "Reingressado pós pagamento", "Nota de Pagamento", "Exigência", "Protocolado", "Vencido", "Campo", "Análise/Escritório", "Pendente documento"]).default("Pronto").notNull(),
   cartorio: varchar("cartorio", { length: 100 }).notNull(),
   ultimaAtualizacao: timestamp("ultimaAtualizacao").defaultNow().onUpdateNow().notNull(),
   observacoes: text("observacoes"),
