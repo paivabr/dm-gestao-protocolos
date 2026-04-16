@@ -54,3 +54,15 @@
 - [x] Corrigir exibição de Meu Perfil no menu lateral
 - [x] Importar dados da planilha Google Sheets (122 registros importados com sucesso)
 - [x] Fazer upload final para GitHub
+
+
+## Exclusão de Usuários na Aba Admin
+- [x] Adicionar rota DELETE `/api/trpc/permissions.deleteUser` no backend
+- [x] Adicionar função `deleteUser` em db.ts com proteção contra exclusão do usuário DMconsultoria
+- [x] Adicionar mutation `deletarUsuarioMutation` no frontend
+- [x] Adicionar botão "Excluir" (ícone de lixeira) na aba "Gerenciar Usuários"
+- [x] Implementar confirmação antes de deletar usuário
+- [x] Impedir exclusão do próprio usuário logado
+- [x] Impedir exclusão do usuário DMconsultoria
+- [x] Criar testes para a funcionalidade de exclusão de usuários
+- [x] Testes passando com sucesso

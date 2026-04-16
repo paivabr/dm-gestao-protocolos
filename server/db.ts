@@ -924,3 +924,26 @@ export async function searchStatusProtocolo(numeroProtocolo?: string, clienteId?
     return [];
   }
 }
+
+
+export async function deleteUser(userId: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot delete user: database not available");
+    throw new Error("Database not available");
+  }
+
+  try {
+    // Get the user to check if it's DMconsultoria
+    const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    if (user.length > 0 && user[0].username === "DMconsultoria") {
+      throw new Error("Não é possível excluir o usuário DMconsultoria");
+    }
+
+    await db.delete(users).where(eq(users.id, userId));
+    return { success: true };
+  } catch (error) {
+    console.error("[Database] Failed to delete user:", error);
+    throw error;
+  }
+}

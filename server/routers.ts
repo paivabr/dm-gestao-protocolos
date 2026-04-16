@@ -644,6 +644,23 @@ export const appRouter = router({
         }
         return await db.getAllUsers();
       }),
+
+    deleteUser: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        // Only admins can delete users
+        if (ctx.user?.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Apenas administradores podem deletar usuários" });
+        }
+
+        // Prevent deleting yourself
+        if (input.userId === ctx.user.id) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Você não pode deletar sua própria conta" });
+        }
+
+        await db.deleteUser(input.userId);
+        return { success: true };
+      }),
   }),
 
   statusProtocolo: router({

@@ -4,9 +4,10 @@ import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export default function Admin() {
   const { user } = useAuth();
@@ -19,6 +20,17 @@ export default function Admin() {
 
   const auditoriaQuery = trpc.auditoria.getAll.useQuery(undefined, {
     enabled: user?.role === "admin",
+  });
+
+  const getAllUsersQuery = trpc.permissions.getAllUsers.useQuery();
+  const deletarUsuarioMutation = trpc.permissions.deleteUser.useMutation({
+    onSuccess: () => {
+      toast.success("Usuário excluído com sucesso!");
+      void getAllUsersQuery.refetch();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Erro ao excluir usuário");
+    },
   });
 
   useEffect(() => {
@@ -48,69 +60,30 @@ export default function Admin() {
   const auditoria = auditoriaQuery.data || [];
 
   // Agrupar auditoria por usuário
-  const auditoriaByUsuario = auditoria.reduce((acc, item) => {
-    if (!acc[item.usuarioId]) {
-      acc[item.usuarioId] = [];
-    }
-    acc[item.usuarioId].push(item);
-    return acc;
-  }, {} as Record<number, typeof auditoria>);
-
-  // Agrupar auditoria por processo
-  const auditoriaByProcesso = auditoria
-    .filter((item) => item.tabela === "processos")
-    .reduce((acc, item) => {
-      if (!acc[item.registroId]) {
-        acc[item.registroId] = [];
+  const auditoriaAgrupada = auditoria.reduce(
+    (acc, item) => {
+      if (!acc[item.nomeUsuario]) {
+        acc[item.nomeUsuario] = [];
       }
-      acc[item.registroId].push(item);
+      acc[item.nomeUsuario].push(item);
       return acc;
-    }, {} as Record<number, typeof auditoria>);
+    },
+    {} as Record<string, typeof auditoria>
+  );
 
-  // Filtrar por usuário
-  const filteredByUsuario = filterUsuarioId
-    ? { [filterUsuarioId]: auditoriaByUsuario[parseInt(filterUsuarioId)] || [] }
-    : auditoriaByUsuario;
+  const usuariosComNomes = getAllUsersQuery.data || [];
 
-  // Filtrar por processo
-  const filteredByProcesso = filterProcessoId
-    ? { [filterProcessoId]: auditoriaByProcesso[parseInt(filterProcessoId)] || [] }
-    : auditoriaByProcesso;
-
-  // Obter lista de todos os usuários
-  const getAllUsersQuery = trpc.permissions.getAllUsers.useQuery(undefined, {
-    enabled: user?.role === "admin",
-  });
-  
-  const usuariosComNomes = (getAllUsersQuery.data || []).map((user) => ({
-    id: user.id,
-    nome: user.username || `Usuário ${user.id}`,
-  }));
-  
-  // Obter lista de usuários únicos com nomes (para auditoria)
-  const usuariosUnicos = Array.from(new Set(auditoria.map((a) => a.usuarioId)));
-  const usuariosAuditoriaComNomes = usuariosUnicos.map((id) => {
-    const item = auditoria.find((a) => a.usuarioId === id);
-    return {
-      id,
-      nome: item?.nomeUsuario || `Usuário ${id}`,
-    };
-  });
-  const processosUnicos = Array.from(new Set(auditoria.filter((a) => a.tabela === "processos").map((a) => a.registroId)));
-
-  // Filtrar por nome de usuário
+  // Filtrar auditoria por usuário
   const auditoriaFiltrada = filterUsuarioNome
-    ? auditoria.filter((a) => a.nomeUsuario?.toLowerCase().includes(filterUsuarioNome.toLowerCase()))
+    ? auditoria.filter((item) =>
+        item.nomeUsuario.toLowerCase().includes(filterUsuarioNome.toLowerCase())
+      )
     : auditoria;
 
-  // Agrupar auditoria filtrada por usuário
-  const auditoriaByUsuarioFiltrada = auditoriaFiltrada.reduce((acc, item) => {
-    if (!acc[item.usuarioId]) {
-      acc[item.usuarioId] = [];
-    }
-    acc[item.usuarioId].push(item);
-    return acc;
-  }, {} as Record<number, typeof auditoria>);
+  // Filtrar auditoria por processo
+  const auditoriaFiltradaPorProcesso = filterProcessoId
+    ? auditoria.filter((item) => item.registroId?.toString() === filterProcessoId)
+    : auditoria;
 
   return (
     <div className="space-y-6">
@@ -120,10 +93,11 @@ export default function Admin() {
       </div>
 
       <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="usuarios">Histórico por Usuário</TabsTrigger>
           <TabsTrigger value="processos">Histórico por Processo</TabsTrigger>
           <TabsTrigger value="permissoes">Permissões</TabsTrigger>
+          <TabsTrigger value="gerenciar">Gerenciar Usuários</TabsTrigger>
         </TabsList>
 
         <TabsContent value="usuarios" className="space-y-4">
@@ -133,55 +107,41 @@ export default function Admin() {
               value={filterUsuarioNome}
               onChange={(e) => setFilterUsuarioNome(e.target.value)}
             />
-            {filterUsuarioNome && (
-              <Button
-                variant="outline"
-                onClick={() => setFilterUsuarioNome("")}
-              >
-                Limpar
-              </Button>
-            )}
           </div>
-          <div className="text-sm text-gray-600 mb-4">
-            Usuários com ações: {usuariosAuditoriaComNomes.map((u) => u.nome).join(", ") || "Nenhum"}
-          </div>
-          {Object.entries(filterUsuarioNome ? auditoriaByUsuarioFiltrada : filteredByUsuario).map(([usuarioId, items]) => {
-            const nomeUsuario = usuariosComNomes.find((u) => u.id === parseInt(usuarioId))?.nome || `Usuário ${usuarioId}`;
-            return (
-              <Card key={usuarioId}>
-                <CardHeader>
-                  <CardTitle className="text-lg">{nomeUsuario}</CardTitle>
-                  <CardDescription>{items.length} ações registradas</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {items.map((item) => (
-                      <div key={item.id} className="border-l-4 border-blue-500 pl-4 py-2">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-semibold text-gray-900">
-                              {item.acao.charAt(0).toUpperCase() + item.acao.slice(1)} - {item.tabela}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              Registro ID: {item.registroId}
-                            </p>
-                            {item.alteracoes && (
-                              <p className="text-sm text-gray-700 mt-2 bg-gray-50 p-2 rounded">
-                                {item.alteracoes}
-                              </p>
-                            )}
-                          </div>
-                          <span className="text-xs text-gray-500 whitespace-nowrap ml-4">
-                            {new Date(item.criadoEm).toLocaleString("pt-BR")}
-                          </span>
+
+          {auditoriaFiltrada.length === 0 ? (
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-gray-500">Nenhum registro encontrado</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {Object.entries(auditoriaAgrupada).map(([usuario, registros]) => (
+                <Card key={usuario}>
+                  <CardHeader>
+                    <CardTitle className="text-lg">{usuario}</CardTitle>
+                    <CardDescription>{registros.length} ações</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {registros.map((registro, idx) => (
+                        <div key={idx} className="text-sm p-2 border rounded-lg">
+                          <p className="font-medium">{registro.acao}</p>
+                          <p className="text-gray-600">
+                            {new Date(registro.criadoEm).toLocaleString("pt-BR")}
+                          </p>
+                          {registro.alteracoes && (
+                            <p className="text-gray-500 text-xs mt-1">{registro.alteracoes}</p>
+                          )}
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="processos" className="space-y-4">
@@ -190,51 +150,38 @@ export default function Admin() {
               placeholder="Filtrar por ID do processo..."
               value={filterProcessoId}
               onChange={(e) => setFilterProcessoId(e.target.value)}
-              type="number"
             />
-            {filterProcessoId && (
-              <Button
-                variant="outline"
-                onClick={() => setFilterProcessoId("")}
-              >
-                Limpar
-              </Button>
-            )}
           </div>
-          <div className="text-sm text-gray-600 mb-4">
-            Processos com alterações: {processosUnicos.join(", ") || "Nenhum"}
-          </div>
-          {Object.entries(filteredByProcesso).map(([processoId, items]) => (
-            <Card key={processoId}>
-              <CardHeader>
-                <CardTitle className="text-lg">Processo ID: {processoId}</CardTitle>
-                <CardDescription>{items.length} alterações registradas</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {items.map((item) => (
-                    <div key={item.id} className="border-l-4 border-green-500 pl-4 py-2">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-semibold text-gray-900">
-                            {item.acao.charAt(0).toUpperCase() + item.acao.slice(1)} por Usuário {item.usuarioId}
-                          </p>
-                          {item.alteracoes && (
-                            <p className="text-sm text-gray-700 mt-2 bg-gray-50 p-2 rounded">
-                              {item.alteracoes}
-                            </p>
-                          )}
-                        </div>
-                        <span className="text-xs text-gray-500 whitespace-nowrap ml-4">
-                          {new Date(item.criadoEm).toLocaleString("pt-BR")}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+
+          {auditoriaFiltradaPorProcesso.length === 0 ? (
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-gray-500">Nenhum registro encontrado</p>
               </CardContent>
             </Card>
-          ))}
+          ) : (
+            <div className="space-y-4">
+              {auditoriaFiltradaPorProcesso.map((registro, idx) => (
+                <Card key={idx}>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Processo #{registro.registroId}</CardTitle>
+                    <CardDescription>{registro.nomeUsuario}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <p className="font-medium">{registro.acao}</p>
+                      <p className="text-gray-600">
+                        {new Date(registro.criadoEm).toLocaleString("pt-BR")}
+                      </p>
+                      {registro.alteracoes && (
+                        <p className="text-gray-500 text-sm">{registro.alteracoes}</p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="permissoes" className="space-y-4">
@@ -257,14 +204,50 @@ export default function Admin() {
                           : "border-gray-200 hover:border-gray-300"
                       }`}
                     >
-                      {usuario.nome}
+                      {usuario.name || usuario.username}
                     </button>
                   ))}
                 </div>
               </div>
               {selectedUserForPermissions && (
-                <PermissionsManager userId={selectedUserForPermissions} userName={usuariosComNomes.find(u => u.id === selectedUserForPermissions)?.nome || ""} />
+                <PermissionsManager userId={selectedUserForPermissions} userName={usuariosComNomes.find(u => u.id === selectedUserForPermissions)?.name || usuariosComNomes.find(u => u.id === selectedUserForPermissions)?.username || ""} />
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="gerenciar" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Gerenciar Usuários</CardTitle>
+              <CardDescription>Exclua usuários do sistema</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2 max-h-96 overflow-y-auto border rounded-lg p-2">
+                {usuariosComNomes.map((usuario) => (
+                  <div key={usuario.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                    <span className="font-medium text-gray-900">{usuario.name || usuario.username}</span>
+                    {usuario.id !== user?.id && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                          if (window.confirm(`Tem certeza que deseja excluir ${usuario.name || usuario.username}? Esta ação não pode ser desfeita.`)) {
+                            deletarUsuarioMutation.mutate({ userId: usuario.id });
+                          }
+                        }}
+                        disabled={deletarUsuarioMutation.isPending}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Excluir
+                      </Button>
+                    )}
+                    {usuario.id === user?.id && (
+                      <span className="text-xs text-gray-500">Você não pode excluir sua própria conta</span>
+                    )}
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -379,11 +362,7 @@ function PermissionsManager({ userId, userName }: { userId: number; userName: st
             <span className="text-sm font-medium">Ver Aba de Calendário</span>
           </label>
         </div>
-        <Button
-          onClick={handleSave}
-          disabled={isSaving || updatePermissionsMutation.isPending}
-          className="w-full mt-4"
-        >
+        <Button onClick={handleSave} disabled={isSaving} className="w-full">
           {isSaving ? "Salvando..." : "Salvar Permissões"}
         </Button>
       </CardContent>
