@@ -153,7 +153,7 @@ export const appRouter = router({
       .input(
         z.object({
           nome: z.string().min(1, "Nome é obrigatório"),
-          cpfcnpj: z.string().min(1, "CPF/CNPJ é obrigatório"),
+          cpfCnpj: z.string().min(1, "CPF/CNPJ é obrigatório"),
           contato: z.string().optional(),
         })
       )
@@ -167,7 +167,7 @@ export const appRouter = router({
         }
         const clienteId = await db.createCliente({
           nome: input.nome,
-          cpfcnpj: input.cpfcnpj,
+          cpfCnpj: input.cpfCnpj,
           contato: input.contato,
         });
 
@@ -197,14 +197,14 @@ export const appRouter = router({
         z.object({
           id: z.number(),
           nome: z.string().optional(),
-          cpfcnpj: z.string().optional(),
+          cpfCnpj: z.string().optional(),
           contato: z.string().optional(),
         })
       )
       .mutation(async ({ input, ctx }) => {
         await db.updateCliente(input.id, {
           nome: input.nome,
-          cpfcnpj: input.cpfcnpj,
+          cpfCnpj: input.cpfCnpj,
           contato: input.contato,
         });
 

@@ -16,7 +16,7 @@ export default function Clientes() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     nome: "",
-    cpfcnpj: "",
+    cpfCnpj: "",
     contato: "",
   });
 
@@ -42,7 +42,7 @@ export default function Clientes() {
       return;
     }
     
-    if (!isValidCPFOrCNPJ(formData.cpfcnpj)) {
+    if (!isValidCPFOrCNPJ(formData.cpfCnpj)) {
       toast.error("CPF ou CNPJ inválido");
       return;
     }
@@ -53,7 +53,7 @@ export default function Clientes() {
         await updateMutation.mutateAsync({
           id: editingId,
           nome: formData.nome || undefined,
-          cpfcnpj: formData.cpfcnpj || undefined,
+          cpfCnpj: formData.cpfCnpj || undefined,
           contato: formData.contato || undefined,
         });
         toast.success("Cliente atualizado com sucesso!");
@@ -61,12 +61,12 @@ export default function Clientes() {
         // Criar novo cliente
       await createMutation.mutateAsync({
         nome: formData.nome,
-        cpfcnpj: formData.cpfcnpj,
+        cpfCnpj: formData.cpfCnpj,
         contato: formData.contato,
       });
         toast.success("Cliente cadastrado com sucesso!");
       }
-      setFormData({ nome: "", cpfcnpj: "", contato: "" });
+      setFormData({ nome: "", cpfCnpj: "", contato: "" });
       setEditingId(null);
       setOpen(false);
       refetch();
@@ -79,7 +79,7 @@ export default function Clientes() {
   const handleEdit = (cliente: Cliente) => {
     setFormData({
       nome: cliente.nome,
-      cpfcnpj: cliente.cpfcnpj,
+      cpfCnpj: cliente.cpfCnpj,
       contato: cliente.contato || "",
     });
     setEditingId(cliente.id);
@@ -90,7 +90,7 @@ export default function Clientes() {
     setOpen(newOpen);
     if (!newOpen) {
       setEditingId(null);
-      setFormData({ nome: "", cpfcnpj: "", contato: "" });
+      setFormData({ nome: "", cpfCnpj: "", contato: "" });
     }
   };
 
