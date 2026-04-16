@@ -195,7 +195,7 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
   if (!canManageParcelas) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-full max-h-[95vh] overflow-y-auto w-screen">
+        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto w-full">
           <DialogHeader>
             <DialogTitle>Acesso Negado</DialogTitle>
             <DialogDescription>Você não tem permissão para gerenciar parcelas de pagamento</DialogDescription>
@@ -210,7 +210,7 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-full max-h-[95vh] overflow-y-auto w-screen">
+      <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto w-full">
         <DialogHeader>
           <DialogTitle>Gerenciar Parcelas de Pagamento</DialogTitle>
           <DialogDescription>Adicione e controle as parcelas de pagamento do serviço</DialogDescription>
@@ -304,43 +304,43 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
               </Card>
 
               {/* Resumo de pagamentos */}
-              <div className="grid grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card className="border-2 shadow-lg">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base font-semibold text-gray-700">Total Geral</CardTitle>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold text-gray-700">Total Geral</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-4xl font-bold text-gray-900">
+                    <p className="text-3xl lg:text-5xl font-bold text-gray-900 break-words">
                       R$ {totalGeral.toFixed(2)}
                     </p>
                   </CardContent>
                 </Card>
                 <Card className="bg-red-50 border-red-300 border-2 shadow-lg">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base font-semibold text-red-700">Desconto</CardTitle>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold text-red-700">Desconto</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-4xl font-bold text-red-700">
+                    <p className="text-3xl lg:text-5xl font-bold text-red-700 break-words">
                       -R$ {totalDesconto.toFixed(2)}
                     </p>
                   </CardContent>
                 </Card>
                 <Card className="bg-green-50 border-green-300 border-2 shadow-lg">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base font-semibold text-green-700">Pago</CardTitle>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold text-green-700">Pago</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-4xl font-bold text-green-700">
+                    <p className="text-3xl lg:text-5xl font-bold text-green-700 break-words">
                       R$ {totalPago.toFixed(2)}
                     </p>
                   </CardContent>
                 </Card>
                 <Card className="bg-orange-50 border-orange-300 border-2 shadow-lg">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base font-semibold text-orange-700">A Pagar</CardTitle>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold text-orange-700">A Pagar</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-4xl font-bold text-orange-700">
+                    <p className="text-3xl lg:text-5xl font-bold text-orange-700 break-words">
                       R$ {totalAPagar.toFixed(2)}
                     </p>
                   </CardContent>
