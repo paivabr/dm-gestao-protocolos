@@ -65,6 +65,10 @@ export default function StatusProtocolo() {
   }, [protocolos]);
 
   const filteredProtocolos = useMemo(() => {
+    if (filterStatus) {
+      console.log("Filtrando por status:", filterStatus);
+      console.log("Protocolos disponíveis:", protocolosOrdenados.map(p => ({ numero: p.numeroProtocolo, status: p.status })));
+    }
     return protocolosOrdenados.filter((p) => {
       const matchesProtocolo = p.numeroProtocolo
         .toLowerCase()
