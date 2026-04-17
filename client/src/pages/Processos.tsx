@@ -228,6 +228,9 @@ export default function Processos() {
                   <option value="Em Análise">Em Análise</option>
                   <option value="Protocolado">Protocolado</option>
                   <option value="Finalizado">Finalizado</option>
+                  <option value="Campo">Campo</option>
+                  <option value="Análise/Escritório">Análise/Escritório</option>
+                  <option value="Pendente documento">Pendente documento</option>
                 </select>
               </div>
               <div>
@@ -304,6 +307,9 @@ export default function Processos() {
                   <option value="Em Análise">Em Análise</option>
                   <option value="Protocolado">Protocolado</option>
                   <option value="Finalizado">Finalizado</option>
+                  <option value="Campo">Campo</option>
+                  <option value="Análise/Escritório">Análise/Escritório</option>
+                  <option value="Pendente documento">Pendente documento</option>
                 </select>
               </div>
               <div>
