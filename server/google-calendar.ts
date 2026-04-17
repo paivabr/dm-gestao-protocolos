@@ -2,15 +2,30 @@ import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 import { ENV } from './_core/env';
 
+console.log('[Google Calendar] ENV.googleClientId:', ENV.googleClientId ? 'SET' : 'MISSING');
+console.log('[Google Calendar] ENV.googleClientSecret:', ENV.googleClientSecret ? 'SET' : 'MISSING');
+// Determinar a Redirect URI baseada no ambiente
+const getRedirectUri = () => {
+  if (ENV.isProduction) {
+    return 'https://dm-gestao-protocolos-production.up.railway.app/api/google-callback';
+  }
+  return `${ENV.oAuthServerUrl || 'http://localhost:3000'}/api/google-callback`;
+};
+
+const redirectUri = getRedirectUri();
+console.log('[Google Calendar] Redirect URI:', redirectUri);
+
 if (!ENV.googleClientId || !ENV.googleClientSecret) {
-  console.warn('[Google Calendar] Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET');
+  console.error('[Google Calendar] Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET');
 }
 
 const oauth2Client = new OAuth2Client(
   ENV.googleClientId,
   ENV.googleClientSecret,
-  `${ENV.oAuthServerUrl || 'http://localhost:3000'}/api/google-callback`
+  redirectUri
 );
+
+console.log('[Google Calendar] OAuth2Client initialized with clientId:', ENV.googleClientId?.substring(0, 20) + '...');
 
 export function getOAuth2Client() {
   return oauth2Client;
@@ -21,11 +36,13 @@ export function getOAuth2Client() {
  */
 export function getGoogleAuthUrl(userId: number): string {
   const state = JSON.stringify({ userId });
-  return oauth2Client.generateAuthUrl({
+  const authUrl = oauth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: ['https://www.googleapis.com/auth/calendar'],
     state: Buffer.from(state).toString('base64'),
   });
+  console.log('[Google Calendar] Generated auth URL:', authUrl.substring(0, 100) + '...');
+  return authUrl;
 }
 
 /**
@@ -52,7 +69,7 @@ export async function createGoogleCalendarEvent(
   
   const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
-  const endTime = event.endTime || new Date(event.startTime.getTime() + 60 * 60 * 1000); // 1 hora por padrão
+  const endTime = event.endTime || new Date(event.startTime.getTime() + 60 * 60 * 1000);
 
   const response = await calendar.events.insert({
     calendarId: 'primary',
