@@ -151,6 +151,17 @@ export const appRouter = router({
       return await db.getClientes();
     }),
 
+    listPaginated: protectedProcedure
+      .input(
+        z.object({
+          page: z.number().min(1).default(1),
+          limit: z.number().min(1).max(100).default(10),
+        })
+      )
+      .query(async ({ input }) => {
+        return await db.getProcessosPaginated(input.page, input.limit);
+      }),
+
     create: protectedProcedure
       .input(
         z.object({
@@ -244,6 +255,17 @@ export const appRouter = router({
         cliente: clienteMap.get(p.clienteId),
       }));
     }),
+
+    listPaginated: protectedProcedure
+      .input(
+        z.object({
+          page: z.number().min(1).default(1),
+          limit: z.number().min(1).max(100).default(10),
+        })
+      )
+      .query(async ({ input }) => {
+        return await db.getProcessosPaginated(input.page, input.limit);
+      }),
 
     create: protectedProcedure
       .input(
@@ -832,6 +854,18 @@ export const appRouter = router({
       .query(async ({ ctx }) => {
         if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
         return await db.getStatusProtocoloList();
+      }),
+
+    listPaginated: protectedProcedure
+      .input(
+        z.object({
+          page: z.number().min(1).default(1),
+          limit: z.number().min(1).max(100).default(10),
+        })
+      )
+      .query(async ({ ctx, input }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        return await db.getStatusProtocoloPaginated(input.page, input.limit);
       }),
 
     create: protectedProcedure

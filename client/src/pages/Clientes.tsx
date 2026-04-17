@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { Cliente } from "@shared/types";
-import { Trash2, Plus, AlertCircle, Edit } from "lucide-react";
+import { Trash2, Plus, AlertCircle, Edit, ChevronLeft, ChevronRight } from "lucide-react";
 import { isValidCPFOrCNPJ } from "@shared/validators";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,9 +11,13 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
 
+const ITEMS_PER_PAGE = 10;
+
 export default function Clientes() {
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
   const [formData, setFormData] = useState({
     nome: "",
     cpfCnpj: "",
@@ -22,12 +26,24 @@ export default function Clientes() {
 
   const { user } = useAuth();
   const { data: permissions } = trpc.permissions.getMyPermissions.useQuery();
-  const { data: clientes, isLoading, refetch } = trpc.clientes.list.useQuery(undefined, {
-    enabled: user?.role === "admin" || permissions?.canViewClients,
-  });
+  
+  const { data: paginatedData, isLoading, refetch } = trpc.clientes.listPaginated.useQuery(
+    {
+      page: currentPage,
+      limit: ITEMS_PER_PAGE,
+    },
+    {
+      enabled: user?.role === "admin" || permissions?.canViewClients,
+    }
+  );
+
   const createMutation = trpc.clientes.create.useMutation();
   const updateMutation = trpc.clientes.update.useMutation();
   const deleteMutation = trpc.clientes.delete.useMutation();
+
+  const clientes = paginatedData?.data || [];
+  const totalItems = paginatedData?.total || 0;
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -69,6 +85,7 @@ export default function Clientes() {
       setFormData({ nome: "", cpfCnpj: "", contato: "" });
       setEditingId(null);
       setOpen(false);
+      setCurrentPage(1);
       refetch();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Erro ao salvar cliente";
@@ -118,12 +135,18 @@ export default function Clientes() {
       try {
         await deleteMutation.mutateAsync({ id });
         toast.success("Cliente deletado com sucesso!");
+        setCurrentPage(1);
         refetch();
       } catch (error) {
         const message = error instanceof Error ? error.message : "Erro ao deletar cliente";
         toast.error(message);
       }
     }
+  };
+
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
   };
 
   return (
@@ -205,62 +228,107 @@ export default function Clientes() {
         </Dialog>
       </div>
 
+      {/* Search Bar */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Buscar Clientes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Input
+            type="text"
+            placeholder="Buscar por nome do cliente..."
+            value={searchTerm}
+            onChange={(e) => handleSearch(e.target.value)}
+            className="w-full"
+          />
+        </CardContent>
+      </Card>
+
       {/* Table */}
       <Card>
         <CardHeader>
           <CardTitle>Clientes Cadastrados</CardTitle>
           <CardDescription>
-            Total de {clientes?.length || 0} cliente(s)
+            Exibindo {clientes.length} de {totalItems} cliente(s)
           </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="text-center py-8 text-slate-600">Carregando...</div>
           ) : clientes && clientes.length > 0 ? (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>CPF/CNPJ</TableHead>
-                    <TableHead>Contato</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {clientes.map(cliente => (
-                    <TableRow key={cliente.id}>
-                      <TableCell className="font-medium">{cliente.nome}</TableCell>
-                      <TableCell>{cliente.cpfCnpj}</TableCell>
-                      <TableCell>{cliente.contato || "-"}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex gap-2 justify-end">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(cliente)}
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(cliente.id)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+            <>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>CPF/CNPJ</TableHead>
+                      <TableHead>Contato</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {clientes.map((cliente: any) => (
+                      <TableRow key={cliente.id}>
+                        <TableCell className="font-medium">{cliente.nome}</TableCell>
+                        <TableCell>{cliente.cpfCnpj}</TableCell>
+                        <TableCell>{cliente.contato || "-"}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex gap-2 justify-end">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(cliente)}
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(cliente.id)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Pagination */}
+              <div className="flex items-center justify-between mt-6 pt-6 border-t">
+                <div className="text-sm text-slate-600">
+                  Página {currentPage} de {totalPages}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Anterior
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Próxima
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
+            </>
           ) : (
             <div className="text-center py-8 text-slate-600">
-              Nenhum cliente cadastrado. Clique em "Novo Cliente" para começar.
+              {searchTerm ? "Nenhum cliente encontrado com esse nome." : "Nenhum cliente cadastrado. Clique em \"Novo Cliente\" para começar."}
             </div>
           )}
         </CardContent>

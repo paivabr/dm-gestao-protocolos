@@ -1,4 +1,4 @@
-import { eq, and, like } from "drizzle-orm";
+import { eq, and, like, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, clientes, processos, checklistItens, auditoria, calendario, parcelas, statusProtocolo, Cliente, InsertCliente, Processo, InsertProcesso, ChecklistItem, InsertChecklistItem, Auditoria, InsertAuditoria, Calendario, InsertCalendario, Parcela, InsertParcela, StatusProtocolo, InsertStatusProtocolo } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -1132,5 +1132,117 @@ export async function updateCalendarioWithGoogleEvent(
   } catch (error) {
     console.error("[Database] Failed to update calendario with Google event:", error);
     return false;
+  }
+}
+
+
+// ============ PAGINATION FUNCTIONS ============
+
+export async function getClientesPaginated(page: number = 1, limit: number = 10, searchTerm?: string) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get clientes paginated: database not available");
+    return { data: [], total: 0, page, limit };
+  }
+
+  try {
+    const offset = (page - 1) * limit;
+    let query: any = db.select().from(clientes);
+    
+    if (searchTerm) {
+      query = query.where(like(clientes.nome, `%${searchTerm}%`));
+    }
+
+    const result = await query.limit(limit).offset(offset);
+    
+    // Get total count
+    let countQuery: any = db.select({ count: sql`COUNT(*)` }).from(clientes);
+    if (searchTerm) {
+      countQuery = countQuery.where(like(clientes.nome, `%${searchTerm}%`));
+    }
+    const countResult = await countQuery;
+    const total = (countResult[0]?.count as number) || 0;
+
+    return { data: result, total, page, limit };
+  } catch (error) {
+    console.error("[Database] Failed to get clientes paginated:", error);
+    return { data: [], total: 0, page, limit };
+  }
+}
+
+export async function getProcessosPaginated(page: number = 1, limit: number = 10) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get processos paginated: database not available");
+    return { data: [], total: 0, page, limit };
+  }
+
+  try {
+    const offset = (page - 1) * limit;
+    const result = await db
+      .select()
+      .from(processos)
+      .limit(limit)
+      .offset(offset);
+
+    const countResult: any = await db.select({ count: sql`COUNT(*)` }).from(processos);
+    const total = (countResult[0]?.count as number) || 0;
+
+    // Enrich with cliente data
+    const clientes_list = await getClientes();
+    const clienteMap = new Map(clientes_list.map(c => [c.id, c]));
+
+    const enriched = result.map(p => ({
+      ...p,
+      cliente: clienteMap.get(p.clienteId),
+    }));
+
+    return { data: enriched, total, page, limit };
+  } catch (error) {
+    console.error("[Database] Failed to get processos paginated:", error);
+    return { data: [], total: 0, page, limit };
+  }
+}
+
+export async function getStatusProtocoloPaginated(page: number = 1, limit: number = 10) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get status protocolo paginated: database not available");
+    return { data: [], total: 0, page, limit };
+  }
+
+  try {
+    const offset = (page - 1) * limit;
+    const result = await db
+      .select({
+        id: statusProtocolo.id,
+        numeroProtocolo: statusProtocolo.numeroProtocolo,
+        clienteId: statusProtocolo.clienteId,
+        tipoProcesso: statusProtocolo.tipoProcesso,
+        dataAbertura: statusProtocolo.dataAbertura,
+        status: statusProtocolo.status,
+        cartorio: statusProtocolo.cartorio,
+        ultimaAtualizacao: statusProtocolo.ultimaAtualizacao,
+        createdAt: statusProtocolo.createdAt,
+        updatedAt: statusProtocolo.updatedAt,
+        cliente: {
+          id: clientes.id,
+          nome: clientes.nome,
+          cpfCnpj: clientes.cpfCnpj,
+          contato: clientes.contato,
+        },
+      })
+      .from(statusProtocolo)
+      .leftJoin(clientes, eq(statusProtocolo.clienteId, clientes.id))
+      .limit(limit)
+      .offset(offset);
+
+    const countResult: any = await db.select({ count: sql`COUNT(*)` }).from(statusProtocolo);
+    const total = (countResult[0]?.count as number) || 0;
+
+    return { data: result, total, page, limit };
+  } catch (error) {
+    console.error("[Database] Failed to get status protocolo paginated:", error);
+    return { data: [], total: 0, page, limit };
   }
 }

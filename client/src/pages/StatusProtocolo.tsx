@@ -1,7 +1,6 @@
-"use client";
 
 import { useState, useMemo } from "react";
-import { Plus, Search, Edit2, Trash2, Filter, X, AlertCircle } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, Filter, X, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,10 +11,16 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 
+const ITEMS_PER_PAGE = 10;
+
 export default function StatusProtocolo() {
+  const [currentPage, setCurrentPage] = useState(1);
   const { user } = useAuth();
   const { data: permissions } = trpc.permissions.getMyPermissions.useQuery();
-  const { data: protocolos = [], isLoading, refetch } = trpc.statusProtocolo.list.useQuery();
+  const { data: paginatedData, isLoading, refetch } = trpc.statusProtocolo.listPaginated.useQuery({
+    page: currentPage,
+    limit: ITEMS_PER_PAGE,
+  });
   const { data: clientes = [] } = trpc.clientes.list.useQuery();
   const createMutation = trpc.statusProtocolo.create.useMutation();
   const updateMutation = trpc.statusProtocolo.update.useMutation();
@@ -58,9 +63,13 @@ export default function StatusProtocolo() {
 
   const STATUS_OPTIONS = ["Pronto", "Reingressado", "Reingressado pós pagamento", "Nota de Pagamento", "Exigência", "Protocolado", "Vencido", "Campo", "Análise/Escritório", "Pendente documento"];
 
+  const protocolos = paginatedData?.data || [];
+  const totalItems = paginatedData?.total || 0;
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+
   // Ordenar protocolos pelos mais recentes
   const protocolosOrdenados = useMemo(() => {
-    return [...protocolos].sort((a, b) => {
+    return [...protocolos].sort((a: any, b: any) => {
       const dataA = new Date(a.dataAbertura).getTime();
       const dataB = new Date(b.dataAbertura).getTime();
       return dataB - dataA;
@@ -68,7 +77,7 @@ export default function StatusProtocolo() {
   }, [protocolos]);
 
   const filteredProtocolos = useMemo(() => {
-    return protocolosOrdenados.filter((p) => {
+    return protocolosOrdenados.filter((p: any) => {
       const matchesProtocolo = p.numeroProtocolo
         .toLowerCase()
         .includes(searchProtocolo.toLowerCase());
@@ -98,144 +107,82 @@ export default function StatusProtocolo() {
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      clienteId: "",
-      numeroProtocolo: "",
-      tipoProcesso: "",
-      dataAbertura: new Date().toISOString().split("T")[0],
-      status: "Pronto",
-      cartorio: "",
-      observacoes: "",
-    });
-    setEditingId(null);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleOpenDialog = () => {
-    resetForm();
-    setDialogOpen(true);
-  };
-
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-    resetForm();
-  };
-
-  const handleCreate = async () => {
-    if (!formData.clienteId || !formData.numeroProtocolo || !formData.tipoProcesso || !formData.cartorio) {
-      toast.error("Preencha todos os campos obrigatórios");
-      return;
-    }
-
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      await createMutation.mutateAsync({
-        clienteId: parseInt(formData.clienteId),
-        numeroProtocolo: formData.numeroProtocolo,
-        tipoProcesso: formData.tipoProcesso as "Georreferenciamento" | "Certidão de Localização" | "Averbação de Qualificação",
-        dataAbertura: new Date(formData.dataAbertura),
-        status: formData.status as "Pronto" | "Reingressado" | "Reingressado pós pagamento" | "Nota de Pagamento" | "Exigência" | "Protocolado" | "Vencido",
-        cartorio: formData.cartorio,
-        observacoes: formData.observacoes,
-      });
-      toast.success("Protocolo criado com sucesso!");
-      handleCloseDialog();
-      refetch();
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao criar protocolo");
-    }
-  };
-
-  const handleUpdate = async () => {
-    if (!editingId) return;
-    
-    try {
-      await updateMutation.mutateAsync({
-        id: editingId,
-        clienteId: parseInt(formData.clienteId),
-        numeroProtocolo: formData.numeroProtocolo,
-        tipoprocesso: formData.tipoProcesso as "Georreferenciamento" | "Certidão de Localização" | "Averbação de Qualificação",
-        dataAbertura: new Date(formData.dataAbertura),
-        status: formData.status as "Pronto" | "Reingressado" | "Reingressado pós pagamento" | "Nota de Pagamento" | "Exigência" | "Protocolado" | "Vencido",
-        cartorio: formData.cartorio,
-        observacoes: formData.observacoes,
-      });
-      toast.success("Protocolo atualizado com sucesso!");
-      handleCloseDialog();
-      refetch();
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao atualizar protocolo");
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    if (confirm("Tem certeza que deseja deletar este protocolo?")) {
-      try {
-        await deleteMutation.mutateAsync({ id });
-        refetch();
-        toast.success("Protocolo deletado com sucesso!");
-      } catch (error: any) {
-        toast.error(error.message || "Erro ao deletar protocolo");
+      if (editingId) {
+        await updateMutation.mutateAsync({
+          id: editingId,
+          clienteId: parseInt(formData.clienteId),
+          numeroProtocolo: formData.numeroProtocolo,
+          tipoprocesso: formData.tipoProcesso as "Georreferenciamento" | "Certidão de Localização" | "Averbação de Qualificação",
+          dataAbertura: new Date(formData.dataAbertura),
+          status: formData.status as any,
+          cartorio: formData.cartorio,
+          observacoes: formData.observacoes,
+        });
+        toast.success("Protocolo atualizado!");
+      } else {
+        await createMutation.mutateAsync({
+          clienteId: parseInt(formData.clienteId),
+          numeroProtocolo: formData.numeroProtocolo,
+          tipoProcesso: formData.tipoProcesso as "Georreferenciamento" | "Certidão de Localização" | "Averbação de Qualificação",
+          dataAbertura: new Date(formData.dataAbertura),
+          status: formData.status as any,
+          cartorio: formData.cartorio,
+          observacoes: formData.observacoes,
+        });
+        toast.success("Protocolo criado!");
       }
+      setFormData({
+        clienteId: "",
+        numeroProtocolo: "",
+        tipoProcesso: "",
+        dataAbertura: new Date().toISOString().split("T")[0],
+        status: "Pronto",
+        cartorio: "",
+        observacoes: "",
+      });
+      setEditingId(null);
+      setDialogOpen(false);
+      setCurrentPage(1);
+      refetch();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro ao salvar protocolo";
+      toast.error(message);
     }
   };
 
   const handleEdit = (protocolo: any) => {
     setFormData({
-      clienteId: protocolo.clienteId?.toString() || "",
-      numeroProtocolo: protocolo.numeroProtocolo || "",
-      tipoProcesso: protocolo.tipoProcesso || "",
-      dataAbertura: protocolo.dataAbertura ? new Date(protocolo.dataAbertura).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
-      status: protocolo.status || "Pronto",
-      cartorio: protocolo.cartorio || "",
+      clienteId: protocolo.clienteId.toString(),
+      numeroProtocolo: protocolo.numeroProtocolo,
+      tipoProcesso: protocolo.tipoProcesso,
+      dataAbertura: new Date(protocolo.dataAbertura).toISOString().split("T")[0],
+      status: protocolo.status,
+      cartorio: protocolo.cartorio,
       observacoes: protocolo.observacoes || "",
     });
     setEditingId(protocolo.id);
     setDialogOpen(true);
   };
 
-  // Bloquear acesso se não tem permissão
-  if (user?.role !== "admin" && !permissions?.canViewProcesses) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Card className="w-full max-w-md border-red-200 bg-red-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-700">
-              <AlertCircle className="h-5 w-5" />
-              Acesso Negado
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-red-600">Você não tem permissão para acessar esta página. Solicite ao administrador.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Pronto":
-        return "bg-green-100 text-green-800";
-      case "Reingressado":
-        return "bg-blue-100 text-blue-800";
-      case "Reingressado pós pagamento":
-        return "bg-purple-100 text-purple-800";
-      case "Nota de Pagamento":
-        return "bg-yellow-100 text-yellow-800";
-      case "Exigência":
-        return "bg-red-100 text-red-800";
-      case "Protocolado":
-        return "bg-indigo-100 text-indigo-800";
-      case "Vencido":
-        return "bg-red-200 text-red-900";
-      case "Campo":
-        return "bg-orange-100 text-orange-800";
-      case "Análise/Escritório":
-        return "bg-cyan-100 text-cyan-800";
-      case "Pendente documento":
-        return "bg-amber-100 text-amber-800";
-      default:
-        return "bg-gray-100 text-gray-800";
+  const handleDelete = async (id: number) => {
+    if (confirm("Tem certeza que deseja deletar este protocolo?")) {
+      try {
+        await deleteMutation.mutateAsync({ id });
+        toast.success("Protocolo deletado!");
+        setCurrentPage(1);
+        refetch();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Erro ao deletar protocolo";
+        toast.error(message);
+      }
     }
   };
 
@@ -243,33 +190,240 @@ export default function StatusProtocolo() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Status de Protocolo</h1>
-          <p className="text-gray-600">Gerenciar protocolos de registro de imóveis</p>
+          <h1 className="text-3xl font-bold text-slate-900">Status de Protocolos</h1>
+          <p className="text-slate-600 mt-2">Acompanhe o status de todos os protocolos</p>
         </div>
-        <Button onClick={handleOpenDialog} className="gap-2">
-          <Plus className="w-4 h-4" />
+        <Button
+          className="bg-blue-600 hover:bg-blue-700"
+          onClick={() => {
+            setEditingId(null);
+            setFormData({
+              clienteId: "",
+              numeroProtocolo: "",
+              tipoProcesso: "",
+              dataAbertura: new Date().toISOString().split("T")[0],
+              status: "Pronto",
+              cartorio: "",
+              observacoes: "",
+            });
+            setDialogOpen(true);
+          }}
+        >
+          <Plus className="h-4 w-4 mr-2" />
           Novo Protocolo
         </Button>
       </div>
 
-      {/* Dialog único para criar e editar */}
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Filtros</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Número do Protocolo</label>
+              <Input
+                placeholder="Buscar por número..."
+                value={searchProtocolo}
+                onChange={(e) => {
+                  setSearchProtocolo(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Nome do Cliente</label>
+              <Input
+                placeholder="Buscar por cliente..."
+                value={searchCliente}
+                onChange={(e) => {
+                  setSearchCliente(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Tipo de Processo</label>
+              <Select value={filterTipo} onValueChange={(value) => {
+                setFilterTipo(value);
+                setCurrentPage(1);
+              }}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos</SelectItem>
+                  {tiposProcesso.map(tipo => (
+                    <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Status</label>
+              <Select value={filterStatus} onValueChange={(value) => {
+                setFilterStatus(value);
+                setCurrentPage(1);
+              }}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos</SelectItem>
+                  {STATUS_OPTIONS.map(status => (
+                    <SelectItem key={status} value={status}>{status}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Cartório</label>
+              <Select value={filterCartorio} onValueChange={(value) => {
+                setFilterCartorio(value);
+                setCurrentPage(1);
+              }}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos</SelectItem>
+                  {cartorios.map(cartorio => (
+                    <SelectItem key={cartorio} value={cartorio}>{cartorio}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Protocolos</CardTitle>
+          <CardDescription>
+            Exibindo {filteredProtocolos.length} de {totalItems} protocolo(s)
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="text-center py-8 text-slate-600">Carregando...</div>
+          ) : filteredProtocolos.length > 0 ? (
+            <>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nº Protocolo</TableHead>
+                      <TableHead>Cliente</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Cartório</TableHead>
+                      <TableHead>Data Abertura</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredProtocolos.map((protocolo: any) => (
+                      <TableRow key={protocolo.id}>
+                        <TableCell className="font-medium">{protocolo.numeroProtocolo}</TableCell>
+                        <TableCell>{protocolo.cliente?.nome || "-"}</TableCell>
+                        <TableCell>{protocolo.tipoProcesso}</TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded text-sm font-medium ${
+                            protocolo.status === "Pronto" ? "bg-green-100 text-green-800" :
+                            protocolo.status === "Vencido" ? "bg-red-100 text-red-800" :
+                            "bg-blue-100 text-blue-800"
+                          }`}>
+                            {protocolo.status}
+                          </span>
+                        </TableCell>
+                        <TableCell>{protocolo.cartorio}</TableCell>
+                        <TableCell>{new Date(protocolo.dataAbertura).toLocaleDateString()}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex gap-2 justify-end">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(protocolo)}
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(protocolo.id)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Pagination */}
+              <div className="flex items-center justify-between mt-6 pt-6 border-t">
+                <div className="text-sm text-slate-600">
+                  Página {currentPage} de {totalPages}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Anterior
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Próxima
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-8 text-slate-600">
+              {searchProtocolo || searchCliente || filterTipo || filterStatus || filterCartorio
+                ? "Nenhum protocolo encontrado com os filtros aplicados."
+                : "Nenhum protocolo cadastrado."}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingId ? "Editar Protocolo" : "Novo Protocolo"}</DialogTitle>
             <DialogDescription>
-              {editingId ? "Atualize as informações do protocolo" : "Adicione um novo protocolo de registro"}
+              {editingId ? "Atualize os dados do protocolo" : "Preencha os dados do novo protocolo"}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4 max-h-96 overflow-y-auto">
             <div>
-              <label className="text-sm font-medium">Cliente *</label>
-              <Select value={formData.clienteId} onValueChange={(value) => setFormData({ ...formData, clienteId: value })}>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Cliente</label>
+              <Select value={formData.clienteId} onValueChange={(value) => setFormData(prev => ({ ...prev, clienteId: value }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione um cliente" />
                 </SelectTrigger>
                 <SelectContent>
-                  {clientes.map((cliente: any) => (
+                  {clientes.map(cliente => (
                     <SelectItem key={cliente.id} value={cliente.id.toString()}>
                       {cliente.nome}
                     </SelectItem>
@@ -277,251 +431,105 @@ export default function StatusProtocolo() {
                 </SelectContent>
               </Select>
             </div>
-
             <div>
-              <label className="text-sm font-medium">Número do Protocolo *</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Número do Protocolo</label>
               <Input
+                type="text"
+                name="numeroProtocolo"
                 value={formData.numeroProtocolo}
-                onChange={(e) => setFormData({ ...formData, numeroProtocolo: e.target.value })}
-                placeholder="Ex: 123456"
+                onChange={handleChange}
+                placeholder="Ex: 2024/001"
+                required
               />
             </div>
-
             <div>
-              <label className="text-sm font-medium">Tipo de Processo *</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Tipo de Processo</label>
               <div className="flex gap-2">
-                <Select value={formData.tipoProcesso} onValueChange={(value) => setFormData({ ...formData, tipoProcesso: value })}>
-                  <SelectTrigger className="flex-1">
+                <Select value={formData.tipoProcesso} onValueChange={(value) => setFormData(prev => ({ ...prev, tipoProcesso: value }))}>
+                  <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
                   <SelectContent>
-                    {tiposProcesso.map((tipo) => (
-                      <SelectItem key={tipo} value={tipo}>
-                        {tipo}
-                      </SelectItem>
+                    {tiposProcesso.map(tipo => (
+                      <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="flex gap-2 mt-2">
                 <Input
-                  placeholder="Novo tipo"
+                  type="text"
                   value={novoTipo}
                   onChange={(e) => setNovoTipo(e.target.value)}
-                  className="w-32"
+                  placeholder="Novo tipo..."
                 />
-                <Button onClick={handleAddTipo} variant="outline" size="sm">
-                  Adicionar
-                </Button>
+                <Button type="button" onClick={handleAddTipo} variant="outline">Adicionar</Button>
               </div>
             </div>
-
             <div>
-              <label className="text-sm font-medium">Data de Abertura</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Data de Abertura</label>
               <Input
                 type="date"
+                name="dataAbertura"
                 value={formData.dataAbertura}
-                onChange={(e) => setFormData({ ...formData, dataAbertura: e.target.value })}
+                onChange={handleChange}
+                required
               />
             </div>
-
             <div>
-              <label className="text-sm font-medium">Status</label>
-              <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Status</label>
+              <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {STATUS_OPTIONS.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {status}
-                    </SelectItem>
+                  {STATUS_OPTIONS.map(status => (
+                    <SelectItem key={status} value={status}>{status}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-
             <div>
-              <label className="text-sm font-medium">Cartório *</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Cartório</label>
               <div className="flex gap-2">
-                <Select value={formData.cartorio} onValueChange={(value) => setFormData({ ...formData, cartorio: value })}>
-                  <SelectTrigger className="flex-1">
+                <Select value={formData.cartorio} onValueChange={(value) => setFormData(prev => ({ ...prev, cartorio: value }))}>
+                  <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
                   <SelectContent>
-                    {cartorios.map((cartorio) => (
-                      <SelectItem key={cartorio} value={cartorio}>
-                        {cartorio}
-                      </SelectItem>
+                    {cartorios.map(cartorio => (
+                      <SelectItem key={cartorio} value={cartorio}>{cartorio}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="flex gap-2 mt-2">
                 <Input
-                  placeholder="Novo cartório"
+                  type="text"
                   value={novoCartorio}
                   onChange={(e) => setNovoCartorio(e.target.value)}
-                  className="w-32"
+                  placeholder="Novo cartório..."
                 />
-                <Button onClick={handleAddCartorio} variant="outline" size="sm">
-                  Adicionar
-                </Button>
+                <Button type="button" onClick={handleAddCartorio} variant="outline">Adicionar</Button>
               </div>
             </div>
-
             <div>
-              <label className="text-sm font-medium">Observações</label>
-              <Input
+              <label className="block text-sm font-medium text-slate-700 mb-2">Observações</label>
+              <textarea
+                name="observacoes"
                 value={formData.observacoes}
-                onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
-                placeholder="Observações adicionais"
+                onChange={handleChange}
+                placeholder="Observações..."
+                className="w-full p-2 border rounded"
+                rows={3}
               />
             </div>
-
-            <div className="flex gap-2 justify-end pt-4">
-              <Button variant="outline" onClick={handleCloseDialog}>
-                Cancelar
-              </Button>
-              <Button onClick={editingId ? handleUpdate : handleCreate}>
-                {editingId ? "Atualizar" : "Criar"}
-              </Button>
-            </div>
-          </div>
+            <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={createMutation.isPending || updateMutation.isPending}>
+              {createMutation.isPending || updateMutation.isPending ? "Salvando..." : (editingId ? "Atualizar" : "Criar")}
+            </Button>
+          </form>
         </DialogContent>
       </Dialog>
-
-      {/* Filtros */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filtros</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex gap-4 flex-wrap">
-          <Input
-            placeholder="Buscar protocolo..."
-            value={searchProtocolo}
-            onChange={(e) => setSearchProtocolo(e.target.value)}
-            className="flex-1"
-          />
-          <Input
-            placeholder="Buscar cliente..."
-            value={searchCliente}
-            onChange={(e) => setSearchCliente(e.target.value)}
-            className="flex-1"
-          />
-            <Select value={filterTipo} onValueChange={setFilterTipo}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Tipo de Processo" />
-              </SelectTrigger>
-              <SelectContent>
-                {tiposProcesso.map((tipo) => (
-                  <SelectItem key={tipo} value={tipo}>
-                    {tipo}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUS_OPTIONS.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {status}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filterCartorio} onValueChange={setFilterCartorio}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Cartório" />
-              </SelectTrigger>
-              <SelectContent>
-                {cartorios.map((cartorio) => (
-                  <SelectItem key={cartorio} value={cartorio}>
-                    {cartorio}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {(searchProtocolo || filterTipo || filterStatus || filterCartorio) && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setSearchProtocolo("");
-                  setFilterTipo("");
-                  setFilterStatus("");
-                  setFilterCartorio("");
-                }}
-              >
-                <X className="w-4 h-4 mr-2" />
-                Limpar Filtros
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Tabela de Protocolos */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Protocolos ({filteredProtocolos.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="text-center py-8 text-gray-500">Carregando...</div>
-          ) : filteredProtocolos.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">Nenhum protocolo encontrado</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Número</TableHead>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Cartório</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredProtocolos.map((protocolo: any) => (
-                    <TableRow key={protocolo.id}>
-                      <TableCell className="font-medium">{protocolo.numeroProtocolo}</TableCell>
-                      <TableCell>{protocolo.cliente?.nome || "-"}</TableCell>
-                      <TableCell>{protocolo.tipoProcesso}</TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 rounded text-sm ${getStatusColor(protocolo.status)}`}>
-                          {protocolo.status}
-                        </span>
-                      </TableCell>
-                      <TableCell>{protocolo.cartorio}</TableCell>
-                      <TableCell>{new Date(protocolo.dataAbertura).toLocaleDateString("pt-BR")}</TableCell>
-                      <TableCell className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(protocolo)}
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(protocolo.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }
