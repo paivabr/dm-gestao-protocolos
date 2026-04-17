@@ -4,19 +4,14 @@ import { ENV } from './_core/env';
 console.log('[Google Calendar] ENV.googleClientId:', ENV.googleClientId ? 'SET' : 'MISSING');
 console.log('[Google Calendar] ENV.googleClientSecret:', ENV.googleClientSecret ? 'SET' : 'MISSING');
 
-// Determinar a Redirect URI baseada no ambiente
+// Determinar a Redirect URI baseada no APP_URL
 const getRedirectUri = () => {
-  if (ENV.isProduction) {
-    return 'https://dm-gestao-protocolos-production.up.railway.app/api/google-callback';
-  }
-  return `${ENV.oAuthServerUrl || 'http://localhost:3000'}/api/google-callback`;
+  return `${ENV.appUrl}/api/google-callback`;
 };
 
 const redirectUri = getRedirectUri();
-console.log('[Google Calendar] NODE_ENV:', process.env.NODE_ENV);
-console.log('[Google Calendar] ENV.isProduction:', ENV.isProduction);
+console.log('[Google Calendar] APP_URL:', ENV.appUrl);
 console.log('[Google Calendar] Redirect URI:', redirectUri);
-console.log('[Google Calendar] OAUTH_SERVER_URL:', ENV.oAuthServerUrl);
 
 if (!ENV.googleClientId || !ENV.googleClientSecret) {
   console.error('[Google Calendar] Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET');
