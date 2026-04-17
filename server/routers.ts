@@ -7,6 +7,7 @@ import { storagePut } from "./storage";
 import { COOKIE_NAME } from "../shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import * as googleCalendar from "./google-calendar";
 
 export const appRouter = router({
   // ============ AUTH ROUTES ============
@@ -602,6 +603,31 @@ export const appRouter = router({
           data: input.data,
           informacoesAdicionais: input.informacoesAdicionais,
         });
+        
+        // Sincronizar automaticamente com Google Calendar
+        if (id) {
+          try {
+            const userTokens = await db.getGoogleCalendarTokens(ctx.user.id);
+            if (userTokens?.googleAccessToken) {
+              const googleEventId = await googleCalendar.createGoogleCalendarEvent(
+                userTokens.googleAccessToken,
+                {
+                  summary: input.titulo,
+                  description: input.descricao || '',
+                  start: new Date(input.data),
+                  end: new Date(new Date(input.data).getTime() + 60 * 60 * 1000),
+                }
+              );
+              
+              if (googleEventId) {
+                await db.updateCalendarioWithGoogleEvent(id, googleEventId);
+              }
+            }
+          } catch (error) {
+            console.error('[Calendario] Erro ao sincronizar com Google Calendar:', error);
+          }
+        }
+        
         return { id, success: id !== null };
       }),
 
@@ -650,6 +676,22 @@ export const appRouter = router({
         if (cal?.usuarioId !== ctx.user.id && ctx.user.role !== "admin") {
           throw new TRPCError({ code: "FORBIDDEN", message: "Acesso negado" });
         }
+        
+        // Deletar do Google Calendar se estiver sincronizado
+        if (cal?.googleEventId) {
+          try {
+            const userTokens = await db.getGoogleCalendarTokens(ctx.user.id);
+            if (userTokens?.googleAccessToken) {
+              await googleCalendar.deleteGoogleCalendarEvent(
+                userTokens.googleAccessToken,
+                cal.googleEventId
+              );
+            }
+          } catch (error) {
+            console.error('[Calendario] Erro ao deletar evento do Google Calendar:', error);
+          }
+        }
+        
         await db.deleteCalendario(input.id);
         return { success: true };
       }),
