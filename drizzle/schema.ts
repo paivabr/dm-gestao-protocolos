@@ -24,6 +24,10 @@ export const users = mysqlTable("users", {
   canViewProcesses: tinyint("canViewProcesses").default(0).notNull(),
   canViewClients: tinyint("canViewClients").default(0).notNull(),
   canManageParcelas: tinyint("canManageParcelas").default(0).notNull(),
+  // Google Calendar Integration
+  googleAccessToken: text("googleAccessToken"),
+  googleRefreshToken: text("googleRefreshToken"),
+  googleCalendarId: varchar("googleCalendarId", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn"),
@@ -104,6 +108,8 @@ export const calendario = mysqlTable("calendario", {
   descricao: text("descricao"),
   data: timestamp("data").notNull(),
   informacoesAdicionais: text("informacoesAdicionais"),
+  googleEventId: varchar("googleEventId", { length: 255 }),
+  sincronizadoComGoogle: tinyint("sincronizadoComGoogle").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

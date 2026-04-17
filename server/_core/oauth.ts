@@ -2,6 +2,7 @@ import { COOKIE_NAME } from "@shared/const";
 import type { Express, Request, Response } from "express";
 import * as auth from "../auth";
 import { getSessionCookieOptions } from "./cookies";
+import { handleGoogleCallback } from "../google-callback";
 
 function getBodyParam(req: Request, key: string): string | undefined {
   const value = (req.body as Record<string, unknown>)[key];
@@ -79,5 +80,12 @@ export function registerOAuthRoutes(app: Express) {
       console.error("[Auth] Register failed", error);
       res.status(500).json({ error: "Registration failed" });
     }
+  });
+
+  /**
+   * GET /api/google-callback - Google Calendar OAuth callback
+   */
+  app.get("/api/google-callback", async (req: Request, res: Response) => {
+    await handleGoogleCallback(req, res);
   });
 }

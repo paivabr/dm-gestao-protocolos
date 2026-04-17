@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import { googleCalendarRouter } from "./routers-google";
 import { z } from "zod";
 import * as auth from "./auth";
 import * as db from "./db";
@@ -868,6 +869,7 @@ export const appRouter = router({
         return await db.searchStatusProtocolo(input.numeroProtocolo, input.clienteId);
       }),
   }),
+  googleCalendar: googleCalendarRouter,
 });
 
 export type AppRouter = typeof appRouter;

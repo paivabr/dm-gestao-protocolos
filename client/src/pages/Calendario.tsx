@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ChevronLeft, ChevronRight, Plus, Trash2, AlertCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { GoogleCalendarButton } from "@/components/GoogleCalendarButton";
+import { GoogleCalendarSync } from "@/components/GoogleCalendarSync";
 
 export default function Calendario() {
   const { user } = useAuth();
@@ -14,6 +16,8 @@ export default function Calendario() {
   const [currentDate, setCurrentDate] = useState(new Date(2026, 3, 15)); // Abril 15, 2026
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [googleSyncOpen, setGoogleSyncOpen] = useState(false);
+  const [selectedServico, setSelectedServico] = useState<typeof servicos[0] | null>(null);
   const [formData, setFormData] = useState({
     titulo: "",
     descricao: "",
@@ -107,9 +111,12 @@ export default function Calendario() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Calendário de Serviços</h1>
-        <p className="text-gray-600 mt-2">Marque seus serviços e acompanhe as datas</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Calendário de Serviços</h1>
+          <p className="text-gray-600 mt-2">Marque seus serviços e acompanhe as datas</p>
+        </div>
+        <GoogleCalendarButton onConnected={() => refetch()} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -257,7 +264,18 @@ export default function Calendario() {
                               </div>
                             )}
                           </div>
-                          <button
+                          
+                            <button
+                              onClick={() => {
+                                setSelectedServico(servico);
+                                setGoogleSyncOpen(true);
+                              }}
+                              className="text-blue-600 hover:text-blue-700 p-1 text-xs font-medium"
+                              title="Sincronizar com Google Calendar"
+                            >
+                              📅
+                            </button>
+                            <button
                             onClick={() => handleDeleteServico(servico.id)}
                             disabled={deleteMutation.isPending}
                             className="text-red-600 hover:text-red-700 p-1"
@@ -284,6 +302,19 @@ export default function Calendario() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Google Calendar Sync Dialog */}
+      {selectedServico && (
+        <GoogleCalendarSync
+          calendarioId={selectedServico.id}
+          titulo={selectedServico.titulo}
+          descricao={selectedServico.descricao || undefined}
+          data={selectedServico.data}
+          open={googleSyncOpen}
+          onOpenChange={setGoogleSyncOpen}
+          onSuccess={() => refetch()}
+        />
+      )}
     </div>
   );
 }

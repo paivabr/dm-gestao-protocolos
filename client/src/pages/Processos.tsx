@@ -66,7 +66,7 @@ export default function Processos() {
           id: editingProcesso.id,
           titulo: formData.titulo,
           clienteId: parseInt(formData.clienteId),
-          status: formData.status as "Pendente" | "Em Análise" | "Protocolado" | "Finalizado",
+          status: formData.status as "Pendente" | "Em Análise" | "Protocolado" | "Finalizado" | "Campo" | "Análise/Escritório" | "Pendente documento",
           prazoVencimento: formData.prazoVencimento ? new Date(formData.prazoVencimento) : undefined,
         });
         toast.success("Processo atualizado com sucesso!");
@@ -76,7 +76,7 @@ export default function Processos() {
         await createMutation.mutateAsync({
           titulo: formData.titulo,
           clienteId: parseInt(formData.clienteId),
-          status: formData.status as "Pendente" | "Em Análise" | "Protocolado" | "Finalizado",
+          status: formData.status as "Pendente" | "Em Análise" | "Protocolado" | "Finalizado" | "Campo" | "Análise/Escritório" | "Pendente documento",
           prazoVencimento: formData.prazoVencimento ? new Date(formData.prazoVencimento) : undefined,
         });
         toast.success("Processo criado com sucesso!");

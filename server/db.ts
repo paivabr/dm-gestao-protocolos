@@ -411,7 +411,7 @@ export async function getProcessosDashboard() {
   const db = await getDb();
   if (!db) {
     console.warn("[Database] Cannot get dashboard data: database not available");
-    return { pendentes: 0, emAnalise: 0, protocolado: 0, finalizado: 0, vencendoHoje: 0 };
+    return { pendentes: 0, emAnalise: 0, protocolado: 0, finalizado: 0, campo: 0, analiseEscritorio: 0, pendenteDocumento: 0, vencendoHoje: 0 };
   }
 
   try {
@@ -438,7 +438,7 @@ export async function getProcessosDashboard() {
     return stats;
   } catch (error) {
     console.error("[Database] Failed to get dashboard data:", error);
-    return { pendentes: 0, emAnalise: 0, protocolado: 0, finalizado: 0, vencendoHoje: 0 };
+    return { pendentes: 0, emAnalise: 0, protocolado: 0, finalizado: 0, campo: 0, analiseEscritorio: 0, pendenteDocumento: 0, vencendoHoje: 0 };
   }
 }
 
@@ -1011,6 +1011,80 @@ export async function updateUserRole(userId: number, role: "admin" | "user") {
     return true;
   } catch (error) {
     console.error("[Database] Failed to update user role:", error);
+    return false;
+  }
+}
+
+// ============ GOOGLE CALENDAR FUNCTIONS ============
+
+export async function updateGoogleCalendarTokens(
+  userId: number,
+  data: {
+    googleAccessToken?: string;
+    googleRefreshToken?: string;
+    googleCalendarId?: string;
+  }
+) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot update Google Calendar tokens: database not available");
+    return false;
+  }
+
+  try {
+    await db.update(users).set(data).where(eq(users.id, userId));
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to update Google Calendar tokens:", error);
+    return false;
+  }
+}
+
+export async function getGoogleCalendarTokens(userId: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get Google Calendar tokens: database not available");
+    return null;
+  }
+
+  try {
+    const result = await db
+      .select({
+        googleAccessToken: users.googleAccessToken,
+        googleRefreshToken: users.googleRefreshToken,
+        googleCalendarId: users.googleCalendarId,
+      })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    return result.length > 0 ? result[0] : null;
+  } catch (error) {
+    console.error("[Database] Failed to get Google Calendar tokens:", error);
+    return null;
+  }
+}
+
+export async function updateCalendarioWithGoogleEvent(
+  calendarioId: number,
+  googleEventId: string
+) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot update calendario: database not available");
+    return false;
+  }
+
+  try {
+    await db
+      .update(calendario)
+      .set({
+        googleEventId: googleEventId,
+      } as any)
+      .where(eq(calendario.id, calendarioId));
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to update calendario with Google event:", error);
     return false;
   }
 }

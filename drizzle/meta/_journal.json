@@ -85,6 +85,20 @@
       "when": 1776425079416,
       "tag": "0011_lowly_nocturne",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "5",
+      "when": 1776432832267,
+      "tag": "0012_furry_captain_universe",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "5",
+      "when": 1776433040375,
+      "tag": "0013_sudden_leper_queen",
+      "breakpoints": true
     }
   ]
 }

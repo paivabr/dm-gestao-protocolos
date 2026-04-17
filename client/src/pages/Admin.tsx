@@ -138,7 +138,7 @@ export default function Admin() {
                   <div key={item.id} className="p-3 border rounded-lg text-sm">
                     <p className="font-medium text-gray-900">{item.nomeUsuario}</p>
                     <p className="text-gray-600">{item.acao} em {item.tabela}</p>
-                    <p className="text-gray-500 text-xs">{new Date(item.dataHora).toLocaleString()}</p>
+                    <p className="text-gray-500 text-xs">{new Date(item.criadoEm).toLocaleString()}</p>
                     {item.alteracoes && <p className="text-gray-600 text-xs mt-1">{item.alteracoes}</p>}
                   </div>
                 ))}
@@ -164,7 +164,7 @@ export default function Admin() {
                   <div key={item.id} className="p-3 border rounded-lg text-sm">
                     <p className="font-medium text-gray-900">{item.nomeUsuario}</p>
                     <p className="text-gray-600">{item.acao} em {item.tabela} (ID: {item.registroId})</p>
-                    <p className="text-gray-500 text-xs">{new Date(item.dataHora).toLocaleString()}</p>
+                    <p className="text-gray-500 text-xs">{new Date(item.criadoEm).toLocaleString()}</p>
                     {item.alteracoes && <p className="text-gray-600 text-xs mt-1">{item.alteracoes}</p>}
                   </div>
                 ))}

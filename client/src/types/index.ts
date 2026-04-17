@@ -12,7 +12,7 @@ export interface Processo {
   titulo: string;
   clienteId: number;
   cliente?: Cliente;
-  status: "Pendente" | "Em Análise" | "Protocolado" | "Finalizado";
+  status: "Pendente" | "Em Análise" | "Protocolado" | "Finalizado" | "Campo" | "Análise/Escritório" | "Pendente documento";
   prazoVencimento?: Date | null;
   createdAt: Date;
   updatedAt: Date;
