@@ -54,7 +54,7 @@ export const processos = mysqlTable("processos", {
   id: int("id").autoincrement().primaryKey(),
   titulo: varchar("titulo", { length: 255 }).notNull(),
   clienteId: int("clienteId").notNull(),
-  status: mysqlEnum("status", ["Pendente", "Em Análise", "Protocolado", "Finalizado"]).default("Pendente").notNull(),
+  status: mysqlEnum("status", ["Pendente", "Em Análise", "Protocolado", "Finalizado", "Campo", "Análise/Escritório", "Pendente documento"]).default("Pendente").notNull(),
   prazoVencimento: timestamp("prazoVencimento"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

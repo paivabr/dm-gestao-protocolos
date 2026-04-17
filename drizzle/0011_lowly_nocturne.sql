@@ -1,0 +1,1 @@
+ALTER TABLE `processos` MODIFY COLUMN `status` enum('Pendente','Em Análise','Protocolado','Finalizado','Campo','Análise/Escritório','Pendente documento') NOT NULL DEFAULT 'Pendente';
