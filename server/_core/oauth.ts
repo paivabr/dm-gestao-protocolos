@@ -3,6 +3,7 @@ import type { Express, Request, Response } from "express";
 import * as auth from "../auth";
 import { getSessionCookieOptions } from "./cookies";
 import { handleGoogleCallback } from "../google-callback";
+import { debugGoogleAuthUrl } from "../debug-google";
 
 function getBodyParam(req: Request, key: string): string | undefined {
   const value = (req.body as Record<string, unknown>)[key];
@@ -87,5 +88,12 @@ export function registerOAuthRoutes(app: Express) {
    */
   app.get("/api/google-callback", async (req: Request, res: Response) => {
     await handleGoogleCallback(req, res);
+  });
+
+  /**
+   * GET /api/debug/google-auth-url - Debug endpoint to check Google auth URL
+   */
+  app.get("/api/debug/google-auth-url", async (req: Request, res: Response) => {
+    await debugGoogleAuthUrl(req, res);
   });
 }
