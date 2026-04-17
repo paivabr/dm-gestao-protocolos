@@ -424,6 +424,9 @@ export async function getProcessosDashboard() {
       emAnalise: allProcessos.filter(p => p.status === "Em Análise").length,
       protocolado: allProcessos.filter(p => p.status === "Protocolado").length,
       finalizado: allProcessos.filter(p => p.status === "Finalizado").length,
+      campo: allProcessos.filter(p => p.status === "Campo").length,
+      analiseEscritorio: allProcessos.filter(p => p.status === "Análise/Escritório").length,
+      pendenteDocumento: allProcessos.filter(p => p.status === "Pendente documento").length,
       vencendoHoje: allProcessos.filter(p => {
         if (!p.prazoVencimento) return false;
         const prazo = new Date(p.prazoVencimento);

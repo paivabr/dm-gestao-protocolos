@@ -44,6 +44,27 @@ export default function Dashboard() {
       color: "bg-green-50 text-green-600",
       borderColor: "border-green-200",
     },
+    {
+      title: "Campo",
+      value: stats?.campo || 0,
+      icon: MapPin,
+      color: "bg-red-50 text-red-600",
+      borderColor: "border-red-200",
+    },
+    {
+      title: "Análise/Escritório",
+      value: stats?.analiseEscritorio || 0,
+      icon: Briefcase,
+      color: "bg-indigo-50 text-indigo-600",
+      borderColor: "border-indigo-200",
+    },
+    {
+      title: "Pendente Documento",
+      value: stats?.pendenteDocumento || 0,
+      icon: AlertCircle,
+      color: "bg-yellow-50 text-yellow-600",
+      borderColor: "border-yellow-200",
+    },
 
   ];
 
@@ -58,7 +79,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
         {statCards.map((stat, index) => {
           const Icon = stat.icon;
           return (
