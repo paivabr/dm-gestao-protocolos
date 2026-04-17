@@ -248,7 +248,7 @@ export const appRouter = router({
         z.object({
           titulo: z.string().min(1, "Título é obrigatório"),
           clienteId: z.number(),
-          status: z.enum(["Pendente", "Em Análise", "Protocolado", "Finalizado"]),
+          status: z.enum(["Pendente", "Em Análise", "Protocolado", "Finalizado", "Campo", "Análise/Escritório", "Pendente documento"]),
           prazoVencimento: z.date().optional(),
         })
       )
@@ -287,7 +287,7 @@ export const appRouter = router({
           id: z.number(),
           titulo: z.string().optional(),
           clienteId: z.number().optional(),
-          status: z.enum(["Pendente", "Em Análise", "Protocolado", "Finalizado"]).optional(),
+          status: z.enum(["Pendente", "Em Análise", "Protocolado", "Finalizado", "Campo", "Análise/Escritório", "Pendente documento"]).optional(),
           prazoVencimento: z.date().optional(),
         })
       )
