@@ -1,11 +1,20 @@
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
+import { ENV } from './_core/env';
+
+if (!ENV.googleClientId || !ENV.googleClientSecret) {
+  console.warn('[Google Calendar] Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET');
+}
 
 const oauth2Client = new OAuth2Client(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  `${process.env.OAUTH_SERVER_URL || 'http://localhost:3000'}/api/google-callback`
+  ENV.googleClientId,
+  ENV.googleClientSecret,
+  `${ENV.oAuthServerUrl || 'http://localhost:3000'}/api/google-callback`
 );
+
+export function getOAuth2Client() {
+  return oauth2Client;
+}
 
 /**
  * Gera a URL de autorização do Google
