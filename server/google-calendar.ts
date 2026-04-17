@@ -13,7 +13,10 @@ const getRedirectUri = () => {
 };
 
 const redirectUri = getRedirectUri();
+console.log('[Google Calendar] NODE_ENV:', process.env.NODE_ENV);
+console.log('[Google Calendar] ENV.isProduction:', ENV.isProduction);
 console.log('[Google Calendar] Redirect URI:', redirectUri);
+console.log('[Google Calendar] OAUTH_SERVER_URL:', ENV.oAuthServerUrl);
 
 if (!ENV.googleClientId || !ENV.googleClientSecret) {
   console.error('[Google Calendar] Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET');

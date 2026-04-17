@@ -20,7 +20,10 @@ export function GoogleCalendarButton({ onConnected }: GoogleCalendarButtonProps)
       setIsLoading(true);
       const result = await getAuthUrl.refetch();
       
+      console.log('[GoogleCalendarButton] Auth URL result:', result.data);
+      
       if (result.data?.url) {
+        console.log('[GoogleCalendarButton] Opening auth URL:', result.data.url.substring(0, 100) + '...');
         // Abrir janela de autorização do Google
         const width = 500;
         const height = 600;
