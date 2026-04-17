@@ -848,7 +848,29 @@ export async function getStatusProtocoloList() {
   }
 
   try {
-    return await db.select().from(statusProtocolo);
+    const result = await db
+      .select({
+        id: statusProtocolo.id,
+        numeroProtocolo: statusProtocolo.numeroProtocolo,
+        clienteId: statusProtocolo.clienteId,
+        tipoProcesso: statusProtocolo.tipoProcesso,
+        dataAbertura: statusProtocolo.dataAbertura,
+        status: statusProtocolo.status,
+        cartorio: statusProtocolo.cartorio,
+        ultimaAtualizacao: statusProtocolo.ultimaAtualizacao,
+        createdAt: statusProtocolo.createdAt,
+        updatedAt: statusProtocolo.updatedAt,
+        cliente: {
+          id: clientes.id,
+          nome: clientes.nome,
+          cpfCnpj: clientes.cpfCnpj,
+          contato: clientes.contato,
+        },
+      })
+      .from(statusProtocolo)
+      .leftJoin(clientes, eq(statusProtocolo.clienteId, clientes.id));
+    
+    return result;
   } catch (error) {
     console.error("[Database] Failed to get status protocolo list:", error);
     return [];
@@ -863,7 +885,29 @@ export async function getStatusProtocoloById(id: number) {
   }
 
   try {
-    const result = await db.select().from(statusProtocolo).where(eq(statusProtocolo.id, id)).limit(1);
+    const result = await db
+      .select({
+        id: statusProtocolo.id,
+        numeroProtocolo: statusProtocolo.numeroProtocolo,
+        clienteId: statusProtocolo.clienteId,
+        tipoProcesso: statusProtocolo.tipoProcesso,
+        dataAbertura: statusProtocolo.dataAbertura,
+        status: statusProtocolo.status,
+        cartorio: statusProtocolo.cartorio,
+        ultimaAtualizacao: statusProtocolo.ultimaAtualizacao,
+        createdAt: statusProtocolo.createdAt,
+        updatedAt: statusProtocolo.updatedAt,
+        cliente: {
+          id: clientes.id,
+          nome: clientes.nome,
+          cpfCnpj: clientes.cpfCnpj,
+          contato: clientes.contato,
+        },
+      })
+      .from(statusProtocolo)
+      .leftJoin(clientes, eq(statusProtocolo.clienteId, clientes.id))
+      .where(eq(statusProtocolo.id, id))
+      .limit(1);
     return result.length > 0 ? result[0] : undefined;
   } catch (error) {
     console.error("[Database] Failed to get status protocolo:", error);

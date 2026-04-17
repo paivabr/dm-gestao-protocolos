@@ -612,15 +612,17 @@ export const appRouter = router({
               const googleEventId = await googleCalendar.createGoogleCalendarEvent(
                 userTokens.googleAccessToken,
                 {
-                  summary: input.titulo,
+                  title: input.titulo,
                   description: input.descricao || '',
-                  start: new Date(input.data),
-                  end: new Date(new Date(input.data).getTime() + 60 * 60 * 1000),
+                  startTime: new Date(input.data),
+                  endTime: new Date(new Date(input.data).getTime() + 60 * 60 * 1000),
                 }
               );
               
               if (googleEventId) {
+                if (googleEventId && typeof googleEventId === 'string') {
                 await db.updateCalendarioWithGoogleEvent(id, googleEventId);
+              }
               }
             }
           } catch (error) {
