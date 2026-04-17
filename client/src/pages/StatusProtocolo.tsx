@@ -24,6 +24,7 @@ export default function StatusProtocolo() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [searchProtocolo, setSearchProtocolo] = useState("");
+  const [searchCliente, setSearchCliente] = useState("");
   const [filterTipo, setFilterTipo] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterCartorio, setFilterCartorio] = useState("");
@@ -71,12 +72,13 @@ export default function StatusProtocolo() {
       const matchesProtocolo = p.numeroProtocolo
         .toLowerCase()
         .includes(searchProtocolo.toLowerCase());
+      const matchesCliente = !searchCliente || (p.cliente?.nome?.toLowerCase().includes(searchCliente.toLowerCase()) || false);
       const matchesTipo = !filterTipo || p.tipoProcesso === filterTipo;
       const matchesStatus = !filterStatus || p.status === filterStatus;
       const matchesCartorio = !filterCartorio || p.cartorio === filterCartorio;
-      return matchesProtocolo && matchesTipo && matchesStatus && matchesCartorio;
+      return matchesProtocolo && matchesCliente && matchesTipo && matchesStatus && matchesCartorio;
     });
-  }, [protocolosOrdenados, searchProtocolo, filterTipo, filterStatus, filterCartorio]);
+  }, [protocolosOrdenados, searchProtocolo, searchCliente, filterTipo, filterStatus, filterCartorio]);
 
   const handleAddTipo = () => {
     if (novoTipo && !tiposProcesso.includes(novoTipo)) {
@@ -392,12 +394,18 @@ export default function StatusProtocolo() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex gap-4 flex-wrap">
-            <Input
-              placeholder="Buscar protocolo..."
-              value={searchProtocolo}
-              onChange={(e) => setSearchProtocolo(e.target.value)}
-              className="flex-1 min-w-64"
-            />
+          <Input
+            placeholder="Buscar protocolo..."
+            value={searchProtocolo}
+            onChange={(e) => setSearchProtocolo(e.target.value)}
+            className="flex-1"
+          />
+          <Input
+            placeholder="Buscar cliente..."
+            value={searchCliente}
+            onChange={(e) => setSearchCliente(e.target.value)}
+            className="flex-1"
+          />
             <Select value={filterTipo} onValueChange={setFilterTipo}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Tipo de Processo" />

@@ -411,11 +411,12 @@ export async function getProcessosDashboard() {
   const db = await getDb();
   if (!db) {
     console.warn("[Database] Cannot get dashboard data: database not available");
-    return { pendentes: 0, emAnalise: 0, protocolado: 0, finalizado: 0, campo: 0, analiseEscritorio: 0, pendenteDocumento: 0, vencendoHoje: 0 };
+    return { pendentes: 0, emAnalise: 0, protocolado: 0, finalizado: 0, campo: 0, analiseEscritorio: 0, pendenteDocumento: 0, vencendoHoje: 0, statusProtocolo: 0 };
   }
 
   try {
     const allProcessos = await db.select().from(processos);
+    const allStatusProtocolo = await db.select().from(statusProtocolo);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -433,12 +434,13 @@ export async function getProcessosDashboard() {
         prazo.setHours(0, 0, 0, 0);
         return prazo.getTime() === today.getTime() && p.status !== "Finalizado";
       }).length,
+      statusProtocolo: allStatusProtocolo.length,
     };
 
     return stats;
   } catch (error) {
     console.error("[Database] Failed to get dashboard data:", error);
-    return { pendentes: 0, emAnalise: 0, protocolado: 0, finalizado: 0, campo: 0, analiseEscritorio: 0, pendenteDocumento: 0, vencendoHoje: 0 };
+    return { pendentes: 0, emAnalise: 0, protocolado: 0, finalizado: 0, campo: 0, analiseEscritorio: 0, pendenteDocumento: 0, vencendoHoje: 0, statusProtocolo: 0 };
   }
 }
 
