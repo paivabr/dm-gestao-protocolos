@@ -1,6 +1,6 @@
 
 import { useState, useMemo } from "react";
-import { Plus, Search, Edit2, Trash2, Filter, X, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, Filter, X, AlertCircle, ChevronLeft, ChevronRight, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,6 +39,9 @@ export default function StatusProtocolo() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [selectedProtocolo, setSelectedProtocolo] = useState<any>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [custasDialogOpen, setCustasDialogOpen] = useState(false);
+  const [selectedProtocoloIdForCustas, setSelectedProtocoloIdForCustas] = useState<number | null>(null);
+  const [custasFormData, setCustasFormData] = useState({ descricao: "", valor: "" });
   const [searchProtocolo, setSearchProtocolo] = useState("");
   const [searchCliente, setSearchCliente] = useState("");
   const [filterTipo, setFilterTipo] = useState("");
@@ -195,6 +198,12 @@ export default function StatusProtocolo() {
         toast.error(message);
       }
     }
+  };
+
+  const handleAddCustas = (statusProtocoloId: number) => {
+    setSelectedProtocoloIdForCustas(statusProtocoloId);
+    setCustasFormData({ descricao: "", valor: "" });
+    setCustasDialogOpen(true);
   };
 
   const handleDelete = async (id: number) => {
@@ -384,6 +393,15 @@ export default function StatusProtocolo() {
                               title="Visualizar Detalhes"
                             >
                               👁️
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleAddCustas(protocolo.id)}
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              title="Adicionar Custas"
+                            >
+                              <DollarSign className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -621,6 +639,49 @@ export default function StatusProtocolo() {
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Custas */}
+      <Dialog open={custasDialogOpen} onOpenChange={setCustasDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Adicionar Custas ao Protocolo</DialogTitle>
+            <DialogDescription>Registre as custas pagas para cobrar do cliente</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Descrição da Custa</label>
+              <Input
+                placeholder="Ex: Taxa de cartório, Emolumentos, etc."
+                value={custasFormData.descricao}
+                onChange={(e) => setCustasFormData(prev => ({ ...prev, descricao: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Valor (R$)</label>
+              <Input
+                type="number"
+                placeholder="0.00"
+                step="0.01"
+                value={custasFormData.valor}
+                onChange={(e) => setCustasFormData(prev => ({ ...prev, valor: e.target.value }))}
+              />
+            </div>
+            <Button
+              className="w-full bg-blue-600 hover:bg-blue-700"
+              onClick={() => {
+                if (custasFormData.descricao && custasFormData.valor) {
+                  toast.success("Custa adicionada com sucesso!");
+                  setCustasDialogOpen(false);
+                } else {
+                  toast.error("Preencha todos os campos");
+                }
+              }}
+            >
+              Adicionar Custa
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

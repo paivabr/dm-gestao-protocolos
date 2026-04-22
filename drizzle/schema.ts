@@ -61,6 +61,8 @@ export const processos = mysqlTable("processos", {
   clienteId: int("clienteId").notNull(),
   status: mysqlEnum("status", ["Pendente", "Em Análise", "Protocolado", "Finalizado", "Campo", "Análise/Escritório", "Pendente documento"]).default("Pendente").notNull(),
   prazoVencimento: timestamp("prazoVencimento"),
+  isArchived: tinyint("isArchived").default(0).notNull(),
+  dataArquivamento: timestamp("dataArquivamento"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

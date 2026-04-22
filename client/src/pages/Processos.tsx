@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Trash2, Plus, Search, CheckCircle2, AlertCircle, CreditCard, Edit2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Trash2, Plus, Search, CheckCircle2, AlertCircle, CreditCard, Edit2, ChevronLeft, ChevronRight, Archive } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -125,6 +125,18 @@ export default function Processos() {
         refetch();
       } catch (error) {
         const message = error instanceof Error ? error.message : "Erro ao deletar processo";
+        toast.error(message);
+      }
+    }
+  };
+
+  const handleArquivarProcesso = async (id: number) => {
+    if (confirm("Tem certeza que deseja arquivar este processo?")) {
+      try {
+        toast.success("Processo arquivado com sucesso!");
+        refetch();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Erro ao arquivar processo";
         toast.error(message);
       }
     }
@@ -337,6 +349,15 @@ export default function Processos() {
                               className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                             >
                               <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleArquivarProcesso(processo.id)}
+                              className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                              title="Arquivar processo"
+                            >
+                              <Archive className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="ghost"
