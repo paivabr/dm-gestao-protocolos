@@ -1,3 +1,148 @@
+var __defProp = Object.defineProperty;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __esm = (fn, res) => function __init() {
+  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+};
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+
+// server/pdf-generator.ts
+var pdf_generator_exports = {};
+__export(pdf_generator_exports, {
+  generateProcessosReport: () => generateProcessosReport,
+  generateProtocolosReport: () => generateProtocolosReport
+});
+import PDFDocument from "pdfkit";
+function generateProtocolosReport(protocolos) {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({
+      size: "A4",
+      margin: 40
+    });
+    const chunks = [];
+    doc.on("data", (chunk) => chunks.push(chunk));
+    doc.on("end", () => resolve(Buffer.concat(chunks)));
+    doc.on("error", reject);
+    doc.fontSize(24).font("Helvetica-Bold").text("Relat\xF3rio de Protocolos", { align: "center" });
+    doc.fontSize(10).font("Helvetica").text(`Gerado em: ${(/* @__PURE__ */ new Date()).toLocaleDateString("pt-BR")}`, { align: "center" });
+    doc.moveDown();
+    const totalDespesas = protocolos.reduce((sum, p) => sum + p.totalDespesas, 0);
+    const totalReceitas = protocolos.reduce((sum, p) => sum + p.totalReceitas, 0);
+    const totalRecebido = protocolos.reduce((sum, p) => sum + p.totalRecebido, 0);
+    doc.fontSize(12).font("Helvetica-Bold").text("Resumo Financeiro");
+    doc.fontSize(10).font("Helvetica");
+    doc.text(`Total de Despesas: R$ ${totalDespesas.toFixed(2)}`);
+    doc.text(`Total de Receitas: R$ ${totalReceitas.toFixed(2)}`);
+    doc.text(`Total Recebido: R$ ${totalRecebido.toFixed(2)}`);
+    doc.moveDown();
+    const tableTop = doc.y;
+    const col1 = 50;
+    const col2 = 150;
+    const col3 = 250;
+    const col4 = 350;
+    const col5 = 450;
+    const rowHeight = 20;
+    doc.fontSize(10).font("Helvetica-Bold");
+    doc.text("Protocolo", col1, tableTop);
+    doc.text("Cliente", col2, tableTop);
+    doc.text("Tipo", col3, tableTop);
+    doc.text("Status", col4, tableTop);
+    doc.text("Despesas", col5, tableTop);
+    doc.moveTo(50, tableTop + 15).lineTo(550, tableTop + 15).stroke();
+    doc.moveDown();
+    doc.fontSize(9).font("Helvetica");
+    protocolos.forEach((protocolo) => {
+      const y = doc.y;
+      doc.text(protocolo.numeroProtocolo, col1, y, { width: 90 });
+      doc.text(protocolo.clienteNome || "-", col2, y, { width: 90 });
+      doc.text(protocolo.tipoProcesso, col3, y, { width: 90 });
+      doc.text(protocolo.status, col4, y, { width: 90 });
+      doc.text(`R$ ${protocolo.totalDespesas.toFixed(2)}`, col5, y, { width: 90 });
+      doc.moveDown();
+      doc.fontSize(8).font("Helvetica").fillColor("gray");
+      doc.text(`Despesas Pagas: R$ ${protocolo.totalDespesasPagas.toFixed(2)} | Pendentes: R$ ${protocolo.totalDespesasPendentes.toFixed(2)}`, col1, doc.y, { width: 500 });
+      doc.text(`Receitas: R$ ${protocolo.totalReceitas.toFixed(2)} | Recebido: R$ ${protocolo.totalRecebido.toFixed(2)} | Pendente: R$ ${protocolo.totalPendente.toFixed(2)}`, col1, doc.y, { width: 500 });
+      if (protocolo.isArchived && protocolo.dataArquivamento) {
+        doc.text(`[ARQUIVADO em ${new Date(protocolo.dataArquivamento).toLocaleDateString("pt-BR")}]`, col1, doc.y, { width: 500 });
+        doc.text(`Custas: R$ ${parseFloat(protocolo.custas).toFixed(2)} | Despesas: R$ ${parseFloat(protocolo.despesas).toFixed(2)} | A Pagar: R$ ${parseFloat(protocolo.valorAPagar).toFixed(2)} | Falta Pagar: R$ ${parseFloat(protocolo.valorFaltaPagar).toFixed(2)}`, col1, doc.y, { width: 500 });
+      }
+      doc.fillColor("black");
+      doc.moveDown();
+      if (doc.y > 700) {
+        doc.addPage();
+      }
+    });
+    doc.moveDown();
+    doc.fontSize(8).font("Helvetica").fillColor("gray");
+    doc.text("DM Gest\xE3o de Protocolos - Sistema de Gerenciamento", { align: "center" });
+    doc.end();
+  });
+}
+function generateProcessosReport(processos2) {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({
+      size: "A4",
+      margin: 40
+    });
+    const chunks = [];
+    doc.on("data", (chunk) => chunks.push(chunk));
+    doc.on("end", () => resolve(Buffer.concat(chunks)));
+    doc.on("error", reject);
+    doc.fontSize(24).font("Helvetica-Bold").text("Relat\xF3rio de Processos", { align: "center" });
+    doc.fontSize(10).font("Helvetica").text(`Gerado em: ${(/* @__PURE__ */ new Date()).toLocaleDateString("pt-BR")}`, { align: "center" });
+    doc.moveDown();
+    const totalProcessos = processos2.length;
+    const processosAtivos = processos2.filter((p) => p.isArchived === 0).length;
+    const processosArquivados = processos2.filter((p) => p.isArchived === 1).length;
+    doc.fontSize(12).font("Helvetica-Bold").text("Resumo");
+    doc.fontSize(10).font("Helvetica");
+    doc.text(`Total de Processos: ${totalProcessos}`);
+    doc.text(`Processos Ativos: ${processosAtivos}`);
+    doc.text(`Processos Arquivados: ${processosArquivados}`);
+    doc.moveDown();
+    const tableTop = doc.y;
+    const col1 = 50;
+    const col2 = 180;
+    const col3 = 320;
+    const col4 = 420;
+    doc.fontSize(10).font("Helvetica-Bold");
+    doc.text("T\xEDtulo", col1, tableTop);
+    doc.text("Cliente", col2, tableTop);
+    doc.text("Status", col3, tableTop);
+    doc.text("Vencimento", col4, tableTop);
+    doc.moveTo(50, tableTop + 15).lineTo(550, tableTop + 15).stroke();
+    doc.moveDown();
+    doc.fontSize(9).font("Helvetica");
+    processos2.forEach((processo) => {
+      const y = doc.y;
+      doc.text(processo.titulo, col1, y, { width: 120 });
+      doc.text(processo.clienteNome || "-", col2, y, { width: 130 });
+      doc.text(processo.status, col3, y, { width: 90 });
+      doc.text(processo.prazoVencimento ? new Date(processo.prazoVencimento).toLocaleDateString("pt-BR") : "-", col4, y, { width: 90 });
+      doc.moveDown();
+      doc.fontSize(8).font("Helvetica").fillColor("gray");
+      const statusText = processo.isArchived === 1 ? `Arquivado em ${new Date(processo.dataArquivamento).toLocaleDateString("pt-BR")}` : "Ativo";
+      doc.text(statusText, col1, doc.y, { width: 500 });
+      doc.fillColor("black");
+      doc.moveDown();
+      if (doc.y > 700) {
+        doc.addPage();
+      }
+    });
+    doc.moveDown();
+    doc.fontSize(8).font("Helvetica").fillColor("gray");
+    doc.text("DM Gest\xE3o de Protocolos - Sistema de Gerenciamento", { align: "center" });
+    doc.end();
+  });
+}
+var init_pdf_generator = __esm({
+  "server/pdf-generator.ts"() {
+    "use strict";
+  }
+});
+
 // server/_core/index.ts
 import "dotenv/config";
 import express2 from "express";
@@ -15,7 +160,7 @@ var NOT_ADMIN_ERR_MSG = "You do not have required permission (10002)";
 import crypto2 from "crypto";
 
 // server/db.ts
-import { eq, and, like, sql, asc } from "drizzle-orm";
+import { eq, and, like, sql, asc, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 
 // drizzle/schema.ts
@@ -149,6 +294,13 @@ var arquivo = mysqlTable("arquivo", {
   observacoesArquivo: text("observacoesArquivo"),
   totalGasto: decimal("totalGasto", { precision: 10, scale: 2 }).default("0.00"),
   totalRecebido: decimal("totalRecebido", { precision: 10, scale: 2 }).default("0.00"),
+  // Novos campos para controle completo de valores
+  custas: decimal("custas", { precision: 10, scale: 2 }).default("0.00"),
+  despesas: decimal("despesas", { precision: 10, scale: 2 }).default("0.00"),
+  valorAPagar: decimal("valorAPagar", { precision: 10, scale: 2 }).default("0.00"),
+  valorFaltaPagar: decimal("valorFaltaPagar", { precision: 10, scale: 2 }).default("0.00"),
+  valorBaixa: decimal("valorBaixa", { precision: 10, scale: 2 }).default("0.00"),
+  valorRecebido: decimal("valorRecebido", { precision: 10, scale: 2 }).default("0.00"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
 });
@@ -1087,6 +1239,12 @@ async function getArquivados() {
       observacoesArquivo: arquivo.observacoesArquivo,
       totalGasto: arquivo.totalGasto,
       totalRecebido: arquivo.totalRecebido,
+      custas: arquivo.custas,
+      despesas: arquivo.despesas,
+      valorAPagar: arquivo.valorAPagar,
+      valorFaltaPagar: arquivo.valorFaltaPagar,
+      valorBaixa: arquivo.valorBaixa,
+      valorRecebido: arquivo.valorRecebido,
       clienteNome: clientes.nome,
       numeroProtocolo: statusProtocolo.numeroProtocolo,
       processoTitulo: processos.titulo
@@ -1105,6 +1263,25 @@ async function deleteArquivo(id) {
     return true;
   } catch (error) {
     console.error("[Database] Failed to delete arquivo:", error);
+    return false;
+  }
+}
+async function updateArquivo(id, data) {
+  const db = await getDb();
+  if (!db) return false;
+  try {
+    const updateData = {};
+    if (data.custas !== void 0) updateData.custas = data.custas;
+    if (data.despesas !== void 0) updateData.despesas = data.despesas;
+    if (data.valorAPagar !== void 0) updateData.valorAPagar = data.valorAPagar;
+    if (data.valorFaltaPagar !== void 0) updateData.valorFaltaPagar = data.valorFaltaPagar;
+    if (data.valorBaixa !== void 0) updateData.valorBaixa = data.valorBaixa;
+    if (data.valorRecebido !== void 0) updateData.valorRecebido = data.valorRecebido;
+    if (data.observacoesArquivo !== void 0) updateData.observacoesArquivo = data.observacoesArquivo;
+    await db.update(arquivo).set(updateData).where(eq(arquivo.id, id));
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to update arquivo:", error);
     return false;
   }
 }
@@ -1270,6 +1447,81 @@ async function deleteCartorio(id) {
   } catch (error) {
     console.error("[Database] Failed to delete cart\xF3rio:", error);
     return false;
+  }
+}
+async function getRelatorioProtocolos(protocoloIds) {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    const result = await db.select({
+      id: statusProtocolo.id,
+      numeroProtocolo: statusProtocolo.numeroProtocolo,
+      tipoProcesso: statusProtocolo.tipoProcesso,
+      dataAbertura: statusProtocolo.dataAbertura,
+      status: statusProtocolo.status,
+      cartorio: statusProtocolo.cartorio,
+      observacoes: statusProtocolo.observacoes,
+      clienteNome: clientes.nome,
+      clienteCpfCnpj: clientes.cpfCnpj,
+      clienteContato: clientes.contato
+    }).from(statusProtocolo).leftJoin(clientes, eq(statusProtocolo.clienteId, clientes.id)).where(inArray(statusProtocolo.id, protocoloIds));
+    const enriched = await Promise.all(
+      result.map(async (proto) => {
+        const despesasList = await getDespesasByProtocolo(proto.id);
+        const receitasList = await getReceitasByProtocolo(proto.id);
+        const totalDespesas = despesasList.reduce((sum, d) => sum + parseFloat(d.valor), 0);
+        const totalDespesasPagas = despesasList.filter((d) => d.pago === 1).reduce((sum, d) => sum + parseFloat(d.valor), 0);
+        const totalDespesasPendentes = totalDespesas - totalDespesasPagas;
+        const totalReceitas = receitasList.reduce((sum, r) => sum + parseFloat(r.valor), 0);
+        const totalRecebido = receitasList.filter((r) => r.recebido === 1).reduce((sum, r) => sum + parseFloat(r.valor), 0);
+        const totalPendente = totalReceitas - totalRecebido;
+        const arquivoData = await db.select().from(arquivo).where(eq(arquivo.statusProtocoloId, proto.id)).limit(1);
+        const arquivoInfo = arquivoData.length > 0 ? arquivoData[0] : null;
+        return {
+          ...proto,
+          totalDespesas,
+          totalDespesasPagas,
+          totalDespesasPendentes,
+          totalReceitas,
+          totalRecebido,
+          totalPendente,
+          isArchived: !!arquivoInfo,
+          dataArquivamento: arquivoInfo?.dataArquivamento,
+          custas: arquivoInfo?.custas || "0.00",
+          despesas: arquivoInfo?.despesas || "0.00",
+          valorAPagar: arquivoInfo?.valorAPagar || "0.00",
+          valorFaltaPagar: arquivoInfo?.valorFaltaPagar || "0.00",
+          valorBaixa: arquivoInfo?.valorBaixa || "0.00",
+          valorRecebido: arquivoInfo?.valorRecebido || "0.00"
+        };
+      })
+    );
+    return enriched;
+  } catch (error) {
+    console.error("[Database] Failed to get relatorio protocolos:", error);
+    return [];
+  }
+}
+async function getRelatorioProcessos(processoIds) {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    const result = await db.select({
+      id: processos.id,
+      titulo: processos.titulo,
+      clienteId: processos.clienteId,
+      status: processos.status,
+      prazoVencimento: processos.prazoVencimento,
+      isArchived: processos.isArchived,
+      dataArquivamento: processos.dataArquivamento,
+      clienteNome: clientes.nome,
+      clienteCpfCnpj: clientes.cpfCnpj,
+      clienteContato: clientes.contato
+    }).from(processos).leftJoin(clientes, eq(processos.clienteId, clientes.id)).where(inArray(processos.id, processoIds));
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to get relatorio processos:", error);
+    return [];
   }
 }
 
@@ -2539,6 +2791,20 @@ var appRouter = router({
       if (!ctx.user?.id) throw new TRPCError3({ code: "UNAUTHORIZED" });
       if (ctx.user.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
       return await deleteArquivo(input.id);
+    }),
+    atualizar: protectedProcedure.input(z2.object({
+      id: z2.number(),
+      custas: z2.string().optional(),
+      despesas: z2.string().optional(),
+      valorAPagar: z2.string().optional(),
+      valorFaltaPagar: z2.string().optional(),
+      valorBaixa: z2.string().optional(),
+      valorRecebido: z2.string().optional(),
+      observacoesArquivo: z2.string().optional()
+    })).mutation(async ({ input, ctx }) => {
+      if (!ctx.user?.id) throw new TRPCError3({ code: "UNAUTHORIZED" });
+      if (ctx.user.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
+      return await updateArquivo(input.id, input);
     })
   }),
   despesas: router({
@@ -2601,6 +2867,36 @@ var appRouter = router({
     deletar: protectedProcedure.input(z2.object({ id: z2.number() })).mutation(async ({ input, ctx }) => {
       if (!ctx.user?.id) throw new TRPCError3({ code: "UNAUTHORIZED" });
       return await deleteReceita(input.id);
+    })
+  }),
+  // ============ RELATORIO ============
+  relatorio: router({
+    gerarProtocolosPDF: protectedProcedure.input(z2.object({ protocoloIds: z2.array(z2.number()) })).mutation(async ({ input, ctx }) => {
+      if (!ctx.user?.id) throw new TRPCError3({ code: "UNAUTHORIZED" });
+      try {
+        console.log("[PDF] Gerando relat\xF3rio para protocolos:", input.protocoloIds);
+        const { generateProtocolosReport: generateProtocolosReport2 } = await Promise.resolve().then(() => (init_pdf_generator(), pdf_generator_exports));
+        const protocolos = await getRelatorioProtocolos(input.protocoloIds);
+        console.log("[PDF] Dados obtidos:", protocolos.length, "registros");
+        const pdfBuffer = await generateProtocolosReport2(protocolos);
+        console.log("[PDF] PDF gerado:", pdfBuffer.length, "bytes");
+        return { success: true, pdf: pdfBuffer.toString("base64") };
+      } catch (error) {
+        console.error("[PDF] Erro:", error);
+        throw new TRPCError3({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao gerar PDF" });
+      }
+    }),
+    gerarProcessosPDF: protectedProcedure.input(z2.object({ processoIds: z2.array(z2.number()) })).mutation(async ({ input, ctx }) => {
+      if (!ctx.user?.id) throw new TRPCError3({ code: "UNAUTHORIZED" });
+      try {
+        const { generateProcessosReport: generateProcessosReport2 } = await Promise.resolve().then(() => (init_pdf_generator(), pdf_generator_exports));
+        const processos2 = await getRelatorioProcessos(input.processoIds);
+        const pdfBuffer = await generateProcessosReport2(processos2);
+        return { success: true, pdf: pdfBuffer.toString("base64") };
+      } catch (error) {
+        console.error("[PDF] Failed to generate processos report:", error);
+        throw new TRPCError3({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao gerar PDF" });
+      }
     })
   }),
   googleCalendar: googleCalendarRouter,
