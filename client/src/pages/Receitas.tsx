@@ -17,12 +17,8 @@ export default function Receitas() {
     valor: "",
   });
 
-  const { data: protocolos = [] } = trpc.statusProtocolo.listPaginated.useQuery({
-    page: 1,
-    limit: 1000,
-  });
-
-  const protocolosData = (protocolos as any)?.data || [];
+  const { data: protocolos = [] } = trpc.statusProtocolo.list.useQuery();
+  const protocolosData = protocolos || [];
 
   const receitas = useMemo(() => {
     if (!selectedProtocolo) return [];
