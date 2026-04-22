@@ -1,5 +1,4 @@
 import mysql from 'mysql2/promise';
-import fs from 'fs';
 
 const conn = await mysql.createConnection({
   host: 'monorail.proxy.rlwy.net',
@@ -9,19 +8,21 @@ const conn = await mysql.createConnection({
   database: 'railway'
 });
 
-const sql = fs.readFileSync('drizzle/0019_cooing_infant_terrible.sql', 'utf-8');
-const statements = sql.split(';').filter(s => s.trim());
-
-for (const stmt of statements) {
-  if (stmt.trim()) {
-    try {
-      await conn.execute(stmt);
-      console.log('✅ Executado:', stmt.substring(0, 50) + '...');
-    } catch (e) {
-      console.log('⚠️ Erro:', e.message);
-    }
+try {
+  // Executar migração
+  await conn.execute("ALTER TABLE `statusProtocolo` DROP INDEX `statusProtocolo_numeroProtocolo_unique`");
+  console.log('✅ Índice UNIQUE removido');
+  
+  await conn.execute("ALTER TABLE `statusProtocolo` MODIFY COLUMN `tipoProcesso` enum('Georreferenciamento','Certidão de Localização') NOT NULL");
+  console.log('✅ Enum tipoProcesso atualizado');
+  
+  console.log('✅ Migração aplicada com sucesso!');
+} catch (error) {
+  if (error.message.includes('check that column/key exists')) {
+    console.log('✅ Índice já foi removido anteriormente');
+  } else {
+    console.error('❌ Erro:', error.message);
   }
 }
 
 await conn.end();
-console.log('✅ Migração concluída!');

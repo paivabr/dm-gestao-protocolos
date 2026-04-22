@@ -52,7 +52,7 @@ export default function StatusProtocolo() {
   const [tiposProcesso, setTiposProcesso] = useState([
     "Georreferenciamento",
     "Certidão de Localização",
-    "Averbação de Qualificação",
+    ,
   ]);
   const [cartorios, setCartorios] = useState([
     "Colatina",
@@ -134,7 +134,7 @@ export default function StatusProtocolo() {
           id: editingId,
           clienteId: parseInt(formData.clienteId),
           numeroProtocolo: formData.numeroProtocolo,
-          tipoprocesso: formData.tipoProcesso as "Georreferenciamento" | "Certidão de Localização" | "Averbação de Qualificação",
+          tipoprocesso: formData.tipoProcesso as "Georreferenciamento" | "Certidão de Localização" | ,
           dataAbertura: new Date(formData.dataAbertura),
           status: formData.status as any,
           cartorio: formData.cartorio,
@@ -145,7 +145,7 @@ export default function StatusProtocolo() {
         await createMutation.mutateAsync({
           clienteId: parseInt(formData.clienteId),
           numeroProtocolo: formData.numeroProtocolo,
-          tipoProcesso: formData.tipoProcesso as "Georreferenciamento" | "Certidão de Localização" | "Averbação de Qualificação",
+          tipoProcesso: formData.tipoProcesso as "Georreferenciamento" | "Certidão de Localização" | ,
           dataAbertura: new Date(formData.dataAbertura),
           status: formData.status as any,
           cartorio: formData.cartorio,

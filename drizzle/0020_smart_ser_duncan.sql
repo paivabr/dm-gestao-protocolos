@@ -1,0 +1,2 @@
+ALTER TABLE `statusProtocolo` DROP INDEX `statusProtocolo_numeroProtocolo_unique`;--> statement-breakpoint
+ALTER TABLE `statusProtocolo` MODIFY COLUMN `tipoProcesso` enum('Georreferenciamento','Certidão de Localização') NOT NULL;
