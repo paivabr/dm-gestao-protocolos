@@ -1290,14 +1290,35 @@ export async function arquivarProtocolo(statusProtocoloId: number, observacoesAr
     // Get the statusProtocolo to extract clienteId
     const statusProto = await db.select().from(statusProtocolo).where(eq(statusProtocolo.id, statusProtocoloId)).limit(1);
     const clienteId = statusProto.length > 0 ? statusProto[0].clienteId : null;
+
+    // Calculate financial data
+    const despesasList = await getDespesasByProtocolo(statusProtocoloId);
+    const receitasList = await getReceitasByProtocolo(statusProtocoloId);
+    
+    const totalDespesas = despesasList.reduce((sum, d) => sum + parseFloat(d.valor as any), 0);
+    const totalDespesasPagas = despesasList
+      .filter(d => d.pago === 1)
+      .reduce((sum, d) => sum + parseFloat(d.valor as any), 0);
+    const totalDespesasPendentes = totalDespesas - totalDespesasPagas;
+
+    const totalReceitas = receitasList.reduce((sum, r) => sum + parseFloat(r.valor as any), 0);
+    const totalRecebido = receitasList
+      .filter(r => r.recebido === 1)
+      .reduce((sum, r) => sum + parseFloat(r.valor as any), 0);
     
     // Insert into arquivo
     const result = await db.insert(arquivo).values({
       statusProtocoloId,
       clienteId: clienteId || undefined,
       observacoesArquivo,
-      totalGasto: "0.00",
-      totalRecebido: "0.00",
+      totalGasto: totalDespesas.toFixed(2),
+      totalRecebido: totalRecebido.toFixed(2),
+      custas: totalDespesas.toFixed(2),
+      despesas: totalDespesas.toFixed(2),
+      valorAPagar: totalDespesasPendentes.toFixed(2),
+      valorFaltaPagar: totalDespesasPendentes.toFixed(2),
+      valorRecebido: totalRecebido.toFixed(2),
+      valorBaixa: totalRecebido.toFixed(2),
     });
     
     // Mark statusProtocolo as archived
