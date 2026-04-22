@@ -130,10 +130,7 @@ var statusProtocolo = mysqlTable("statusProtocolo", {
   id: int("id").autoincrement().primaryKey(),
   clienteId: int("clienteId"),
   numeroProtocolo: varchar("numeroProtocolo", { length: 50 }).notNull(),
-  tipoProcesso: mysqlEnum("tipoProcesso", [
-    "Georreferenciamento",
-    "Certid\xE3o de Localiza\xE7\xE3o"
-  ]).notNull(),
+  tipoProcesso: varchar("tipoProcesso", { length: 100 }).notNull(),
   dataAbertura: timestamp("dataAbertura").notNull(),
   status: mysqlEnum("status", ["Pronto", "Reingressado", "Reingressado p\xF3s pagamento", "Nota de Pagamento", "Exig\xEAncia", "Protocolado", "Vencido", "Campo", "An\xE1lise/Escrit\xF3rio", "Pendente documento"]).default("Pronto").notNull(),
   cartorio: varchar("cartorio", { length: 100 }).notNull(),
@@ -2457,7 +2454,7 @@ var appRouter = router({
     create: protectedProcedure.input(z2.object({
       clienteId: z2.number(),
       numeroProtocolo: z2.string(),
-      tipoProcesso: z2.enum(["Georreferenciamento", "Certid\xE3o de Localiza\xE7\xE3o"]),
+      tipoProcesso: z2.string(),
       dataAbertura: z2.date(),
       status: z2.enum(["Pronto", "Reingressado", "Reingressado p\xF3s pagamento", "Nota de Pagamento", "Exig\xEAncia", "Protocolado", "Vencido"]).default("Pronto"),
       cartorio: z2.string(),
@@ -2480,7 +2477,7 @@ var appRouter = router({
       id: z2.number(),
       clienteId: z2.number().optional(),
       numeroProtocolo: z2.string().optional(),
-      tipoProcesso: z2.enum(["Georreferenciamento", "Certid\xE3o de Localiza\xE7\xE3o"]).optional(),
+      tipoProcesso: z2.string().optional(),
       dataAbertura: z2.date().optional(),
       status: z2.enum(["Pronto", "Reingressado", "Reingressado p\xF3s pagamento", "Nota de Pagamento", "Exig\xEAncia", "Protocolado", "Vencido"]).optional(),
       cartorio: z2.string().optional(),

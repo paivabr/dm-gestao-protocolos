@@ -162,6 +162,13 @@
       "when": 1776873651000,
       "tag": "0022_neat_mongu",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "5",
+      "when": 1776878912677,
+      "tag": "0023_faulty_queen_noir",
+      "breakpoints": true
     }
   ]
 }

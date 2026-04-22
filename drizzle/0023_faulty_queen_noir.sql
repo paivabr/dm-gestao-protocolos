@@ -1,0 +1,1 @@
+ALTER TABLE `statusProtocolo` MODIFY COLUMN `tipoProcesso` varchar(100) NOT NULL;
