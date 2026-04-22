@@ -947,6 +947,123 @@ export const appRouter = router({
         return await db.searchStatusProtocolo(input.numeroProtocolo, input.clienteId);
       }),
   }),
+
+  arquivo: router({
+    criar: protectedProcedure
+      .input(z.object({
+        statusProtocoloId: z.number(),
+        processoId: z.number().optional(),
+        observacoes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        const id = await db.arquivarProtocolo(input.statusProtocoloId, input.processoId, input.observacoes);
+        return { success: id !== null, id };
+      }),
+
+    listar: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        return await db.getArquivados();
+      }),
+
+    deletar: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        return await db.deleteArquivo(input.id);
+      }),
+  }),
+
+  despesas: router({
+    criar: protectedProcedure
+      .input(z.object({
+        statusProtocoloId: z.number(),
+        processoId: z.number().optional(),
+        descricao: z.string(),
+        valor: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const id = await db.createDespesa(input as any);
+        return { success: id !== null, id };
+      }),
+
+    listarPorProtocolo: protectedProcedure
+      .input(z.object({ statusProtocoloId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getDespesasByProtocolo(input.statusProtocoloId);
+      }),
+
+    atualizar: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        descricao: z.string().optional(),
+        valor: z.string().optional(),
+        pago: z.number().optional(),
+        dataPagamento: z.date().optional(),
+        observacoes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const { id, ...data } = input;
+        return await db.updateDespesa(id, data as any);
+      }),
+
+    deletar: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        return await db.deleteDespesa(input.id);
+      }),
+  }),
+
+  receitas: router({
+    criar: protectedProcedure
+      .input(z.object({
+        statusProtocoloId: z.number(),
+        processoId: z.number().optional(),
+        descricao: z.string(),
+        valor: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const id = await db.createReceita(input as any);
+        return { success: id !== null, id };
+      }),
+
+    listarPorProtocolo: protectedProcedure
+      .input(z.object({ statusProtocoloId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getReceitasByProtocolo(input.statusProtocoloId);
+      }),
+
+    atualizar: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        descricao: z.string().optional(),
+        valor: z.string().optional(),
+        recebido: z.number().optional(),
+        dataRecebimento: z.date().optional(),
+        observacoes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const { id, ...data } = input;
+        return await db.updateReceita(id, data as any);
+      }),
+
+    deletar: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        return await db.deleteReceita(input.id);
+      }),
+  }),
+
   googleCalendar: googleCalendarRouter,
 });
 

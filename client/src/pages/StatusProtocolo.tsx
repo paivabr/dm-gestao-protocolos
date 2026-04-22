@@ -172,6 +172,20 @@ export default function StatusProtocolo() {
     setDialogOpen(true);
   };
 
+  const arquivoMutation = trpc.arquivo.criar.useMutation();
+  const handleArquivar = async (statusProtocoloId: number) => {
+    if (confirm("Tem certeza que deseja arquivar este protocolo?")) {
+      try {
+        await arquivoMutation.mutateAsync({ statusProtocoloId });
+        toast.success("Protocolo arquivado com sucesso!");
+        refetch();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Erro ao arquivar protocolo";
+        toast.error(message);
+      }
+    }
+  };
+
   const handleDelete = async (id: number) => {
     if (confirm("Tem certeza que deseja deletar este protocolo?")) {
       try {
@@ -352,6 +366,15 @@ export default function StatusProtocolo() {
                               className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                             >
                               <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleArquivar(protocolo.id)}
+                              className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                              title="Arquivar"
+                            >
+                              📦
                             </Button>
                             <Button
                               variant="ghost"

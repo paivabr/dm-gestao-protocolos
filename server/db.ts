@@ -1,6 +1,6 @@
 import { eq, and, like, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, clientes, processos, checklistItens, auditoria, calendario, parcelas, statusProtocolo, Cliente, InsertCliente, Processo, InsertProcesso, ChecklistItem, InsertChecklistItem, Auditoria, InsertAuditoria, Calendario, InsertCalendario, Parcela, InsertParcela, StatusProtocolo, InsertStatusProtocolo } from "../drizzle/schema";
+import { InsertUser, users, clientes, processos, checklistItens, auditoria, calendario, parcelas, statusProtocolo, arquivo, despesas, receitas, Cliente, InsertCliente, Processo, InsertProcesso, ChecklistItem, InsertChecklistItem, Auditoria, InsertAuditoria, Calendario, InsertCalendario, Parcela, InsertParcela, StatusProtocolo, InsertStatusProtocolo, Arquivo, InsertArquivo, Despesa, InsertDespesa, Receita, InsertReceita } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -1244,5 +1244,161 @@ export async function getStatusProtocoloPaginated(page: number = 1, limit: numbe
   } catch (error) {
     console.error("[Database] Failed to get status protocolo paginated:", error);
     return { data: [], total: 0, page, limit };
+  }
+}
+
+
+// ============ ARQUIVO FUNCTIONS ============
+
+export async function arquivarProtocolo(statusProtocoloId: number, processoId?: number, observacoes?: string): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    const result = await db.insert(arquivo).values({
+      statusProtocoloId,
+      processoId,
+      observacoes,
+      totalGasto: "0",
+      totalRecebido: "0",
+    });
+    return (result as any)[0]?.insertId as number || null;
+  } catch (error) {
+    console.error("[Database] Failed to archive protocolo:", error);
+    return null;
+  }
+}
+
+export async function getArquivados(): Promise<any[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    const result = await db.select().from(arquivo);
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to get arquivados:", error);
+    return [];
+  }
+}
+
+export async function deleteArquivo(id: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    await db.delete(arquivo).where(eq(arquivo.id, id));
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to delete arquivo:", error);
+    return false;
+  }
+}
+
+// ============ DESPESAS FUNCTIONS ============
+
+export async function createDespesa(data: InsertDespesa): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    const result = await db.insert(despesas).values(data);
+    return (result as any)[0]?.insertId as number || null;
+  } catch (error) {
+    console.error("[Database] Failed to create despesa:", error);
+    return null;
+  }
+}
+
+export async function getDespesasByProtocolo(statusProtocoloId: number): Promise<Despesa[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    const result = await db.select().from(despesas).where(eq(despesas.statusProtocoloId, statusProtocoloId));
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to get despesas:", error);
+    return [];
+  }
+}
+
+export async function updateDespesa(id: number, data: Partial<InsertDespesa>): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    await db.update(despesas).set(data).where(eq(despesas.id, id));
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to update despesa:", error);
+    return false;
+  }
+}
+
+export async function deleteDespesa(id: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    await db.delete(despesas).where(eq(despesas.id, id));
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to delete despesa:", error);
+    return false;
+  }
+}
+
+// ============ RECEITAS FUNCTIONS ============
+
+export async function createReceita(data: InsertReceita): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    const result = await db.insert(receitas).values(data);
+    return (result as any)[0]?.insertId as number || null;
+  } catch (error) {
+    console.error("[Database] Failed to create receita:", error);
+    return null;
+  }
+}
+
+export async function getReceitasByProtocolo(statusProtocoloId: number): Promise<Receita[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    const result = await db.select().from(receitas).where(eq(receitas.statusProtocoloId, statusProtocoloId));
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to get receitas:", error);
+    return [];
+  }
+}
+
+export async function updateReceita(id: number, data: Partial<InsertReceita>): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    await db.update(receitas).set(data).where(eq(receitas.id, id));
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to update receita:", error);
+    return false;
+  }
+}
+
+export async function deleteReceita(id: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    await db.delete(receitas).where(eq(receitas.id, id));
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to delete receita:", error);
+    return false;
   }
 }
