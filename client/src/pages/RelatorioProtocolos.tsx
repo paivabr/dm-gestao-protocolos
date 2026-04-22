@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Download, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +13,8 @@ export default function RelatorioProtocolos() {
   const [selectedProtocolos, setSelectedProtocolos] = useState<number[]>([]);
   const [selectedProcessos, setSelectedProcessos] = useState<number[]>([]);
   const [relatorioType, setRelatorioType] = useState("protocolo");
+  const [filterNumero, setFilterNumero] = useState("");
+  const [filterNome, setFilterNome] = useState("");
 
   const { data: protocolos = [] } = trpc.statusProtocolo.listPaginated.useQuery({
     page: 1,
@@ -61,12 +63,60 @@ export default function RelatorioProtocolos() {
   const protocolosData = (protocolos as any)?.data || [];
   const processosData = (processos as any)?.data || [];
 
+  // Filtrar dados
+  const protocolosFiltrados = useMemo(() => {
+    return protocolosData.filter((p: any) => {
+      const matchNumero = !filterNumero || (p.numeroProtocolo && p.numeroProtocolo.toString().includes(filterNumero));
+      const matchNome = !filterNome || (p.cliente?.nome && p.cliente.nome.toLowerCase().includes(filterNome.toLowerCase()));
+      return matchNumero && matchNome;
+    });
+  }, [protocolosData, filterNumero, filterNome]);
+
+  const processosFiltrados = useMemo(() => {
+    return processosData.filter((p: any) => {
+      const matchNumero = !filterNumero || (p.id && p.id.toString().includes(filterNumero));
+      const matchNome = !filterNome || (p.titulo && p.titulo.toLowerCase().includes(filterNome.toLowerCase())) || (p.cliente?.nome && p.cliente.nome.toLowerCase().includes(filterNome.toLowerCase()));
+      return matchNumero && matchNome;
+    });
+  }, [processosData, filterNumero, filterNome]);
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-slate-900">Relatório de Protocolos</h1>
         <p className="text-slate-600 mt-2">Gere relatórios unificados de protocolos e processos</p>
       </div>
+
+      {/* Filtros */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Filtros de Busca</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Número do Processo/Protocolo</label>
+              <input
+                type="text"
+                placeholder="Buscar por número..."
+                value={filterNumero}
+                onChange={(e) => setFilterNumero(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-md"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Nome do Cliente</label>
+              <input
+                type="text"
+                placeholder="Buscar por nome..."
+                value={filterNome}
+                onChange={(e) => setFilterNome(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-md"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Tipo de Relatório */}
       <Card>
@@ -113,10 +163,10 @@ export default function RelatorioProtocolos() {
                   <TableRow>
                     <TableHead className="w-12">
                       <Checkbox
-                        checked={selectedProtocolos.length === protocolosData.length}
+                        checked={selectedProtocolos.length === protocolosFiltrados.length && protocolosFiltrados.length > 0}
                         onCheckedChange={(checked) => {
                           if (checked) {
-                            setSelectedProtocolos(protocolosData.map((p: any) => p.id));
+                            setSelectedProtocolos(protocolosFiltrados.map((p: any) => p.id));
                           } else {
                             setSelectedProtocolos([]);
                           }
@@ -130,7 +180,7 @@ export default function RelatorioProtocolos() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {protocolosData.map((protocolo: any) => (
+                  {protocolosFiltrados.map((protocolo: any) => (
                     <TableRow key={protocolo.id}>
                       <TableCell>
                         <Checkbox
@@ -169,10 +219,10 @@ export default function RelatorioProtocolos() {
                   <TableRow>
                     <TableHead className="w-12">
                       <Checkbox
-                        checked={selectedProcessos.length === processosData.length}
+                        checked={selectedProcessos.length === processosFiltrados.length && processosFiltrados.length > 0}
                         onCheckedChange={(checked) => {
                           if (checked) {
-                            setSelectedProcessos(processosData.map((p: any) => p.id));
+                            setSelectedProcessos(processosFiltrados.map((p: any) => p.id));
                           } else {
                             setSelectedProcessos([]);
                           }
@@ -186,7 +236,7 @@ export default function RelatorioProtocolos() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {processosData.map((processo: any) => (
+                  {processosFiltrados.map((processo: any) => (
                     <TableRow key={processo.id}>
                       <TableCell>
                         <Checkbox

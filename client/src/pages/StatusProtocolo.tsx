@@ -200,10 +200,32 @@ export default function StatusProtocolo() {
     }
   };
 
+  const custasCreateMutation = trpc.despesas.criar.useMutation();
+
   const handleAddCustas = (statusProtocoloId: number) => {
     setSelectedProtocoloIdForCustas(statusProtocoloId);
     setCustasFormData({ descricao: "", valor: "" });
     setCustasDialogOpen(true);
+  };
+
+  const handleSaveCustas = async () => {
+    if (!custasFormData.descricao || !custasFormData.valor || !selectedProtocoloIdForCustas) {
+      toast.error("Preencha todos os campos");
+      return;
+    }
+    try {
+      await custasCreateMutation.mutateAsync({
+        statusProtocoloId: selectedProtocoloIdForCustas,
+        descricao: custasFormData.descricao,
+        valor: custasFormData.valor,
+      });
+      toast.success("Custa adicionada com sucesso!");
+      setCustasDialogOpen(false);
+      setCustasFormData({ descricao: "", valor: "" });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro ao adicionar custa";
+      toast.error(message);
+    }
   };
 
   const handleDelete = async (id: number) => {
@@ -670,16 +692,10 @@ export default function StatusProtocolo() {
             </div>
             <Button
               className="w-full bg-blue-600 hover:bg-blue-700"
-              onClick={() => {
-                if (custasFormData.descricao && custasFormData.valor) {
-                  toast.success("Custa adicionada com sucesso!");
-                  setCustasDialogOpen(false);
-                } else {
-                  toast.error("Preencha todos os campos");
-                }
-              }}
+              onClick={handleSaveCustas}
+              disabled={custasCreateMutation.isPending}
             >
-              Adicionar Custa
+              {custasCreateMutation.isPending ? "Salvando..." : "Adicionar Custa"}
             </Button>
           </div>
         </DialogContent>

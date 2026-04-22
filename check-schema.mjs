@@ -1,15 +1,17 @@
 import mysql from 'mysql2/promise';
 
-const connection = await mysql.createConnection(process.env.DATABASE_URL);
+const conn = await mysql.createConnection({
+  host: 'monorail.proxy.rlwy.net',
+  port: 19333,
+  user: 'root',
+  password: 'fBBnBNMoKhouqhcshloztbkJeTTVKewI',
+  database: 'railway'
+});
 
-try {
-  const [columns] = await connection.execute(`DESCRIBE users`);
-  console.log('Colunas da tabela users:');
-  columns.forEach(col => {
-    console.log(`  - ${col.Field}: ${col.Type}`);
-  });
-} catch (e) {
-  console.error('✗ Erro:', e.message);
-}
+const [cols] = await conn.execute('DESCRIBE arquivo');
+console.log('Schema da tabela arquivo:');
+cols.forEach(c => {
+  console.log(`${c.Field}: ${c.Type} (Null: ${c.Null}, Default: ${c.Default})`);
+});
 
-await connection.end();
+await conn.end();
