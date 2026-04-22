@@ -1,6 +1,6 @@
-import { eq, and, like, sql } from "drizzle-orm";
+import { eq, and, like, sql, asc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, clientes, processos, checklistItens, auditoria, calendario, parcelas, statusProtocolo, arquivo, despesas, receitas, Cliente, InsertCliente, Processo, InsertProcesso, ChecklistItem, InsertChecklistItem, Auditoria, InsertAuditoria, Calendario, InsertCalendario, Parcela, InsertParcela, StatusProtocolo, InsertStatusProtocolo, Arquivo, InsertArquivo, Despesa, InsertDespesa, Receita, InsertReceita } from "../drizzle/schema";
+import { InsertUser, users, clientes, processos, checklistItens, auditoria, calendario, parcelas, statusProtocolo, arquivo, despesas, receitas, tiposProcesso, cartorios, Cliente, InsertCliente, Processo, InsertProcesso, ChecklistItem, InsertChecklistItem, Auditoria, InsertAuditoria, Calendario, InsertCalendario, Parcela, InsertParcela, StatusProtocolo, InsertStatusProtocolo, Arquivo, InsertArquivo, Despesa, InsertDespesa, Receita, InsertReceita, TipoProcesso, InsertTipoProcesso, Cartorio, InsertCartorio } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -1439,6 +1439,99 @@ export async function deleteReceita(id: number): Promise<boolean> {
     return true;
   } catch (error) {
     console.error("[Database] Failed to delete receita:", error);
+    return false;
+  }
+}
+
+
+// ============ TIPOS DE PROCESSO FUNCTIONS ============
+
+export async function getTiposProcesso(): Promise<TipoProcesso[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get tipos de processo: database not available");
+    return [];
+  }
+
+  try {
+    return await db.select().from(tiposProcesso).where(eq(tiposProcesso.ativo, 1)).orderBy(asc(tiposProcesso.nome));
+  } catch (error) {
+    console.error("[Database] Failed to get tipos de processo:", error);
+    return [];
+  }
+}
+
+export async function createTipoProcesso(data: InsertTipoProcesso): Promise<number | null> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot create tipo de processo: database not available");
+    return null;
+  }
+
+  try {
+    const result = await db.insert(tiposProcesso).values(data);
+    return result[0].insertId as number;
+  } catch (error) {
+    console.error("[Database] Failed to create tipo de processo:", error);
+    return null;
+  }
+}
+
+export async function deleteTipoProcesso(id: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    await db.update(tiposProcesso).set({ ativo: 0 }).where(eq(tiposProcesso.id, id));
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to delete tipo de processo:", error);
+    return false;
+  }
+}
+
+// ============ CARTÓRIOS FUNCTIONS ============
+
+export async function getCartorios(): Promise<Cartorio[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get cartórios: database not available");
+    return [];
+  }
+
+  try {
+    return await db.select().from(cartorios).where(eq(cartorios.ativo, 1)).orderBy(asc(cartorios.nome));
+  } catch (error) {
+    console.error("[Database] Failed to get cartórios:", error);
+    return [];
+  }
+}
+
+export async function createCartorio(data: InsertCartorio): Promise<number | null> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot create cartório: database not available");
+    return null;
+  }
+
+  try {
+    const result = await db.insert(cartorios).values(data);
+    return result[0].insertId as number;
+  } catch (error) {
+    console.error("[Database] Failed to create cartório:", error);
+    return null;
+  }
+}
+
+export async function deleteCartorio(id: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    await db.update(cartorios).set({ ativo: 0 }).where(eq(cartorios.id, id));
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to delete cartório:", error);
     return false;
   }
 }

@@ -1067,6 +1067,58 @@ export const appRouter = router({
   }),
 
   googleCalendar: googleCalendarRouter,
+
+  // ============ TIPOS DE PROCESSO ============
+  tiposProcesso: router({
+    list: publicProcedure.query(async () => {
+      return await db.getTiposProcesso();
+    }),
+
+    create: protectedProcedure
+      .input(
+        z.object({
+          nome: z.string().min(1, "Nome é obrigatório"),
+          descricao: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        return await db.createTipoProcesso(input);
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        return await db.deleteTipoProcesso(input.id);
+      }),
+  }),
+
+  // ============ CARTÓRIOS ============
+  cartorios: router({
+    list: publicProcedure.query(async () => {
+      return await db.getCartorios();
+    }),
+
+    create: protectedProcedure
+      .input(
+        z.object({
+          nome: z.string().min(1, "Nome é obrigatório"),
+          localizacao: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        return await db.createCartorio(input);
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        return await db.deleteCartorio(input.id);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

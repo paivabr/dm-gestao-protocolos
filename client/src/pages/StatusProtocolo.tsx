@@ -32,9 +32,13 @@ export default function StatusProtocolo() {
   });
   const utils = trpc.useUtils();
   const { data: clientes = [] } = trpc.clientes.list.useQuery();
+  const { data: tiposProcessoData = [] } = trpc.tiposProcesso.list.useQuery();
+  const { data: cartoriosData = [] } = trpc.cartorios.list.useQuery();
   const createMutation = trpc.statusProtocolo.create.useMutation();
   const updateMutation = trpc.statusProtocolo.update.useMutation();
   const deleteMutation = trpc.statusProtocolo.delete.useMutation();
+  const createTipoMutation = trpc.tiposProcesso.create.useMutation();
+  const createCartorioMutation = trpc.cartorios.create.useMutation();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -49,21 +53,12 @@ export default function StatusProtocolo() {
   const [filterStatus, setFilterStatus] = useState("");
   const [filterCartorio, setFilterCartorio] = useState("");
   
-  // Estados para tipos de processo e cartórios dinâmicos
-  const [tiposProcesso, setTiposProcesso] = useState([
-    "Georreferenciamento",
-    "Certidão de Localização",
-  ]);
-  const [cartorios, setCartorios] = useState([
-    "Colatina",
-    "Santa Teresa",
-    "Linares",
-    "João Neiva",
-    "Marialândia",
-  ]);
-  
   const [novoTipo, setNovoTipo] = useState("");
   const [novoCartorio, setNovoCartorio] = useState("");
+  
+  // Mapear dados dinâmicos para nomes
+  const tiposProcessoNames = tiposProcessoData.map((t: any) => t.nome);
+  const cartoriosNames = cartoriosData.map((c: any) => c.nome);
 
   const [formData, setFormData] = useState({
     clienteId: "",
@@ -103,21 +98,31 @@ export default function StatusProtocolo() {
     });
   }, [protocolosOrdenados, searchProtocolo, searchCliente, filterTipo, filterStatus, filterCartorio]);
 
-  const handleAddTipo = () => {
-    if (novoTipo && !tiposProcesso.includes(novoTipo)) {
-      setTiposProcesso([...tiposProcesso, novoTipo]);
-      setFormData({ ...formData, tipoProcesso: novoTipo });
-      setNovoTipo("");
-      toast.success("Tipo de processo adicionado!");
+  const handleAddTipo = async () => {
+    if (novoTipo && !tiposProcessoNames.includes(novoTipo)) {
+      try {
+        await createTipoMutation.mutateAsync({ nome: novoTipo });
+        setFormData({ ...formData, tipoProcesso: novoTipo });
+        setNovoTipo("");
+        utils.tiposProcesso.list.invalidate();
+        toast.success("Tipo de processo adicionado!");
+      } catch (error) {
+        toast.error("Erro ao adicionar tipo de processo");
+      }
     }
   };
 
-  const handleAddCartorio = () => {
-    if (novoCartorio && !cartorios.includes(novoCartorio)) {
-      setCartorios([...cartorios, novoCartorio]);
-      setFormData({ ...formData, cartorio: novoCartorio });
-      setNovoCartorio("");
-      toast.success("Cartório adicionado!");
+  const handleAddCartorio = async () => {
+    if (novoCartorio && !cartoriosNames.includes(novoCartorio)) {
+      try {
+        await createCartorioMutation.mutateAsync({ nome: novoCartorio });
+        setFormData({ ...formData, cartorio: novoCartorio });
+        setNovoCartorio("");
+        utils.cartorios.list.invalidate();
+        toast.success("Cartório adicionado!");
+      } catch (error) {
+        toast.error("Erro ao adicionar cartório");
+      }
     }
   };
 
@@ -319,7 +324,7 @@ export default function StatusProtocolo() {
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  {tiposProcesso.map(tipo => (
+                  {tiposProcessoNames.map((tipo: string) => (
                     <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
                   ))}
                 </SelectContent>
@@ -351,7 +356,7 @@ export default function StatusProtocolo() {
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  {cartorios.map(cartorio => (
+                  {cartoriosNames.map((cartorio: string) => (
                     <SelectItem key={cartorio} value={cartorio}>{cartorio}</SelectItem>
                   ))}
                 </SelectContent>
@@ -539,7 +544,7 @@ export default function StatusProtocolo() {
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
                   <SelectContent>
-                    {tiposProcesso.map(tipo => (
+                    {tiposProcessoNames.map((tipo: string) => (
                       <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
                     ))}
                   </SelectContent>
@@ -586,7 +591,7 @@ export default function StatusProtocolo() {
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
                   <SelectContent>
-                    {cartorios.map(cartorio => (
+                    {cartoriosNames.map((cartorio: string) => (
                       <SelectItem key={cartorio} value={cartorio}>{cartorio}</SelectItem>
                     ))}
                   </SelectContent>
