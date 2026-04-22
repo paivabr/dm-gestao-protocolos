@@ -133,7 +133,7 @@ export default function StatusProtocolo() {
           id: editingId,
           clienteId: parseInt(formData.clienteId),
           numeroProtocolo: formData.numeroProtocolo,
-          tipoprocesso: formData.tipoProcesso as "Georreferenciamento" | "Certidão de Localização",
+          tipoProcesso: formData.tipoProcesso as "Georreferenciamento" | "Certidão de Localização",
           dataAbertura: new Date(formData.dataAbertura),
           status: formData.status as any,
           cartorio: formData.cartorio,

@@ -18,12 +18,12 @@ export default function RelatorioProtocolos() {
 
   const { data: protocolos = [] } = trpc.statusProtocolo.listPaginated.useQuery({
     page: 1,
-    limit: 1000,
+    limit: 100,
   });
 
   const { data: processos = [] } = trpc.processos.listPaginated.useQuery({
     page: 1,
-    limit: 1000,
+    limit: 100,
   });
 
   const handleSelectProtocolo = (id: number) => {

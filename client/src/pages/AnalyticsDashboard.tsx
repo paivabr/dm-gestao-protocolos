@@ -5,12 +5,12 @@ import { trpc } from "@/lib/trpc";
 export default function AnalyticsDashboard() {
   const { data: protocolos = [] } = trpc.statusProtocolo.listPaginated.useQuery({
     page: 1,
-    limit: 1000,
+    limit: 100,
   });
 
   const { data: processos = [] } = trpc.processos.listPaginated.useQuery({
     page: 1,
-    limit: 1000,
+    limit: 100,
   });
 
   const { data: clientes = [] } = trpc.clientes.list.useQuery();

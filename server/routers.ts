@@ -900,7 +900,7 @@ export const appRouter = router({
         id: z.number(),
         clienteId: z.number().optional(),
         numeroProtocolo: z.string().optional(),
-        tipoprocesso: z.enum(["Georreferenciamento", "Certidão de Localização"]).optional(),
+        tipoProcesso: z.enum(["Georreferenciamento", "Certidão de Localização"]).optional(),
         dataAbertura: z.date().optional(),
         status: z.enum(["Pronto", "Reingressado", "Reingressado pós pagamento", "Nota de Pagamento", "Exigência", "Protocolado", "Vencido"]).optional(),
         cartorio: z.string().optional(),

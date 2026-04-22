@@ -19,7 +19,7 @@ export default function Despesas() {
 
   const { data: protocolos = [] } = trpc.statusProtocolo.listPaginated.useQuery({
     page: 1,
-    limit: 1000,
+    limit: 100,
   });
 
   const { data: despesas = [], refetch } = trpc.despesas.listarPorProtocolo.useQuery(
