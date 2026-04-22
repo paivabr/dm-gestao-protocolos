@@ -3,7 +3,7 @@
 .pnpm-store/
 
 # Build outputs
-dist/
+# dist/  # Comentado para permitir deploy no Railway
 build/
 *.dist
 
