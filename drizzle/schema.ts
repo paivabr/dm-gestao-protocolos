@@ -164,11 +164,10 @@ export type InsertStatusProtocolo = typeof statusProtocolo.$inferInsert;
 export const arquivo = mysqlTable("arquivo", {
   id: int("id").autoincrement().primaryKey(),
   statusProtocoloId: int("statusProtocoloId").notNull(),
-  processoId: int("processoId"),
   dataArquivamento: timestamp("dataArquivamento").defaultNow().notNull(),
-  observacoes: text("observacoes"),
-  totalGasto: decimal("totalGasto", { precision: 10, scale: 2 }).default("0"),
-  totalRecebido: decimal("totalRecebido", { precision: 10, scale: 2 }).default("0"),
+  observacoesArquivo: text("observacoesArquivo"),
+  totalGasto: decimal("totalGasto", { precision: 10, scale: 2 }).default("0.00"),
+  totalRecebido: decimal("totalRecebido", { precision: 10, scale: 2 }).default("0.00"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -180,9 +179,9 @@ export type InsertArquivo = typeof arquivo.$inferInsert;
 export const despesas = mysqlTable("despesas", {
   id: int("id").autoincrement().primaryKey(),
   statusProtocoloId: int("statusProtocoloId").notNull(),
-  processoId: int("processoId"),
   descricao: varchar("descricao", { length: 255 }).notNull(),
   valor: decimal("valor", { precision: 10, scale: 2 }).notNull(),
+  dataDespesa: timestamp("dataDespesa").defaultNow().notNull(),
   pago: tinyint("pago").default(0).notNull(),
   dataPagamento: timestamp("dataPagamento"),
   observacoes: text("observacoes"),
@@ -197,9 +196,9 @@ export type InsertDespesa = typeof despesas.$inferInsert;
 export const receitas = mysqlTable("receitas", {
   id: int("id").autoincrement().primaryKey(),
   statusProtocoloId: int("statusProtocoloId").notNull(),
-  processoId: int("processoId"),
   descricao: varchar("descricao", { length: 255 }).notNull(),
   valor: decimal("valor", { precision: 10, scale: 2 }).notNull(),
+  dataReceita: timestamp("dataReceita").defaultNow().notNull(),
   recebido: tinyint("recebido").default(0).notNull(),
   dataRecebimento: timestamp("dataRecebimento"),
   observacoes: text("observacoes"),
