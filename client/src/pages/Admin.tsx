@@ -298,10 +298,10 @@ function PermissionsManager({ userId, userName }: { userId: number; userName: st
   useEffect(() => {
     if (getPermissionsQuery.data) {
       setPermissions({
-        canViewDespesas: getPermissionsQuery.data.canViewDespesas ?? false,
-        canViewRelatorio: getPermissionsQuery.data.canViewRelatorio ?? false,
         ...getPermissionsQuery.data,
         canViewArchivo: getPermissionsQuery.data.canViewArchivo ?? false,
+        canViewDespesas: getPermissionsQuery.data.canViewDespesas ?? false,
+        canViewRelatorio: getPermissionsQuery.data.canViewRelatorio ?? false,
       });
     }
   }, [getPermissionsQuery.data]);

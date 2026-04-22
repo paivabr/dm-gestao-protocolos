@@ -201,6 +201,9 @@ export default function StatusProtocolo() {
   };
 
   const custasCreateMutation = trpc.despesas.criar.useMutation();
+  const despesasQuery = selectedProtocoloIdForCustas 
+    ? trpc.despesas.listarPorProtocolo.useQuery({ statusProtocoloId: selectedProtocoloIdForCustas })
+    : { data: [], isLoading: false, refetch: () => {} };
 
   const handleAddCustas = (statusProtocoloId: number) => {
     setSelectedProtocoloIdForCustas(statusProtocoloId);
@@ -222,6 +225,8 @@ export default function StatusProtocolo() {
       toast.success("Custa adicionada com sucesso!");
       setCustasDialogOpen(false);
       setCustasFormData({ descricao: "", valor: "" });
+      void despesasQuery.refetch();
+      void refetch();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Erro ao adicionar custa";
       toast.error(message);
@@ -659,6 +664,28 @@ export default function StatusProtocolo() {
                   <p className="text-sm">{selectedProtocolo.observacoes}</p>
                 </div>
               )}
+              <div className="border-t pt-4">
+                <p className="text-sm font-semibold text-slate-600 mb-3">Custas/Despesas</p>
+                {despesasQuery.data && despesasQuery.data.length > 0 ? (
+                  <div className="space-y-2">
+                    {despesasQuery.data.map((despesa: any) => (
+                      <div key={despesa.id} className="flex justify-between items-center p-2 bg-slate-50 rounded">
+                        <div>
+                          <p className="text-sm font-medium">{despesa.descricao}</p>
+                          <p className="text-xs text-slate-500">{new Date(despesa.dataDespesa).toLocaleDateString()}</p>
+                        </div>
+                        <p className="font-semibold">R$ {parseFloat(despesa.valor).toFixed(2)}</p>
+                      </div>
+                    ))}
+                    <div className="border-t pt-2 mt-2 flex justify-between font-semibold">
+                      <span>Total:</span>
+                      <span>R$ {despesasQuery.data.reduce((sum: number, d: any) => sum + parseFloat(d.valor), 0).toFixed(2)}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500">Nenhuma custa registrada</p>
+                )}
+              </div>
             </div>
           )}
         </DialogContent>
