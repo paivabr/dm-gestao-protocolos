@@ -14,9 +14,10 @@ import Calendario from "./pages/Calendario";
 import Perfil from "./pages/Perfil";
 import RecuperarSenha from "./pages/RecuperarSenha";
 import StatusProtocolo from "./pages/StatusProtocolo";
+import Despesas from "./pages/Despesas";
 import { useAuth } from "./_core/hooks/useAuth";
 import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger } from "@/components/ui/sidebar";
-import { LayoutDashboard, Users, FileText, LogOut, Menu, Settings, Calendar, User } from "lucide-react";
+import { LayoutDashboard, Users, FileText, LogOut, Menu, Settings, Calendar, User, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
@@ -91,13 +92,22 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
             onClick={() => navigate("/calendario")}
           />
           {user?.role === "admin" && (
-            <NavItem
-              icon={FileText}
-              label="Arquivo"
-              href="/arquivo"
-              open={sidebarOpen}
-              onClick={() => navigate("/arquivo")}
-            />
+            <>
+              <NavItem
+                icon={FileText}
+                label="Arquivo"
+                href="/arquivo"
+                open={sidebarOpen}
+                onClick={() => navigate("/arquivo")}
+              />
+              <NavItem
+                icon={DollarSign}
+                label="Custas"
+                href="/despesas"
+                open={sidebarOpen}
+                onClick={() => navigate("/despesas")}
+              />
+            </>
           )}
           <NavItem
             icon={User}
@@ -223,6 +233,7 @@ function Router() {
         <Route path="/status-protocolo" component={StatusProtocolo} />
         <Route path="/calendario" component={Calendario} />
         <Route path="/arquivo" component={Arquivo} />
+        <Route path="/despesas" component={Despesas} />
         <Route path="/perfil" component={Perfil} />
         <Route path="/admin" component={Admin} />
         <Route path="/404" component={NotFound} />
