@@ -202,6 +202,13 @@ export const arquivo = mysqlTable("arquivo", {
   observacoesArquivo: text("observacoesArquivo"),
   totalGasto: decimal("totalGasto", { precision: 10, scale: 2 }).default("0.00"),
   totalRecebido: decimal("totalRecebido", { precision: 10, scale: 2 }).default("0.00"),
+  // Novos campos para controle completo de valores
+  custas: decimal("custas", { precision: 10, scale: 2 }).default("0.00"),
+  despesas: decimal("despesas", { precision: 10, scale: 2 }).default("0.00"),
+  valorAPagar: decimal("valorAPagar", { precision: 10, scale: 2 }).default("0.00"),
+  valorFaltaPagar: decimal("valorFaltaPagar", { precision: 10, scale: 2 }).default("0.00"),
+  valorBaixa: decimal("valorBaixa", { precision: 10, scale: 2 }).default("0.00"),
+  valorRecebido: decimal("valorRecebido", { precision: 10, scale: 2 }).default("0.00"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

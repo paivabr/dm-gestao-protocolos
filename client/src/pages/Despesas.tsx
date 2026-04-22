@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Plus, Trash2, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,16 +12,37 @@ import { toast } from "sonner";
 export default function Despesas() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedProtocolo, setSelectedProtocolo] = useState<string>("");
+  const [selectedProcesso, setSelectedProcesso] = useState<string>("");
   const [formData, setFormData] = useState({
     descricao: "",
     valor: "",
   });
 
-  const { data: protocolos = [] } = trpc.statusProtocolo.listPaginated.useQuery({
+  // Carregar protocolos
+  const { data: protocolosResponse } = trpc.statusProtocolo.listPaginated.useQuery({
     page: 1,
     limit: 100,
   });
 
+  const protocolos = useMemo(() => {
+    if (!protocolosResponse) return [];
+    if (Array.isArray(protocolosResponse)) return protocolosResponse;
+    return (protocolosResponse as any)?.data || [];
+  }, [protocolosResponse]);
+
+  // Carregar processos
+  const { data: processosResponse } = trpc.processos.listPaginated.useQuery({
+    page: 1,
+    limit: 100,
+  });
+
+  const processos = useMemo(() => {
+    if (!processosResponse) return [];
+    if (Array.isArray(processosResponse)) return processosResponse;
+    return (processosResponse as any)?.data || [];
+  }, [processosResponse]);
+
+  // Carregar despesas do protocolo selecionado
   const { data: despesas = [] } = trpc.despesas.listarPorProtocolo.useQuery(
     { statusProtocoloId: parseInt(selectedProtocolo) },
     { enabled: !!selectedProtocolo }
@@ -36,8 +57,9 @@ export default function Despesas() {
       setDialogOpen(false);
       utils.despesas.listarPorProtocolo.invalidate();
     },
-    onError: (error) => {
-      toast.error(error.message);
+    onError: (error: any) => {
+      console.error("Erro ao criar despesa:", error);
+      toast.error(error?.message || "Erro ao adicionar despesa");
     },
   });
 
@@ -46,8 +68,9 @@ export default function Despesas() {
       toast.success("Despesa atualizada!");
       utils.despesas.listarPorProtocolo.invalidate();
     },
-    onError: (error) => {
-      toast.error(error.message);
+    onError: (error: any) => {
+      console.error("Erro ao atualizar despesa:", error);
+      toast.error(error?.message || "Erro ao atualizar despesa");
     },
   });
 
@@ -56,50 +79,73 @@ export default function Despesas() {
       toast.success("Despesa removida!");
       utils.despesas.listarPorProtocolo.invalidate();
     },
-    onError: (error) => {
-      toast.error(error.message);
+    onError: (error: any) => {
+      console.error("Erro ao deletar despesa:", error);
+      toast.error(error?.message || "Erro ao remover despesa");
     },
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!selectedProtocolo) {
       toast.error("Selecione um protocolo");
       return;
     }
+    
     if (!formData.descricao || !formData.valor) {
       toast.error("Preencha todos os campos");
       return;
     }
 
-    await createMutation.mutateAsync({
-      statusProtocoloId: parseInt(selectedProtocolo),
-      descricao: formData.descricao,
-      valor: formData.valor,
-    });
+    const valor = parseFloat(formData.valor);
+    if (isNaN(valor) || valor <= 0) {
+      toast.error("Valor deve ser maior que zero");
+      return;
+    }
+
+    try {
+      await createMutation.mutateAsync({
+        statusProtocoloId: parseInt(selectedProtocolo),
+        descricao: formData.descricao,
+        valor: formData.valor,
+      });
+    } catch (error) {
+      console.error("Erro no handleSubmit:", error);
+    }
   };
 
   const handleTogglePago = async (despesa: any) => {
-    await updateMutation.mutateAsync({
-      id: despesa.id,
-      pago: despesa.pago ? 0 : 1,
-      dataPagamento: despesa.pago ? undefined : new Date(),
-    });
+    try {
+      await updateMutation.mutateAsync({
+        id: despesa.id,
+        pago: despesa.pago ? 0 : 1,
+        dataPagamento: despesa.pago ? undefined : new Date(),
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar status:", error);
+    }
   };
 
   const handleDelete = async (id: number) => {
     if (confirm("Tem certeza que deseja deletar esta despesa?")) {
-      await deleteMutation.mutateAsync({ id });
+      try {
+        await deleteMutation.mutateAsync({ id });
+      } catch (error) {
+        console.error("Erro ao deletar:", error);
+      }
     }
   };
 
+  // Calcular totais
   const totalDespesas = despesas.reduce((sum, d) => sum + parseFloat(d.valor || "0"), 0);
   const totalPago = despesas
     .filter((d) => d.pago)
     .reduce((sum, d) => sum + parseFloat(d.valor || "0"), 0);
   const totalPendente = totalDespesas - totalPago;
 
-  const protocoloSelecionado = (protocolos as any)?.data?.find((p: any) => p.id === parseInt(selectedProtocolo));
+  const protocoloSelecionado = protocolos.find((p: any) => p.id === parseInt(selectedProtocolo));
+  const processoSelecionado = processos.find((p: any) => p.id === parseInt(selectedProcesso));
 
   return (
     <div className="space-y-6">
@@ -108,26 +154,50 @@ export default function Despesas() {
         <p className="text-slate-600 mt-2">Gerencie custas pagas e adicionais dos protocolos</p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Selecionar Protocolo</CardTitle>
-          <CardDescription>Escolha um protocolo para visualizar suas despesas</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Select value={selectedProtocolo} onValueChange={setSelectedProtocolo}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione um protocolo..." />
-            </SelectTrigger>
-            <SelectContent>
-              {(protocolos as any)?.data?.map((p: any) => (
-                <SelectItem key={p.id} value={p.id.toString()}>
-                  {p.numeroProtocolo} - {p.cliente?.nome || "Sem cliente"}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </CardContent>
-      </Card>
+      {/* Seleção dupla: Protocolo + Processo */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Selecionar Protocolo</CardTitle>
+            <CardDescription>Escolha um protocolo</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Select value={selectedProtocolo} onValueChange={setSelectedProtocolo}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um protocolo..." />
+              </SelectTrigger>
+              <SelectContent>
+                {protocolos.map((p: any) => (
+                  <SelectItem key={p.id} value={p.id.toString()}>
+                    {p.numeroProtocolo} - {p.cliente?.nome || "Sem cliente"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Selecionar Processo</CardTitle>
+            <CardDescription>Escolha um processo (opcional)</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Select value={selectedProcesso} onValueChange={setSelectedProcesso}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um processo..." />
+              </SelectTrigger>
+              <SelectContent>
+                {processos.map((p: any) => (
+                  <SelectItem key={p.id} value={p.id.toString()}>
+                    {p.titulo} - {p.cliente?.nome || "Sem cliente"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
+      </div>
 
       {selectedProtocolo && (
         <>
@@ -159,16 +229,46 @@ export default function Despesas() {
             </Card>
           </div>
 
+          {/* Informações do Protocolo */}
+          {protocoloSelecionado && (
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-xs text-slate-600">Protocolo</p>
+                    <p className="font-semibold text-slate-900">{protocoloSelecionado.numeroProtocolo}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-600">Cliente</p>
+                    <p className="font-semibold text-slate-900">{protocoloSelecionado.cliente?.nome || "-"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-600">Tipo</p>
+                    <p className="font-semibold text-slate-900">{protocoloSelecionado.tipoProcesso || "-"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-600">Status</p>
+                    <p className="font-semibold text-slate-900">{protocoloSelecionado.status || "-"}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Tabela de Despesas */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Despesas</CardTitle>
                 <CardDescription>
-                  Protocolo: {protocoloSelecionado?.numeroProtocolo} - {protocoloSelecionado?.cliente?.nome}
+                  {processoSelecionado ? `Processo: ${processoSelecionado.titulo}` : "Todas as despesas do protocolo"}
                 </CardDescription>
               </div>
-              <Button onClick={() => setDialogOpen(true)} className="gap-2">
+              <Button 
+                onClick={() => setDialogOpen(true)} 
+                className="gap-2"
+                disabled={!selectedProtocolo}
+              >
                 <Plus className="h-4 w-4" />
                 Nova Despesa
               </Button>
@@ -208,6 +308,7 @@ export default function Despesas() {
                                 size="sm"
                                 onClick={() => handleTogglePago(despesa)}
                                 className={despesa.pago ? "text-green-600" : "text-amber-600"}
+                                disabled={updateMutation.isPending}
                               >
                                 {despesa.pago ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
                               </Button>
@@ -216,6 +317,7 @@ export default function Despesas() {
                                 size="sm"
                                 onClick={() => handleDelete(despesa.id)}
                                 className="text-red-600"
+                                disabled={deleteMutation.isPending}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -257,7 +359,11 @@ export default function Despesas() {
                     onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
                   />
                 </div>
-                <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={createMutation.isPending}>
+                <Button 
+                  type="submit" 
+                  className="w-full bg-blue-600 hover:bg-blue-700" 
+                  disabled={createMutation.isPending}
+                >
                   {createMutation.isPending ? "Salvando..." : "Adicionar Despesa"}
                 </Button>
               </form>

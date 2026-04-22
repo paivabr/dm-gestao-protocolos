@@ -15,6 +15,7 @@ export default function RelatorioProtocolos() {
   const [relatorioType, setRelatorioType] = useState("protocolo");
   const [filterNumero, setFilterNumero] = useState("");
   const [filterNome, setFilterNome] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const { data: protocolos = [] } = trpc.statusProtocolo.listPaginated.useQuery({
     page: 1,
@@ -25,6 +26,9 @@ export default function RelatorioProtocolos() {
     page: 1,
     limit: 100,
   });
+
+  const gerarProtocolosPDF = trpc.relatorio.gerarProtocolosPDF.useMutation();
+  const gerarProcessosPDF = trpc.relatorio.gerarProcessosPDF.useMutation();
 
   const handleSelectProtocolo = (id: number) => {
     setSelectedProtocolos(prev =>
@@ -48,15 +52,60 @@ export default function RelatorioProtocolos() {
       return;
     }
 
+    setIsGenerating(true);
     try {
-      toast.success("Gerando relatório PDF...");
-      // Implementar geração de PDF
-      // Por enquanto, apenas mostra mensagem de sucesso
-      setTimeout(() => {
-        toast.success("Relatório gerado com sucesso!");
-      }, 1000);
+      if (relatorioType === "protocolo") {
+        const result = await gerarProtocolosPDF.mutateAsync({
+          protocoloIds: selectedProtocolos,
+        });
+
+        if (result.success && result.pdf) {
+          // Convert base64 to blob and download
+          const binaryString = atob(result.pdf);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          const blob = new Blob([bytes], { type: "application/pdf" });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `relatorio-protocolos-${new Date().toISOString().split("T")[0]}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+          toast.success("Relatório gerado e baixado com sucesso!");
+        }
+      } else {
+        const result = await gerarProcessosPDF.mutateAsync({
+          processoIds: selectedProcessos,
+        });
+
+        if (result.success && result.pdf) {
+          // Convert base64 to blob and download
+          const binaryString = atob(result.pdf);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          const blob = new Blob([bytes], { type: "application/pdf" });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `relatorio-processos-${new Date().toISOString().split("T")[0]}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+          toast.success("Relatório gerado e baixado com sucesso!");
+        }
+      }
     } catch (error) {
-      toast.error("Erro ao gerar relatório");
+      console.error("Erro ao gerar PDF:", error);
+      toast.error("Erro ao gerar relatório PDF");
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -84,7 +133,7 @@ export default function RelatorioProtocolos() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-slate-900">Relatório de Protocolos</h1>
-        <p className="text-slate-600 mt-2">Gere relatórios unificados de protocolos e processos</p>
+        <p className="text-slate-600 mt-2">Gere relatórios unificados de protocolos e processos com dados financeiros</p>
       </div>
 
       {/* Filtros */}
@@ -267,12 +316,13 @@ export default function RelatorioProtocolos() {
           className="bg-blue-600 hover:bg-blue-700"
           onClick={handleGeneratePDF}
           disabled={
+            isGenerating ||
             (relatorioType === "protocolo" && selectedProtocolos.length === 0) ||
             (relatorioType === "processo" && selectedProcessos.length === 0)
           }
         >
           <Download className="h-4 w-4 mr-2" />
-          Gerar Relatório PDF
+          {isGenerating ? "Gerando..." : "Gerar Relatório PDF"}
         </Button>
         <Button
           variant="outline"

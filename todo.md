@@ -121,3 +121,17 @@
 - [x] Validar schema Drizzle sincronizado com banco - VALIDADO
 - [x] Build sem erros TypeScript - CONFIRMADO
 - [x] Servidor rodando normalmente - CONFIRMADO
+
+
+## Implementação de Custas, Despesas e Relatórios - Abril 2026
+
+- [ ] Corrigir erro do botão Nova Despesa
+- [ ] Implementar seleção dupla protocolo/processo em Custas
+- [ ] Implementar cálculo de valores totais (gasto, recebido, custas, despesas)
+- [ ] Vincular custas/despesas ao arquivo
+- [ ] Criar dashboard de Arquivo com totais
+- [ ] Implementar relatório com dados de cliente/processo
+- [ ] Implementar geração de PDF para relatórios
+- [ ] Remover aba Receita do relatório
+- [ ] Incluir arquivados no relatório com valores (a pagar, falta pagar, baixa, recebido, custas)
+- [ ] Testar todas as funcionalidades

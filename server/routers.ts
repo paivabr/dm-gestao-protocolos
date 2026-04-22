@@ -1066,6 +1066,39 @@ export const appRouter = router({
       }),
   }),
 
+  // ============ RELATORIO ============
+  relatorio: router({
+    gerarProtocolosPDF: protectedProcedure
+      .input(z.object({ protocoloIds: z.array(z.number()) }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        try {
+          const { generateProtocolosReport } = await import("./pdf-generator");
+          const protocolos = await db.getRelatorioProtocolos(input.protocoloIds);
+          const pdfBuffer = await generateProtocolosReport(protocolos as any);
+          return { success: true, pdf: pdfBuffer.toString("base64") };
+        } catch (error) {
+          console.error("[PDF] Failed to generate protocolos report:", error);
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao gerar PDF" });
+        }
+      }),
+
+    gerarProcessosPDF: protectedProcedure
+      .input(z.object({ processoIds: z.array(z.number()) }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        try {
+          const { generateProcessosReport } = await import("./pdf-generator");
+          const processos = await db.getRelatorioProcessos(input.processoIds);
+          const pdfBuffer = await generateProcessosReport(processos as any);
+          return { success: true, pdf: pdfBuffer.toString("base64") };
+        } catch (error) {
+          console.error("[PDF] Failed to generate processos report:", error);
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao gerar PDF" });
+        }
+      }),
+  }),
+
   googleCalendar: googleCalendarRouter,
 
   // ============ TIPOS DE PROCESSO ============

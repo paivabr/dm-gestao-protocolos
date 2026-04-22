@@ -1,4 +1,4 @@
-import { eq, and, like, sql, asc } from "drizzle-orm";
+import { eq, and, like, sql, asc, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, clientes, processos, checklistItens, auditoria, calendario, parcelas, statusProtocolo, arquivo, despesas, receitas, tiposProcesso, cartorios, Cliente, InsertCliente, Processo, InsertProcesso, ChecklistItem, InsertChecklistItem, Auditoria, InsertAuditoria, Calendario, InsertCalendario, Parcela, InsertParcela, StatusProtocolo, InsertStatusProtocolo, Arquivo, InsertArquivo, Despesa, InsertDespesa, Receita, InsertReceita, TipoProcesso, InsertTipoProcesso, Cartorio, InsertCartorio } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -1533,5 +1533,96 @@ export async function deleteCartorio(id: number): Promise<boolean> {
   } catch (error) {
     console.error("[Database] Failed to delete cartório:", error);
     return false;
+  }
+}
+
+
+// ============ RELATORIO FUNCTIONS ============
+
+export async function getRelatorioProtocolos(protocoloIds: number[]) {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    const result = await db
+      .select({
+        id: statusProtocolo.id,
+        numeroProtocolo: statusProtocolo.numeroProtocolo,
+        tipoProcesso: statusProtocolo.tipoProcesso,
+        dataAbertura: statusProtocolo.dataAbertura,
+        status: statusProtocolo.status,
+        cartorio: statusProtocolo.cartorio,
+        observacoes: statusProtocolo.observacoes,
+        clienteNome: clientes.nome,
+        clienteCpfCnpj: clientes.cpfCnpj,
+        clienteContato: clientes.contato,
+      })
+      .from(statusProtocolo)
+      .leftJoin(clientes, eq(statusProtocolo.clienteId, clientes.id))
+      .where(inArray(statusProtocolo.id, protocoloIds));
+
+    // Enrich with financial data
+    const enriched = await Promise.all(
+      result.map(async (proto: any) => {
+        const despesasList = await getDespesasByProtocolo(proto.id);
+        const receitasList = await getReceitasByProtocolo(proto.id);
+        
+        const totalDespesas = despesasList.reduce((sum, d) => sum + parseFloat(d.valor as any), 0);
+        const totalDespesasPagas = despesasList
+          .filter(d => d.pago === 1)
+          .reduce((sum, d) => sum + parseFloat(d.valor as any), 0);
+        const totalDespesasPendentes = totalDespesas - totalDespesasPagas;
+
+        const totalReceitas = receitasList.reduce((sum, r) => sum + parseFloat(r.valor as any), 0);
+        const totalRecebido = receitasList
+          .filter(r => r.recebido === 1)
+          .reduce((sum, r) => sum + parseFloat(r.valor as any), 0);
+        const totalPendente = totalReceitas - totalRecebido;
+
+        return {
+          ...proto,
+          totalDespesas,
+          totalDespesasPagas,
+          totalDespesasPendentes,
+          totalReceitas,
+          totalRecebido,
+          totalPendente,
+        };
+      })
+    );
+
+    return enriched;
+  } catch (error) {
+    console.error("[Database] Failed to get relatorio protocolos:", error);
+    return [];
+  }
+}
+
+export async function getRelatorioProcessos(processoIds: number[]) {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    const result = await db
+      .select({
+        id: processos.id,
+        titulo: processos.titulo,
+        clienteId: processos.clienteId,
+        status: processos.status,
+        prazoVencimento: processos.prazoVencimento,
+        isArchived: processos.isArchived,
+        dataArquivamento: processos.dataArquivamento,
+        clienteNome: clientes.nome,
+        clienteCpfCnpj: clientes.cpfCnpj,
+        clienteContato: clientes.contato,
+      })
+      .from(processos)
+      .leftJoin(clientes, eq(processos.clienteId, clientes.id))
+      .where(inArray(processos.id, processoIds));
+
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to get relatorio processos:", error);
+    return [];
   }
 }

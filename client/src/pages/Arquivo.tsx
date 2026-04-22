@@ -78,8 +78,10 @@ export default function Arquivo() {
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Cliente</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Protocolo</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Data Arquivamento</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Total Gasto</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Total Recebido</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Custas</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Despesas</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">A Pagar</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Recebido</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Ações</th>
                 </tr>
               </thead>
@@ -90,8 +92,10 @@ export default function Arquivo() {
                     <td className="px-6 py-4 text-sm text-gray-900">{item.clienteNome || '-'}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{item.numeroProtocolo || item.processoTitulo || '-'}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{formatarData(item.dataArquivamento)}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{formatarValor(item.totalGasto)}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{formatarValor(item.totalRecebido)}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{formatarValor(item.custas)}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{formatarValor(item.despesas)}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{formatarValor(item.valorAPagar)}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{formatarValor(item.valorRecebido)}</td>
                     <td className="px-6 py-4 text-sm space-x-2">
                       <Button
                         variant="ghost"
@@ -145,6 +149,30 @@ export default function Arquivo() {
                 <div>
                   <p className="text-sm text-gray-600">Data Arquivamento</p>
                   <p className="font-semibold">{formatarData(selectedArquivo.dataArquivamento)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Custas</p>
+                  <p className="font-semibold">{formatarValor(selectedArquivo.custas)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Despesas</p>
+                  <p className="font-semibold">{formatarValor(selectedArquivo.despesas)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Valor a Pagar</p>
+                  <p className="font-semibold">{formatarValor(selectedArquivo.valorAPagar)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Valor Falta Pagar</p>
+                  <p className="font-semibold">{formatarValor(selectedArquivo.valorFaltaPagar)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Valor Baixa</p>
+                  <p className="font-semibold">{formatarValor(selectedArquivo.valorBaixa)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Valor Recebido</p>
+                  <p className="font-semibold">{formatarValor(selectedArquivo.valorRecebido)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Total Gasto</p>

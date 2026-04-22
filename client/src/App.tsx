@@ -16,7 +16,6 @@ import RecuperarSenha from "./pages/RecuperarSenha";
 import StatusProtocolo from "./pages/StatusProtocolo";
 import Despesas from "./pages/Despesas";
 import RelatorioProtocolos from "./pages/RelatorioProtocolos";
-import Receitas from "./pages/Receitas";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import { useAuth } from "./_core/hooks/useAuth";
 import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger } from "@/components/ui/sidebar";
@@ -116,13 +115,6 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
                 href="/relatorio"
                 open={sidebarOpen}
                 onClick={() => navigate("/relatorio")}
-              />
-              <NavItem
-                icon={TrendingUp}
-                label="Receitas"
-                href="/receitas"
-                open={sidebarOpen}
-                onClick={() => navigate("/receitas")}
               />
               <NavItem
                 icon={BarChart3}
@@ -259,7 +251,6 @@ function Router() {
         <Route path="/arquivo" component={Arquivo} />
         <Route path="/despesas" component={Despesas} />
         <Route path="/relatorio" component={RelatorioProtocolos} />
-        <Route path="/receitas" component={Receitas} />
         <Route path="/analytics" component={AnalyticsDashboard} />
         <Route path="/perfil" component={Perfil} />
         <Route path="/admin" component={Admin} />

@@ -169,6 +169,13 @@
       "when": 1776878912677,
       "tag": "0023_faulty_queen_noir",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "5",
+      "when": 1776879838681,
+      "tag": "0024_curved_molten_man",
+      "breakpoints": true
     }
   ]
 }
