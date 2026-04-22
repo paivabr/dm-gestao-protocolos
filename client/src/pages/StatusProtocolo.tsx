@@ -200,6 +200,7 @@ export default function StatusProtocolo() {
     }
   };
 
+  const utils = trpc.useUtils();
   const custasCreateMutation = trpc.despesas.criar.useMutation();
   const despesasQuery = selectedProtocoloIdForCustas 
     ? trpc.despesas.listarPorProtocolo.useQuery({ statusProtocoloId: selectedProtocoloIdForCustas })
@@ -225,7 +226,10 @@ export default function StatusProtocolo() {
       toast.success("Custa adicionada com sucesso!");
       setCustasDialogOpen(false);
       setCustasFormData({ descricao: "", valor: "" });
-      void despesasQuery.refetch();
+      // Invalidar queries para refetch automático
+      if (selectedProtocoloIdForCustas) {
+        void utils.despesas.listarPorProtocolo.invalidate({ statusProtocoloId: selectedProtocoloIdForCustas });
+      }
       void refetch();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Erro ao adicionar custa";
