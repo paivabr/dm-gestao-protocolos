@@ -13,6 +13,15 @@ import { toast } from "sonner";
 
 const ITEMS_PER_PAGE = 10;
 
+// Função correta para converter data sem problema de timezone
+const getLocalDateString = (date: Date | string): string => {
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 export default function StatusProtocolo() {
   const [currentPage, setCurrentPage] = useState(1);
   const { user } = useAuth();
@@ -57,7 +66,7 @@ export default function StatusProtocolo() {
     clienteId: "",
     numeroProtocolo: "",
     tipoProcesso: "",
-    dataAbertura: new Date().toISOString().split("T")[0],
+    dataAbertura: getLocalDateString(new Date()),
     status: "Pronto",
     cartorio: "",
     observacoes: "",
@@ -145,7 +154,7 @@ export default function StatusProtocolo() {
         clienteId: "",
         numeroProtocolo: "",
         tipoProcesso: "",
-        dataAbertura: new Date().toISOString().split("T")[0],
+        dataAbertura: getLocalDateString(new Date()),
         status: "Pronto",
         cartorio: "",
         observacoes: "",
@@ -165,7 +174,7 @@ export default function StatusProtocolo() {
       clienteId: protocolo.clienteId.toString(),
       numeroProtocolo: protocolo.numeroProtocolo,
       tipoProcesso: protocolo.tipoProcesso,
-      dataAbertura: new Date(protocolo.dataAbertura).toISOString().split("T")[0],
+      dataAbertura: getLocalDateString(protocolo.dataAbertura),
       status: protocolo.status,
       cartorio: protocolo.cartorio,
       observacoes: protocolo.observacoes || "",
@@ -217,7 +226,7 @@ export default function StatusProtocolo() {
               clienteId: "",
               numeroProtocolo: "",
               tipoProcesso: "",
-              dataAbertura: new Date().toISOString().split("T")[0],
+              dataAbertura: getLocalDateString(new Date()),
               status: "Pronto",
               cartorio: "",
               observacoes: "",
@@ -562,9 +571,6 @@ export default function StatusProtocolo() {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
 
       {/* Details Dialog */}
       <Dialog open={detailsDialogOpen || !!selectedProtocolo} onOpenChange={(open) => {
@@ -616,6 +622,7 @@ export default function StatusProtocolo() {
             </div>
           )}
         </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -159,7 +159,7 @@ export const appRouter = router({
         })
       )
       .query(async ({ input }) => {
-        return await db.getProcessosPaginated(input.page, input.limit);
+        return await db.getClientesPaginated(input.page, input.limit);
       }),
 
     create: protectedProcedure
