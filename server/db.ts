@@ -1250,17 +1250,16 @@ export async function getStatusProtocoloPaginated(page: number = 1, limit: numbe
 
 // ============ ARQUIVO FUNCTIONS ============
 
-export async function arquivarProtocolo(statusProtocoloId: number, processoId?: number, observacoes?: string): Promise<number | null> {
+export async function arquivarProtocolo(statusProtocoloId: number, observacoesArquivo?: string): Promise<number | null> {
   const db = await getDb();
   if (!db) return null;
 
   try {
     const result = await db.insert(arquivo).values({
       statusProtocoloId,
-      processoId,
-      observacoes,
-      totalGasto: "0",
-      totalRecebido: "0",
+      observacoesArquivo,
+      totalGasto: "0.00",
+      totalRecebido: "0.00",
     });
     return (result as any)[0]?.insertId as number || null;
   } catch (error) {
