@@ -286,6 +286,8 @@ function PermissionsManager({ userId, userName }: { userId: number; userName: st
     canViewClients: false,
     canManageParcelas: false,
     canViewArchivo: false,
+    canViewDespesas: false,
+    canViewRelatorio: false,
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -296,6 +298,8 @@ function PermissionsManager({ userId, userName }: { userId: number; userName: st
   useEffect(() => {
     if (getPermissionsQuery.data) {
       setPermissions({
+        canViewDespesas: getPermissionsQuery.data.canViewDespesas ?? false,
+        canViewRelatorio: getPermissionsQuery.data.canViewRelatorio ?? false,
         ...getPermissionsQuery.data,
         canViewArchivo: getPermissionsQuery.data.canViewArchivo ?? false,
       });
@@ -403,6 +407,24 @@ function PermissionsManager({ userId, userName }: { userId: number; userName: st
               className="w-4 h-4"
             />
             <span className="text-sm font-medium">Ver Arquivo</span>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-blue-100 transition-colors">
+            <input
+              type="checkbox"
+              checked={permissions.canViewDespesas}
+              onChange={() => handlePermissionChange("canViewDespesas")}
+              className="w-4 h-4"
+            />
+            <span className="text-sm font-medium">Ver Custas/Despesas</span>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-blue-100 transition-colors">
+            <input
+              type="checkbox"
+              checked={permissions.canViewRelatorio}
+              onChange={() => handlePermissionChange("canViewRelatorio")}
+              className="w-4 h-4"
+            />
+            <span className="text-sm font-medium">Ver Relatório</span>
           </label>
         </div>
         <Button

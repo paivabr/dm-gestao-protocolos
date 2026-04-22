@@ -1,18 +1,27 @@
 import mysql from 'mysql2/promise';
 import fs from 'fs';
 
-const sql = fs.readFileSync('./drizzle/0016_mature_darwin.sql', 'utf-8');
-const connection = await mysql.createConnection(process.env.DATABASE_URL);
+const conn = await mysql.createConnection({
+  host: 'monorail.proxy.rlwy.net',
+  port: 19333,
+  user: 'root',
+  password: 'fBBnBNMoKhouqhcshloztbkJeTTVKewI',
+  database: 'railway'
+});
 
-const statements = sql.split('--> statement-breakpoint').map(s => s.trim()).filter(s => s);
+const sql = fs.readFileSync('drizzle/0019_cooing_infant_terrible.sql', 'utf-8');
+const statements = sql.split(';').filter(s => s.trim());
+
 for (const stmt of statements) {
-  try {
-    await connection.execute(stmt);
-    console.log('✓ Executed:', stmt.substring(0, 60));
-  } catch (e) {
-    console.error('✗ Error:', e.message);
+  if (stmt.trim()) {
+    try {
+      await conn.execute(stmt);
+      console.log('✅ Executado:', stmt.substring(0, 50) + '...');
+    } catch (e) {
+      console.log('⚠️ Erro:', e.message);
+    }
   }
 }
 
-await connection.end();
-console.log('Migration complete');
+await conn.end();
+console.log('✅ Migração concluída!');

@@ -765,6 +765,8 @@ export async function updateUserPermissions(userId: number, permissions: {
   canViewClients?: boolean;
   canManageParcelas?: boolean;
   canViewArchivo?: boolean;
+  canViewDespesas?: boolean;
+  canViewRelatorio?: boolean;
 }) {
   const db = await getDb();
   if (!db) {
@@ -780,6 +782,8 @@ export async function updateUserPermissions(userId: number, permissions: {
     if (permissions.canViewCalendar !== undefined) updateData.canViewCalendar = permissions.canViewCalendar ? 1 : 0;
     if (permissions.canViewProcesses !== undefined) updateData.canViewProcesses = permissions.canViewProcesses ? 1 : 0;
     if (permissions.canViewClients !== undefined) updateData.canViewClients = permissions.canViewClients ? 1 : 0;
+    if (permissions.canViewDespesas !== undefined) updateData.canViewDespesas = permissions.canViewDespesas ? 1 : 0;
+    if (permissions.canViewRelatorio !== undefined) updateData.canViewRelatorio = permissions.canViewRelatorio ? 1 : 0;
     if (permissions.canManageParcelas !== undefined) updateData.canManageParcelas = permissions.canManageParcelas ? 1 : 0;
     if (permissions.canViewArchivo !== undefined) updateData.canViewArchivo = permissions.canViewArchivo ? 1 : 0;
 
@@ -806,6 +810,8 @@ export async function getUserPermissions(userId: number) {
       canViewClients: users.canViewClients,
       canManageParcelas: users.canManageParcelas,
       canViewArchivo: users.canViewArchivo,
+      canViewDespesas: users.canViewDespesas,
+      canViewRelatorio: users.canViewRelatorio,
     }).from(users).where(eq(users.id, userId)).limit(1);
 
     if (result.length > 0) {
@@ -816,6 +822,8 @@ export async function getUserPermissions(userId: number) {
         canViewCalendar: result[0].canViewCalendar === 1,
         canViewProcesses: result[0].canViewProcesses === 1,
         canViewClients: result[0].canViewClients === 1,
+        canViewDespesas: result[0].canViewDespesas === 1,
+        canViewRelatorio: result[0].canViewRelatorio === 1,
         canManageParcelas: result[0].canManageParcelas === 1,
         canViewArchivo: result[0].canViewArchivo === 1,
       };
