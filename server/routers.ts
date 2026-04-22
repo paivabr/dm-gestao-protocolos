@@ -958,7 +958,7 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
         if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
-        const id = await db.arquivarProtocolo(input.statusProtocoloId, input.processoId, input.observacoes);
+        const id = await db.arquivarProtocolo(input.statusProtocoloId, input.observacoes);
         return { success: id !== null, id };
       }),
 

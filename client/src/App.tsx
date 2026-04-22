@@ -8,6 +8,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Clientes from "./pages/Clientes";
 import Processos from "./pages/Processos";
+import Arquivo from "./pages/Arquivo";
 import Admin from "./pages/Admin";
 import Calendario from "./pages/Calendario";
 import Perfil from "./pages/Perfil";
@@ -89,6 +90,15 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
             open={sidebarOpen}
             onClick={() => navigate("/calendario")}
           />
+          {user?.role === "admin" && (
+            <NavItem
+              icon={FileText}
+              label="Arquivo"
+              href="/arquivo"
+              open={sidebarOpen}
+              onClick={() => navigate("/arquivo")}
+            />
+          )}
           <NavItem
             icon={User}
             label="Meu Perfil"
@@ -212,6 +222,7 @@ function Router() {
         <Route path="/processos" component={Processos} />
         <Route path="/status-protocolo" component={StatusProtocolo} />
         <Route path="/calendario" component={Calendario} />
+        <Route path="/arquivo" component={Arquivo} />
         <Route path="/perfil" component={Perfil} />
         <Route path="/admin" component={Admin} />
         <Route path="/404" component={NotFound} />
