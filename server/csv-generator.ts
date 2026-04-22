@@ -31,10 +31,10 @@ export function gerarCSVProtocolos(protocolos: ProtocoloData[]): string {
     p.tipoProcesso,
     p.status,
     p.dataAbertura,
-    (p.custas || 0).toFixed(2),
-    (p.despesas || 0).toFixed(2),
-    (p.valorAPagar || 0).toFixed(2),
-    (p.valorRecebido || 0).toFixed(2)
+    (Number(p.custas) || 0).toFixed(2),
+    (Number(p.despesas) || 0).toFixed(2),
+    (Number(p.valorAPagar) || 0).toFixed(2),
+    (Number(p.valorRecebido) || 0).toFixed(2)
   ]);
 
   // Escapar aspas e criar CSV
