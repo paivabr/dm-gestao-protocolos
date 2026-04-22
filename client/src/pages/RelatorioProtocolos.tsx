@@ -60,7 +60,6 @@ export default function RelatorioProtocolos() {
         });
 
         if (result.success && result.pdf) {
-          // Convert base64 to blob and download
           const binaryString = atob(result.pdf);
           const bytes = new Uint8Array(binaryString.length);
           for (let i = 0; i < binaryString.length; i++) {
@@ -76,6 +75,8 @@ export default function RelatorioProtocolos() {
           window.URL.revokeObjectURL(url);
           document.body.removeChild(a);
           toast.success("Relatório gerado e baixado com sucesso!");
+        } else {
+          toast.error("Erro ao gerar PDF");
         }
       } else {
         const result = await gerarProcessosPDF.mutateAsync({
