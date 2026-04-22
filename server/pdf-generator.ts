@@ -18,6 +18,14 @@ interface ProtocoloData {
   totalReceitas: number;
   totalRecebido: number;
   totalPendente: number;
+  isArchived?: boolean;
+  dataArquivamento?: Date;
+  custas?: string | number;
+  despesas?: string | number;
+  valorAPagar?: string | number;
+  valorFaltaPagar?: string | number;
+  valorBaixa?: string | number;
+  valorRecebido?: string | number;
 }
 
 interface ProcessoData {
@@ -99,6 +107,12 @@ export function generateProtocolosReport(protocolos: ProtocoloData[]): Promise<B
       doc.fontSize(8).font("Helvetica").fillColor("gray");
       doc.text(`Despesas Pagas: R$ ${protocolo.totalDespesasPagas.toFixed(2)} | Pendentes: R$ ${protocolo.totalDespesasPendentes.toFixed(2)}`, col1, doc.y, { width: 500 });
       doc.text(`Receitas: R$ ${protocolo.totalReceitas.toFixed(2)} | Recebido: R$ ${protocolo.totalRecebido.toFixed(2)} | Pendente: R$ ${protocolo.totalPendente.toFixed(2)}`, col1, doc.y, { width: 500 });
+
+      // Add arquivo data if archived
+      if (protocolo.isArchived && protocolo.dataArquivamento) {
+        doc.text(`[ARQUIVADO em ${new Date(protocolo.dataArquivamento).toLocaleDateString("pt-BR")}]`, col1, doc.y, { width: 500 });
+        doc.text(`Custas: R$ ${parseFloat(protocolo.custas as any).toFixed(2)} | Despesas: R$ ${parseFloat(protocolo.despesas as any).toFixed(2)} | A Pagar: R$ ${parseFloat(protocolo.valorAPagar as any).toFixed(2)} | Falta Pagar: R$ ${parseFloat(protocolo.valorFaltaPagar as any).toFixed(2)}`, col1, doc.y, { width: 500 });
+      }
 
       doc.fillColor("black");
       doc.moveDown();

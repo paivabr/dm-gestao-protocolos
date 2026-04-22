@@ -1306,6 +1306,12 @@ export async function getArquivados(): Promise<any[]> {
       observacoesArquivo: arquivo.observacoesArquivo,
       totalGasto: arquivo.totalGasto,
       totalRecebido: arquivo.totalRecebido,
+      custas: arquivo.custas,
+      despesas: arquivo.despesas,
+      valorAPagar: arquivo.valorAPagar,
+      valorFaltaPagar: arquivo.valorFaltaPagar,
+      valorBaixa: arquivo.valorBaixa,
+      valorRecebido: arquivo.valorRecebido,
       clienteNome: clientes.nome,
       numeroProtocolo: statusProtocolo.numeroProtocolo,
       processoTitulo: processos.titulo,
@@ -1579,6 +1585,10 @@ export async function getRelatorioProtocolos(protocoloIds: number[]) {
           .reduce((sum, r) => sum + parseFloat(r.valor as any), 0);
         const totalPendente = totalReceitas - totalRecebido;
 
+        // Check if protocol is archived and get arquivo data
+        const arquivoData = await db!.select().from(arquivo).where(eq(arquivo.statusProtocoloId, proto.id)).limit(1);
+        const arquivoInfo = arquivoData.length > 0 ? arquivoData[0] : null;
+
         return {
           ...proto,
           totalDespesas,
@@ -1587,6 +1597,14 @@ export async function getRelatorioProtocolos(protocoloIds: number[]) {
           totalReceitas,
           totalRecebido,
           totalPendente,
+          isArchived: !!arquivoInfo,
+          dataArquivamento: arquivoInfo?.dataArquivamento,
+          custas: arquivoInfo?.custas || "0.00",
+          despesas: arquivoInfo?.despesas || "0.00",
+          valorAPagar: arquivoInfo?.valorAPagar || "0.00",
+          valorFaltaPagar: arquivoInfo?.valorFaltaPagar || "0.00",
+          valorBaixa: arquivoInfo?.valorBaixa || "0.00",
+          valorRecebido: arquivoInfo?.valorRecebido || "0.00",
         };
       })
     );

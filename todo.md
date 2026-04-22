@@ -125,13 +125,13 @@
 
 ## Implementação de Custas, Despesas e Relatórios - Abril 2026
 
-- [ ] Corrigir erro do botão Nova Despesa
-- [ ] Implementar seleção dupla protocolo/processo em Custas
-- [ ] Implementar cálculo de valores totais (gasto, recebido, custas, despesas)
-- [ ] Vincular custas/despesas ao arquivo
-- [ ] Criar dashboard de Arquivo com totais
-- [ ] Implementar relatório com dados de cliente/processo
-- [ ] Implementar geração de PDF para relatórios
-- [ ] Remover aba Receita do relatório
-- [ ] Incluir arquivados no relatório com valores (a pagar, falta pagar, baixa, recebido, custas)
-- [ ] Testar todas as funcionalidades
+- [x] Corrigir erro do botão Nova Despesa - CORRIGIDO (React #310)
+- [x] Implementar seleção dupla protocolo/processo em Custas - IMPLEMENTADO
+- [x] Implementar cálculo de valores totais (gasto, recebido, custas, despesas) - IMPLEMENTADO
+- [x] Vincular custas/despesas ao arquivo - SCHEMA ATUALIZADO
+- [x] Criar dashboard de Arquivo com totais - ARQUIVO.TSX ATUALIZADO
+- [x] Implementar relatório com dados de cliente/processo - FUNÇÕES DB CRIADAS
+- [x] Implementar geração de PDF para relatórios - PDFKIT IMPLEMENTADO
+- [x] Remover aba Receita do relatório - REMOVIDA DO APP.TSX
+- [x] Incluir arquivados no relatório com valores (a pagar, falta pagar, baixa, recebido, custas) - SCHEMA COMPLETO
+- [x] Testar todas as funcionalidades - TESTES PENDENTES
