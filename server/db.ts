@@ -1238,10 +1238,11 @@ export async function getStatusProtocoloPaginated(page: number = 1, limit: numbe
       })
       .from(statusProtocolo)
       .leftJoin(clientes, eq(statusProtocolo.clienteId, clientes.id))
+      .where(eq(statusProtocolo.isArchived, 0))
       .limit(limit)
       .offset(offset);
 
-    const countResult: any = await db.select({ count: sql`COUNT(*)` }).from(statusProtocolo);
+    const countResult: any = await db.select({ count: sql`COUNT(*)` }).from(statusProtocolo).where(eq(statusProtocolo.isArchived, 0));
     const total = (countResult[0]?.count as number) || 0;
 
     return { data: result, total, page, limit };
@@ -1262,6 +1263,7 @@ export async function arquivarProtocolo(statusProtocoloId: number, observacoesAr
     const statusProto = await db.select().from(statusProtocolo).where(eq(statusProtocolo.id, statusProtocoloId)).limit(1);
     const clienteId = statusProto.length > 0 ? statusProto[0].clienteId : null;
     
+    // Insert into arquivo
     const result = await db.insert(arquivo).values({
       statusProtocoloId,
       clienteId: clienteId || undefined,
@@ -1269,6 +1271,10 @@ export async function arquivarProtocolo(statusProtocoloId: number, observacoesAr
       totalGasto: "0.00",
       totalRecebido: "0.00",
     });
+    
+    // Mark statusProtocolo as archived
+    await db.update(statusProtocolo).set({ isArchived: 1 }).where(eq(statusProtocolo.id, statusProtocoloId));
+    
     return (result as any)[0]?.insertId as number || null;
   } catch (error) {
     console.error("[Database] Failed to archive protocolo:", error);

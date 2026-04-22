@@ -153,6 +153,7 @@ export const statusProtocolo = mysqlTable("statusProtocolo", {
   cartorio: varchar("cartorio", { length: 100 }).notNull(),
   ultimaAtualizacao: timestamp("ultimaAtualizacao").defaultNow().onUpdateNow().notNull(),
   observacoes: text("observacoes"),
+  isArchived: tinyint("isArchived").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

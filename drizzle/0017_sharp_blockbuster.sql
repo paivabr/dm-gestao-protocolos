@@ -1,0 +1,1 @@
+ALTER TABLE `statusProtocolo` ADD `isArchived` tinyint DEFAULT 0 NOT NULL;

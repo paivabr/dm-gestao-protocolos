@@ -28,6 +28,8 @@ export default function StatusProtocolo() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [selectedProtocolo, setSelectedProtocolo] = useState<any>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [searchProtocolo, setSearchProtocolo] = useState("");
   const [searchCliente, setSearchCliente] = useState("");
   const [filterTipo, setFilterTipo] = useState("");
@@ -361,8 +363,18 @@ export default function StatusProtocolo() {
                               size="sm"
                               onClick={() => handleEdit(protocolo)}
                               className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              title="Editar"
                             >
                               <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setSelectedProtocolo(protocolo)}
+                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                              title="Visualizar Detalhes"
+                            >
+                              👁️
                             </Button>
                             <Button
                               variant="ghost"
@@ -550,6 +562,60 @@ export default function StatusProtocolo() {
           </form>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+      {/* Details Dialog */}
+      <Dialog open={detailsDialogOpen || !!selectedProtocolo} onOpenChange={(open) => {
+        if (!open) setSelectedProtocolo(null);
+        setDetailsDialogOpen(open);
+      }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Protocolo</DialogTitle>
+          </DialogHeader>
+          {selectedProtocolo && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-slate-600">Número do Protocolo</p>
+                  <p className="font-semibold">{selectedProtocolo.numeroProtocolo}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-600">Cliente</p>
+                  <p className="font-semibold">{selectedProtocolo.cliente?.nome || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-600">Tipo de Processo</p>
+                  <p className="font-semibold">{selectedProtocolo.tipoProcesso}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-600">Cartório</p>
+                  <p className="font-semibold">{selectedProtocolo.cartorio}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-600">Status</p>
+                  <p className="font-semibold">{selectedProtocolo.status}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-600">Data de Abertura</p>
+                  <p className="font-semibold">{new Date(selectedProtocolo.dataAbertura).toLocaleDateString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-600">Última Atualização</p>
+                  <p className="font-semibold">{new Date(selectedProtocolo.ultimaAtualizacao).toLocaleDateString()}</p>
+                </div>
+              </div>
+              {selectedProtocolo.observacoes && (
+                <div>
+                  <p className="text-sm text-slate-600">Observações</p>
+                  <p className="text-sm">{selectedProtocolo.observacoes}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
     </div>
   );
 }
