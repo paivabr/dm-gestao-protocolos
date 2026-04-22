@@ -1681,7 +1681,33 @@ export async function getRelatorioProcessos(processoIds: number[]) {
       .leftJoin(clientes, eq(processos.clienteId, clientes.id))
       .where(inArray(processos.id, processoIds));
 
-    return result;
+    // Enrich with financial data (parcelas)
+    const enriched = await Promise.all(result.map(async (p: any) => {
+      const pParcelas = await db.select().from(parcelas).where(eq(parcelas.processoId, p.id));
+      
+      const totalDespesas = pParcelas.reduce((sum, item) => sum + parseFloat(item.valorParcela), 0);
+      const totalDesconto = pParcelas.reduce((sum, item) => sum + parseFloat(item.desconto || "0"), 0);
+      const totalDespesasPagas = pParcelas
+        .filter(item => item.pago === 1)
+        .reduce((sum, item) => sum + (parseFloat(item.valorParcela) - parseFloat(item.desconto || "0")), 0);
+      
+      const totalDespesasPendentes = (totalDespesas - totalDesconto) - totalDespesasPagas;
+
+      return {
+        ...p,
+        totalDespesas: totalDespesas - totalDesconto, // Show total with discount
+        totalDespesasPagas,
+        totalDespesasPendentes,
+        despesasList: pParcelas.map(d => ({
+          dataDespesa: d.dataVencimento,
+          descricao: `Parcela ${d.id}${d.desconto && parseFloat(d.desconto) > 0 ? ' (com desconto)' : ''}`,
+          valor: parseFloat(d.valorParcela) - parseFloat(d.desconto || "0"),
+          pago: d.pago
+        }))
+      };
+    }));
+
+    return enriched;
   } catch (error) {
     console.error("[Database] Failed to get relatorio processos:", error);
     return [];

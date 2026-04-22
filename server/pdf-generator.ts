@@ -93,19 +93,19 @@ export async function gerarRelatorioPDF(data: RelatorioData[]): Promise<Buffer> 
       renderInfoTable(doc, clienteInfo);
 
       // --- SECTION: CUSTAS E DESPESAS ---
-      renderSectionHeader(doc, 'Custas e Despesas (Financeiro)');
+      renderSectionHeader(doc, 'Informações Financeiras');
       
       const financialSummary = [
-        ['Total Despesas:', formatCurrency(item.totalDespesas)],
-        ['Total Pago:', formatCurrency(item.totalDespesasPagas)],
-        ['Total Pendente:', formatCurrency(item.totalDespesasPendentes)]
+        ['Valor Total:', formatCurrency(item.totalDespesas)],
+        ['Valor Pago:', formatCurrency(item.totalDespesasPagas)],
+        ['Valor Falta Pagar:', formatCurrency(item.totalDespesasPendentes)]
       ];
       renderInfoTable(doc, financialSummary);
 
       // List detailed expenses if available
       if (item.despesasList && item.despesasList.length > 0) {
         doc.moveDown(0.5);
-        doc.fontSize(9).fillColor('#334155').text('Detalhamento de Despesas:', { underline: true });
+        doc.fontSize(9).fillColor('#334155').text('Detalhamento (Custas / Parcelas):', { underline: true });
         doc.moveDown(0.2);
         
         item.despesasList.forEach((d: any) => {
