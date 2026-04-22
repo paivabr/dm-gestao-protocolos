@@ -11,6 +11,8 @@ export default function Arquivo() {
   const [selectedArquivo, setSelectedArquivo] = useState<any>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState<any>({})
 
   const { data: arquivados, isLoading } = trpc.arquivo.listar.useQuery();
   const utils = trpc.useUtils();
@@ -24,10 +26,42 @@ export default function Arquivo() {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     },
   });
+  const updateMutation = trpc.arquivo.atualizar.useMutation({
+    onSuccess: () => {
+      toast({ title: "Sucesso", description: "Arquivo atualizado com sucesso" });
+      utils.arquivo.listar.invalidate();
+      setIsEditDialogOpen(false);
+    },
+    onError: (error) => {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    },
+  });
 
   const handleDelete = async () => {
     if (deleteId) {
       await deleteMutation.mutateAsync({ id: deleteId });
+    }
+  };
+
+  const handleEditClick = (item: any) => {
+    setSelectedArquivo(item);
+    setEditFormData({
+      custas: item.custas || "0.00",
+      despesas: item.despesas || "0.00",
+      valorAPagar: item.valorAPagar || "0.00",
+      valorFaltaPagar: item.valorFaltaPagar || "0.00",
+      valorBaixa: item.valorBaixa || "0.00",
+      valorRecebido: item.valorRecebido || "0.00",
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (selectedArquivo) {
+      await updateMutation.mutateAsync({
+        id: selectedArquivo.id,
+        ...editFormData,
+      });
     }
   };
 
@@ -102,8 +136,18 @@ export default function Arquivo() {
                         size="sm"
                         onClick={() => setSelectedArquivo(item)}
                         className="text-blue-600 hover:text-blue-800"
+                        title="Visualizar"
                       >
                         <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditClick(item)}
+                        className="text-green-600 hover:text-green-800"
+                        title="Editar"
+                      >
+                        ✏️
                       </Button>
                       <Button
                         variant="ghost"
@@ -213,6 +257,91 @@ export default function Arquivo() {
               {deleteMutation.isPending ? "Deletando..." : "Deletar"}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Edição */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Valores - {selectedArquivo?.numeroProtocolo}</DialogTitle>
+          </DialogHeader>
+          {selectedArquivo && (
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Custas</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editFormData.custas}
+                  onChange={(e) => setEditFormData({ ...editFormData, custas: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-md"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Despesas</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editFormData.despesas}
+                  onChange={(e) => setEditFormData({ ...editFormData, despesas: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-md"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Valor a Pagar</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editFormData.valorAPagar}
+                  onChange={(e) => setEditFormData({ ...editFormData, valorAPagar: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-md"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Valor Falta Pagar</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editFormData.valorFaltaPagar}
+                  onChange={(e) => setEditFormData({ ...editFormData, valorFaltaPagar: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-md"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Valor Baixa</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editFormData.valorBaixa}
+                  onChange={(e) => setEditFormData({ ...editFormData, valorBaixa: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-md"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Valor Recebido</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editFormData.valorRecebido}
+                  onChange={(e) => setEditFormData({ ...editFormData, valorRecebido: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-md"
+                />
+              </div>
+              <div className="flex gap-2 justify-end pt-4">
+                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleSaveEdit}
+                  disabled={updateMutation.isPending}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {updateMutation.isPending ? "Salvando..." : "Salvar"}
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

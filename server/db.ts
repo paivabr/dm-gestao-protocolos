@@ -1341,6 +1341,28 @@ export async function deleteArquivo(id: number): Promise<boolean> {
   }
 }
 
+export async function updateArquivo(id: number, data: any): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    const updateData: any = {};
+    if (data.custas !== undefined) updateData.custas = data.custas;
+    if (data.despesas !== undefined) updateData.despesas = data.despesas;
+    if (data.valorAPagar !== undefined) updateData.valorAPagar = data.valorAPagar;
+    if (data.valorFaltaPagar !== undefined) updateData.valorFaltaPagar = data.valorFaltaPagar;
+    if (data.valorBaixa !== undefined) updateData.valorBaixa = data.valorBaixa;
+    if (data.valorRecebido !== undefined) updateData.valorRecebido = data.valorRecebido;
+    if (data.observacoesArquivo !== undefined) updateData.observacoesArquivo = data.observacoesArquivo;
+
+    await db.update(arquivo).set(updateData).where(eq(arquivo.id, id));
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to update arquivo:", error);
+    return false;
+  }
+}
+
 // ============ DESPESAS FUNCTIONS ============
 
 export async function createDespesa(data: InsertDespesa): Promise<number | null> {

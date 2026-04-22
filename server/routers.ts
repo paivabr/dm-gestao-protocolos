@@ -978,6 +978,23 @@ export const appRouter = router({
         if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
         return await db.deleteArquivo(input.id);
       }),
+
+    atualizar: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        custas: z.string().optional(),
+        despesas: z.string().optional(),
+        valorAPagar: z.string().optional(),
+        valorFaltaPagar: z.string().optional(),
+        valorBaixa: z.string().optional(),
+        valorRecebido: z.string().optional(),
+        observacoesArquivo: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        return await db.updateArquivo(input.id, input);
+      }),
   }),
 
   despesas: router({
