@@ -253,3 +253,21 @@ export const receitas = mysqlTable("receitas", {
 
 export type Receita = typeof receitas.$inferSelect;
 export type InsertReceita = typeof receitas.$inferInsert;
+
+// ============ EMPRESA CONFIG TABLE ============
+export const empresaConfig = mysqlTable("empresaConfig", {
+  id: int("id").autoincrement().primaryKey(),
+  nomeFantasia: varchar("nomeFantasia", { length: 255 }).notNull(),
+  razaoSocial: varchar("razaoSocial", { length: 255 }),
+  cnpj: varchar("cnpj", { length: 20 }),
+  email: varchar("email", { length: 255 }),
+  telefone: varchar("telefone", { length: 20 }),
+  endereco: text("endereco"),
+  website: varchar("website", { length: 255 }),
+  logoUrl: text("logoUrl"),
+  corPrimaria: varchar("corPrimaria", { length: 7 }).default("#3b82f6"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type EmpresaConfig = typeof empresaConfig.$inferSelect;
+export type InsertEmpresaConfig = typeof empresaConfig.$inferInsert;

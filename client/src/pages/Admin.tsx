@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { TRPCError } from "@trpc/server";
+import EmpresaConfigManager from "@/components/EmpresaConfigManager";
 
 export default function Admin() {
   const { user } = useAuth();
@@ -114,11 +115,12 @@ export default function Admin() {
       </div>
 
       <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="usuarios">Histórico por Usuário</TabsTrigger>
           <TabsTrigger value="processos">Histórico por Processo</TabsTrigger>
           <TabsTrigger value="permissoes">Permissões</TabsTrigger>
           <TabsTrigger value="gerenciar">Gerenciar Usuários</TabsTrigger>
+          <TabsTrigger value="empresa" className="text-blue-600 font-semibold">Empresa</TabsTrigger>
         </TabsList>
 
         <TabsContent value="usuarios" className="space-y-4">
@@ -270,6 +272,10 @@ export default function Admin() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="empresa" className="space-y-4">
+          <EmpresaConfigManager />
         </TabsContent>
       </Tabs>
     </div>

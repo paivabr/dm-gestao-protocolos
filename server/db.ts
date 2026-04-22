@@ -1,6 +1,6 @@
 import { eq, and, like, sql, asc, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, clientes, processos, checklistItens, auditoria, calendario, parcelas, statusProtocolo, arquivo, despesas, receitas, tiposProcesso, cartorios, Cliente, InsertCliente, Processo, InsertProcesso, ChecklistItem, InsertChecklistItem, Auditoria, InsertAuditoria, Calendario, InsertCalendario, Parcela, InsertParcela, StatusProtocolo, InsertStatusProtocolo, Arquivo, InsertArquivo, Despesa, InsertDespesa, Receita, InsertReceita, TipoProcesso, InsertTipoProcesso, Cartorio, InsertCartorio } from "../drizzle/schema";
+import { InsertUser, users, clientes, processos, checklistItens, auditoria, calendario, parcelas, statusProtocolo, arquivo, despesas, receitas, tiposProcesso, cartorios, Cliente, InsertCliente, Processo, InsertProcesso, ChecklistItem, InsertChecklistItem, Auditoria, InsertAuditoria, Calendario, InsertCalendario, Parcela, InsertParcela, StatusProtocolo, InsertStatusProtocolo, Arquivo, InsertArquivo, Despesa, InsertDespesa, Receita, InsertReceita, TipoProcesso, InsertTipoProcesso, Cartorio, InsertCartorio, empresaConfig, EmpresaConfig, InsertEmpresaConfig } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -16,6 +16,37 @@ export async function getDb() {
     }
   }
   return _db;
+}
+
+// ============ EMPRESA CONFIG FUNCTIONS ============
+
+export async function getEmpresaConfig(): Promise<EmpresaConfig | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  try {
+    const result = await db.select().from(empresaConfig).limit(1);
+    return result.length > 0 ? result[0] : undefined;
+  } catch (error) {
+    console.error("[Database] Failed to get empresa config:", error);
+    return undefined;
+  }
+}
+
+export async function updateEmpresaConfig(data: Partial<InsertEmpresaConfig>): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  try {
+    const existing = await getEmpresaConfig();
+    if (existing) {
+      await db.update(empresaConfig).set(data).where(eq(empresaConfig.id, existing.id));
+    } else {
+      await db.insert(empresaConfig).values(data as InsertEmpresaConfig);
+    }
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to update empresa config:", error);
+    return false;
+  }
 }
 
 // ============ USER FUNCTIONS ============

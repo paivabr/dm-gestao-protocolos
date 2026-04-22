@@ -38,6 +38,10 @@ interface RelatorioData {
 }
 
 export async function gerarRelatorioPDF(data: RelatorioData[]): Promise<Buffer> {
+  const empresa = await db.getEmpresaConfig();
+  const empresaNome = empresa?.nomeFantasia || 'DM Engenharia e Consultoria';
+  const empresaInfo = empresa?.cnpj ? `${empresaNome} - CNPJ: ${empresa.cnpj}` : empresaNome;
+
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({
       margin: 50,
@@ -72,7 +76,8 @@ export async function gerarRelatorioPDF(data: RelatorioData[]): Promise<Buffer> 
 
       // --- HEADER ---
       doc.fillColor('#1e293b').fontSize(20).text('Relatório de Protocolo', { align: 'center' });
-      doc.fontSize(10).fillColor('#64748b').text(`Gerado em: ${formatInTimeZone(new Date(), TIMEZONE, "dd/MM/yyyy HH:mm", { locale: ptBR })}`, { align: 'center' });
+      doc.fontSize(10).fillColor('#64748b').text(empresaNome, { align: 'center' });
+      doc.fontSize(9).text(`Gerado em: ${formatInTimeZone(new Date(), TIMEZONE, "dd/MM/yyyy HH:mm", { locale: ptBR })}`, { align: 'center' });
       doc.moveDown(2);
 
       // --- SECTION: INFORMAÇÕES GERAIS ---
@@ -174,7 +179,7 @@ export async function gerarRelatorioPDF(data: RelatorioData[]): Promise<Buffer> 
       // --- FOOTER ---
       const pageCount = doc.bufferedPageRange().count;
       doc.fontSize(8).fillColor('#94a3b8')
-         .text('DM Engenharia e Consultoria - Gestão de Protocolos', 50, doc.page.height - 50, { align: 'center' });
+         .text(`${empresaInfo} - Gestão de Protocolos`, 50, doc.page.height - 50, { align: 'center' });
     });
 
     doc.end();

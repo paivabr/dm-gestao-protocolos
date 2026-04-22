@@ -10,6 +10,31 @@ import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import * as googleCalendar from "./google-calendar";
 
 export const appRouter = router({
+  // ============ EMPRESA ROUTES ============
+  empresa: router({
+    getConfig: publicProcedure.query(async () => {
+      return await db.getEmpresaConfig();
+    }),
+    updateConfig: protectedProcedure
+      .input(z.object({
+        nomeFantasia: z.string().min(1, "Nome fantasia é obrigatório"),
+        razaoSocial: z.string().optional(),
+        cnpj: z.string().optional(),
+        email: z.string().email().optional().or(z.literal("")),
+        telefone: z.string().optional(),
+        endereco: z.string().optional(),
+        website: z.string().optional(),
+        logoUrl: z.string().optional(),
+        corPrimaria: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user?.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Apenas administradores podem alterar as configurações da empresa" });
+        }
+        return await db.updateEmpresaConfig(input);
+      }),
+  }),
+
   // ============ AUTH ROUTES ============
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
