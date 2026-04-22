@@ -1619,6 +1619,8 @@ export async function getRelatorioProtocolos(protocoloIds: number[]) {
           totalReceitas,
           totalRecebido,
           totalPendente,
+          despesasList,
+          receitasList,
           isArchived: !!arquivoInfo,
           dataArquivamento: arquivoInfo?.dataArquivamento,
           custas: arquivoInfo?.custas || "0.00",

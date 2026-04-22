@@ -59,47 +59,49 @@ export default function RelatorioProtocolos() {
           protocoloIds: selectedProtocolos,
         });
 
-        if (result.success && result.csv) {
-          const binaryString = atob(result.csv);
+        if (result.success && result.pdf) {
+          const binaryString = atob(result.pdf);
           const bytes = new Uint8Array(binaryString.length);
           for (let i = 0; i < binaryString.length; i++) {
             bytes[i] = binaryString.charCodeAt(i);
           }
-          const blob = new Blob([bytes], { type: "text/csv;charset=utf-8" });
+          const blob = new Blob([bytes], { type: "application/pdf" });
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;
-          a.download = `relatorio-protocolos-${new Date().toISOString().split("T")[0]}.csv`;
+          a.download = result.filename || `relatorio-protocolos-${new Date().toISOString().split("T")[0]}.pdf`;
           document.body.appendChild(a);
           a.click();
           window.URL.revokeObjectURL(url);
           document.body.removeChild(a);
-          toast.success("Relatório gerado e baixado com sucesso!");
+          toast.success("Relatório PDF gerado e baixado com sucesso!");
         } else {
-          toast.error("Erro ao gerar relatório");
+          toast.error("Erro ao gerar relatório PDF");
         }
       } else {
         const result = await gerarProcessosPDF.mutateAsync({
           processoIds: selectedProcessos,
         });
 
-        if (result.success && result.csv) {
+        if (result.success && result.pdf) {
           // Convert base64 to blob and download
-          const binaryString = atob(result.csv);
+          const binaryString = atob(result.pdf);
           const bytes = new Uint8Array(binaryString.length);
           for (let i = 0; i < binaryString.length; i++) {
             bytes[i] = binaryString.charCodeAt(i);
           }
-          const blob = new Blob([bytes], { type: "text/csv;charset=utf-8" });
+          const blob = new Blob([bytes], { type: "application/pdf" });
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;
-          a.download = `relatorio-processos-${new Date().toISOString().split("T")[0]}.csv`;
+          a.download = result.filename || `relatorio-processos-${new Date().toISOString().split("T")[0]}.pdf`;
           document.body.appendChild(a);
           a.click();
           window.URL.revokeObjectURL(url);
           document.body.removeChild(a);
-          toast.success("Relatório gerado e baixado com sucesso!");
+          toast.success("Relatório PDF gerado e baixado com sucesso!");
+        } else {
+          toast.error("Erro ao gerar relatório PDF");
         }
       }
     } catch (error) {
