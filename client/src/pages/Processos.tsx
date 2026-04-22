@@ -83,7 +83,7 @@ export default function Processos() {
           titulo: formData.titulo,
           clienteId: parseInt(formData.clienteId),
           status: formData.status as "Pendente" | "Em Análise" | "Protocolado" | "Finalizado" | "Campo" | "Análise/Escritório" | "Pendente documento",
-          prazoVencimento: formData.prazoVencimento ? new Date(formData.prazoVencimento) : undefined,
+          prazoVencimento: formData.prazoVencimento ? new Date(`${formData.prazoVencimento}T12:00:00`) : undefined,
         });
         toast.success("Processo atualizado com sucesso!");
         setEditingProcesso(null);
@@ -93,7 +93,7 @@ export default function Processos() {
           titulo: formData.titulo,
           clienteId: parseInt(formData.clienteId),
           status: formData.status as "Pendente" | "Em Análise" | "Protocolado" | "Finalizado" | "Campo" | "Análise/Escritório" | "Pendente documento",
-          prazoVencimento: formData.prazoVencimento ? new Date(formData.prazoVencimento) : undefined,
+          prazoVencimento: formData.prazoVencimento ? new Date(`${formData.prazoVencimento}T12:00:00`) : undefined,
         });
         toast.success("Processo criado com sucesso!");
         setOpen(false);

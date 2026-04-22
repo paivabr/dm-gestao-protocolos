@@ -1,6 +1,9 @@
 import PDFDocument from 'pdfkit';
 import { format } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 import { ptBR } from 'date-fns/locale';
+
+const TIMEZONE = 'America/Sao_Paulo';
 
 interface RelatorioData {
   id: number;
@@ -57,7 +60,8 @@ export async function gerarRelatorioPDF(data: RelatorioData[]): Promise<Buffer> 
     const formatDate = (date: any) => {
       if (!date) return 'N/A';
       try {
-        return format(new Date(date), 'dd/MM/yyyy', { locale: ptBR });
+        // Use formatInTimeZone to ensure Brazil time regardless of server TZ
+        return formatInTimeZone(new Date(date), TIMEZONE, 'dd/MM/yyyy', { locale: ptBR });
       } catch (e) {
         return 'Data Inválida';
       }
@@ -68,7 +72,7 @@ export async function gerarRelatorioPDF(data: RelatorioData[]): Promise<Buffer> 
 
       // --- HEADER ---
       doc.fillColor('#1e293b').fontSize(20).text('Relatório de Protocolo', { align: 'center' });
-      doc.fontSize(10).fillColor('#64748b').text(`Gerado em: ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: ptBR })}`, { align: 'center' });
+      doc.fontSize(10).fillColor('#64748b').text(`Gerado em: ${formatInTimeZone(new Date(), TIMEZONE, "dd/MM/yyyy HH:mm", { locale: ptBR })}`, { align: 'center' });
       doc.moveDown(2);
 
       // --- SECTION: INFORMAÇÕES GERAIS ---
