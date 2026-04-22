@@ -73,6 +73,36 @@ export type Processo = typeof processos.$inferSelect;
 export type InsertProcesso = typeof processos.$inferInsert;
 
 /**
+ * TiposProcesso table for storing dynamic process types.
+ */
+export const tiposProcesso = mysqlTable("tiposProcesso", {
+  id: int("id").autoincrement().primaryKey(),
+  nome: varchar("nome", { length: 100 }).notNull().unique(),
+  descricao: text("descricao"),
+  ativo: tinyint("ativo").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type TipoProcesso = typeof tiposProcesso.$inferSelect;
+export type InsertTipoProcesso = typeof tiposProcesso.$inferInsert;
+
+/**
+ * Cartorios table for storing dynamic notary offices.
+ */
+export const cartorios = mysqlTable("cartorios", {
+  id: int("id").autoincrement().primaryKey(),
+  nome: varchar("nome", { length: 100 }).notNull().unique(),
+  localizacao: varchar("localizacao", { length: 255 }),
+  ativo: tinyint("ativo").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Cartorio = typeof cartorios.$inferSelect;
+export type InsertCartorio = typeof cartorios.$inferInsert;
+
+/**
  * ChecklistItens table for document checklists per process.
  */
 export const checklistItens = mysqlTable("checklistItens", {

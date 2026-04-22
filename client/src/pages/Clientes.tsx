@@ -27,7 +27,7 @@ export default function Clientes() {
   const { user } = useAuth();
   const { data: permissions } = trpc.permissions.getMyPermissions.useQuery();
   
-  const { data: paginatedData, isLoading, refetch } = trpc.clientes.listPaginated.useQuery(
+  const { data: paginatedData, isLoading } = trpc.clientes.listPaginated.useQuery(
     {
       page: currentPage,
       limit: ITEMS_PER_PAGE,
@@ -36,6 +36,8 @@ export default function Clientes() {
       enabled: user?.role === "admin" || permissions?.canViewClients,
     }
   );
+
+  const utils = trpc.useUtils();
 
   const createMutation = trpc.clientes.create.useMutation();
   const updateMutation = trpc.clientes.update.useMutation();
@@ -86,7 +88,7 @@ export default function Clientes() {
       setEditingId(null);
       setOpen(false);
       setCurrentPage(1);
-      refetch();
+      utils.clientes.listPaginated.invalidate();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Erro ao salvar cliente";
       toast.error(message);
@@ -136,7 +138,7 @@ export default function Clientes() {
         await deleteMutation.mutateAsync({ id });
         toast.success("Cliente deletado com sucesso!");
         setCurrentPage(1);
-        refetch();
+        utils.clientes.listPaginated.invalidate();
       } catch (error) {
         const message = error instanceof Error ? error.message : "Erro ao deletar cliente";
         toast.error(message);

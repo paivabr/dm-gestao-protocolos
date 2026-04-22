@@ -22,17 +22,19 @@ export default function Despesas() {
     limit: 100,
   });
 
-  const { data: despesas = [], refetch } = trpc.despesas.listarPorProtocolo.useQuery(
+  const { data: despesas = [] } = trpc.despesas.listarPorProtocolo.useQuery(
     { statusProtocoloId: parseInt(selectedProtocolo) },
     { enabled: !!selectedProtocolo }
   );
+
+  const utils = trpc.useUtils();
 
   const createMutation = trpc.despesas.criar.useMutation({
     onSuccess: () => {
       toast.success("Despesa adicionada com sucesso!");
       setFormData({ descricao: "", valor: "" });
       setDialogOpen(false);
-      refetch();
+      utils.despesas.listarPorProtocolo.invalidate();
     },
     onError: (error) => {
       toast.error(error.message);
@@ -42,7 +44,7 @@ export default function Despesas() {
   const updateMutation = trpc.despesas.atualizar.useMutation({
     onSuccess: () => {
       toast.success("Despesa atualizada!");
-      refetch();
+      utils.despesas.listarPorProtocolo.invalidate();
     },
     onError: (error) => {
       toast.error(error.message);
@@ -52,7 +54,7 @@ export default function Despesas() {
   const deleteMutation = trpc.despesas.deletar.useMutation({
     onSuccess: () => {
       toast.success("Despesa removida!");
-      refetch();
+      utils.despesas.listarPorProtocolo.invalidate();
     },
     onError: (error) => {
       toast.error(error.message);

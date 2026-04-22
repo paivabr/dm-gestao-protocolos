@@ -35,7 +35,7 @@ export default function Processos() {
   const { user } = useAuth();
   const { data: permissions } = trpc.permissions.getMyPermissions.useQuery();
 
-  const { data: paginatedData, isLoading, refetch } = trpc.processos.listPaginated.useQuery(
+  const { data: paginatedData, isLoading } = trpc.processos.listPaginated.useQuery(
     {
       page: currentPage,
       limit: ITEMS_PER_PAGE,
@@ -44,6 +44,8 @@ export default function Processos() {
       enabled: user?.role === "admin" || permissions?.canViewProcesses,
     }
   );
+
+  const utils = trpc.useUtils();
 
   const { data: clientes } = trpc.clientes.list.useQuery();
   const createMutation = trpc.processos.create.useMutation();
@@ -98,7 +100,7 @@ export default function Processos() {
       }
       setFormData({ titulo: "", clienteId: "", status: "Pendente", prazoVencimento: "" });
       setCurrentPage(1);
-      refetch();
+      utils.processos.listPaginated.invalidate();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Erro ao salvar processo";
       toast.error(message);
@@ -122,7 +124,7 @@ export default function Processos() {
         await deleteMutation.mutateAsync({ id });
         toast.success("Processo deletado com sucesso!");
         setCurrentPage(1);
-        refetch();
+        utils.processos.listPaginated.invalidate();
       } catch (error) {
         const message = error instanceof Error ? error.message : "Erro ao deletar processo";
         toast.error(message);
@@ -134,7 +136,7 @@ export default function Processos() {
     if (confirm("Tem certeza que deseja arquivar este processo?")) {
       try {
         toast.success("Processo arquivado com sucesso!");
-        refetch();
+        utils.processos.listPaginated.invalidate();
       } catch (error) {
         const message = error instanceof Error ? error.message : "Erro ao arquivar processo";
         toast.error(message);

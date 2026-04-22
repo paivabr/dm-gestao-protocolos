@@ -26,10 +26,11 @@ export default function StatusProtocolo() {
   const [currentPage, setCurrentPage] = useState(1);
   const { user } = useAuth();
   const { data: permissions } = trpc.permissions.getMyPermissions.useQuery();
-  const { data: paginatedData, isLoading, refetch } = trpc.statusProtocolo.listPaginated.useQuery({
+  const { data: paginatedData, isLoading } = trpc.statusProtocolo.listPaginated.useQuery({
     page: currentPage,
     limit: ITEMS_PER_PAGE,
   });
+  const utils = trpc.useUtils();
   const { data: clientes = [] } = trpc.clientes.list.useQuery();
   const createMutation = trpc.statusProtocolo.create.useMutation();
   const updateMutation = trpc.statusProtocolo.update.useMutation();
@@ -164,7 +165,7 @@ export default function StatusProtocolo() {
       setEditingId(null);
       setDialogOpen(false);
       setCurrentPage(1);
-      refetch();
+      utils.statusProtocolo.listPaginated.invalidate();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Erro ao salvar protocolo";
       toast.error(message);
@@ -191,7 +192,7 @@ export default function StatusProtocolo() {
       try {
         await arquivoMutation.mutateAsync({ statusProtocoloId });
         toast.success("Protocolo arquivado com sucesso!");
-        refetch();
+        utils.statusProtocolo.listPaginated.invalidate();
       } catch (error) {
         const message = error instanceof Error ? error.message : "Erro ao arquivar protocolo";
         toast.error(message);
@@ -199,7 +200,6 @@ export default function StatusProtocolo() {
     }
   };
 
-  const utils = trpc.useUtils();
   const custasCreateMutation = trpc.despesas.criar.useMutation();
   const despesasQuery = selectedProtocoloIdForCustas 
     ? trpc.despesas.listarPorProtocolo.useQuery({ statusProtocoloId: selectedProtocoloIdForCustas })
@@ -229,7 +229,7 @@ export default function StatusProtocolo() {
       if (selectedProtocoloIdForCustas) {
         void utils.despesas.listarPorProtocolo.invalidate({ statusProtocoloId: selectedProtocoloIdForCustas });
       }
-      void refetch();
+      utils.statusProtocolo.listPaginated.invalidate();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Erro ao adicionar custa";
       toast.error(message);
@@ -242,7 +242,7 @@ export default function StatusProtocolo() {
         await deleteMutation.mutateAsync({ id });
         toast.success("Protocolo deletado!");
         setCurrentPage(1);
-        refetch();
+        utils.statusProtocolo.listPaginated.invalidate();
       } catch (error) {
         const message = error instanceof Error ? error.message : "Erro ao deletar protocolo";
         toast.error(message);

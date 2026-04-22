@@ -12,11 +12,12 @@ export default function Arquivo() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  const { data: arquivados, isLoading, refetch } = trpc.arquivo.listar.useQuery();
+  const { data: arquivados, isLoading } = trpc.arquivo.listar.useQuery();
+  const utils = trpc.useUtils();
   const deleteMutation = trpc.arquivo.deletar.useMutation({
     onSuccess: () => {
       toast({ title: "Sucesso", description: "Arquivo deletado com sucesso" });
-      refetch();
+      utils.arquivo.listar.invalidate();
       setIsDeleteDialogOpen(false);
     },
     onError: (error) => {
