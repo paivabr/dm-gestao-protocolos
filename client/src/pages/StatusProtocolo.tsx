@@ -1,6 +1,6 @@
 
 import { useState, useMemo } from "react";
-import { Plus, Search, Edit2, Trash2, Filter, X, AlertCircle, ChevronLeft, ChevronRight, DollarSign } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, Filter, X, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -429,15 +429,7 @@ export default function StatusProtocolo() {
                             >
                               👁️
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleAddCustas(protocolo.id)}
-                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                              title="Adicionar Custas"
-                            >
-                              <DollarSign className="h-4 w-4" />
-                            </Button>
+
                             <Button
                               variant="ghost"
                               size="sm"

@@ -1073,12 +1073,15 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
         try {
+          console.log("[PDF] Gerando relatório para protocolos:", input.protocoloIds);
           const { generateProtocolosReport } = await import("./pdf-generator");
           const protocolos = await db.getRelatorioProtocolos(input.protocoloIds);
+          console.log("[PDF] Dados obtidos:", protocolos.length, "registros");
           const pdfBuffer = await generateProtocolosReport(protocolos as any);
+          console.log("[PDF] PDF gerado:", pdfBuffer.length, "bytes");
           return { success: true, pdf: pdfBuffer.toString("base64") };
         } catch (error) {
-          console.error("[PDF] Failed to generate protocolos report:", error);
+          console.error("[PDF] Erro:", error);
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao gerar PDF" });
         }
       }),
