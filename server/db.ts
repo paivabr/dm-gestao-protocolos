@@ -1227,6 +1227,7 @@ export async function getStatusProtocoloPaginated(page: number = 1, limit: numbe
         status: statusProtocolo.status,
         cartorio: statusProtocolo.cartorio,
         ultimaAtualizacao: statusProtocolo.ultimaAtualizacao,
+        observacoes: statusProtocolo.observacoes,
         createdAt: statusProtocolo.createdAt,
         updatedAt: statusProtocolo.updatedAt,
         cliente: {
