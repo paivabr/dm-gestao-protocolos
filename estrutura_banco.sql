@@ -375,3 +375,31 @@ CREATE TABLE `users` (
 INSERT INTO users (username, passwordHash, name, role, canCreateClient, canEditProcess, canDeleteProcess, canViewCalendar, canViewProcesses, canViewClients, canManageParcelas, canViewArchivo, canViewDespesas, canViewRelatorio) 
 VALUES ('admin', '$2b$10$LzGfXzS5u9W5oYV6S6eS6eS6eS6eS6eS6eS6eS6eS6eS6eS6eS6e', 'Administrador Sistema', 'admin', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
 
+
+--
+-- Table structure for table `empresaConfig`
+--
+
+DROP TABLE IF EXISTS `empresaConfig`;
+CREATE TABLE `empresaConfig` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `nomeFantasia` varchar(255) NOT NULL,
+  `razaoSocial` varchar(255) DEFAULT NULL,
+  `cnpj` varchar(20) DEFAULT NULL,
+  `email` varchar(255) DEFAULT NULL,
+  `telefone` varchar(20) DEFAULT NULL,
+  `endereco` text,
+  `website` varchar(255) DEFAULT NULL,
+  `logoUrl` text,
+  `corPrimaria` varchar(7) DEFAULT '#3b82f6',
+  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Inserir configuração inicial da marca GP
+INSERT INTO empresaConfig (nomeFantasia, razaoSocial, corPrimaria) 
+VALUES ('Gestão de Protocolos GP', 'Gestão de Protocolos GP LTDA', '#3b82f6');
+
+-- Inserir usuário administrador padrão (Senha: admin123)
+INSERT INTO users (username, passwordHash, name, role, canCreateClient, canEditProcess, canDeleteProcess, canViewCalendar, canViewProcesses, canViewClients, canManageParcelas, canViewArchivo, canViewDespesas, canViewRelatorio) 
+VALUES ('admin', '$2b$10$LzGfXzS5u9W5oYV6S6eS6eS6eS6eS6eS6eS6eS6eS6eS6eS6eS6e', 'Administrador Sistema', 'admin', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
