@@ -1204,9 +1204,28 @@ export async function getProcessosPaginated(page: number = 1, limit: number = 10
     const clientes_list = await getClientes();
     const clienteMap = new Map(clientes_list.map(c => [c.id, c]));
 
-    const enriched = result.map(p => ({
-      ...p,
-      cliente: clienteMap.get(p.clienteId),
+    const enriched = await Promise.all(result.map(async (p) => {
+      const pParcelas = await db.select().from(parcelas).where(eq(parcelas.processoId, p.id));
+      
+      const totalGeral = pParcelas.reduce((sum, item) => sum + parseFloat(item.valorParcela), 0);
+      const totalDesconto = pParcelas.reduce((sum, item) => sum + parseFloat(item.desconto || "0"), 0);
+      const totalPago = pParcelas
+        .filter(item => item.pago === 1)
+        .reduce((sum, item) => sum + (parseFloat(item.valorParcela) - parseFloat(item.desconto || "0")), 0);
+      
+      const totalAPagar = (totalGeral - totalDesconto) - totalPago;
+
+      return {
+        ...p,
+        cliente: clienteMap.get(p.clienteId),
+        financeiro: {
+          totalGeral,
+          totalDesconto,
+          totalPago,
+          totalAPagar,
+          totalComDesconto: totalGeral - totalDesconto
+        }
+      };
     }));
 
     return { data: enriched, total, page, limit };

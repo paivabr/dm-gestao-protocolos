@@ -298,7 +298,9 @@ export default function Processos() {
                       <TableHead>Título</TableHead>
                       <TableHead>Cliente</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Vencimento</TableHead>
+                      <TableHead>Valor Total</TableHead>
+                      <TableHead>Pago</TableHead>
+                      <TableHead>Falta Pagar</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -318,7 +320,13 @@ export default function Processos() {
                           </span>
                         </TableCell>
                         <TableCell>
-                          {processo.prazoVencimento ? new Date(processo.prazoVencimento).toLocaleDateString() : "-"}
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(processo.financeiro?.totalComDesconto || 0)}
+                        </TableCell>
+                        <TableCell className="text-green-600 font-medium">
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(processo.financeiro?.totalPago || 0)}
+                        </TableCell>
+                        <TableCell className="text-red-600 font-medium">
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(processo.financeiro?.totalAPagar || 0)}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex gap-2 justify-end">
