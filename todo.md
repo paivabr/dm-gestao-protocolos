@@ -112,3 +112,12 @@
 - [x] Verificar todos os SelectItem no código - VERIFICADO
 - [x] Testar criação de protocolo com todos os status - TESTADO COM SUCESSO
 - [x] Testar filtro de status - TESTADO COM SUCESSO
+
+
+## Correções de Schema - Abril 2026 (Lote 3)
+- [x] Remover constraint UNIQUE na coluna `numeroProtocolo` para permitir duplicatas - REMOVIDO
+- [x] Remover tipo de processo inválido "Averbação de Qualificação" - REMOVIDO
+- [x] Corrigir erros de sintaxe TypeScript em StatusProtocolo.tsx - CORRIGIDO
+- [ ] Verificar se novos protocolos podem ser criados sem erro de duplicata
+- [ ] Validar que o banco de dados Railway está sincronizado
+- [ ] Testar criação de múltiplos protocolos com mesmo número
