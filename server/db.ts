@@ -764,6 +764,7 @@ export async function updateUserPermissions(userId: number, permissions: {
   canViewProcesses?: boolean;
   canViewClients?: boolean;
   canManageParcelas?: boolean;
+  canViewArchivo?: boolean;
 }) {
   const db = await getDb();
   if (!db) {
@@ -780,6 +781,7 @@ export async function updateUserPermissions(userId: number, permissions: {
     if (permissions.canViewProcesses !== undefined) updateData.canViewProcesses = permissions.canViewProcesses ? 1 : 0;
     if (permissions.canViewClients !== undefined) updateData.canViewClients = permissions.canViewClients ? 1 : 0;
     if (permissions.canManageParcelas !== undefined) updateData.canManageParcelas = permissions.canManageParcelas ? 1 : 0;
+    if (permissions.canViewArchivo !== undefined) updateData.canViewArchivo = permissions.canViewArchivo ? 1 : 0;
 
     await db.update(users).set(updateData).where(eq(users.id, userId));
   } catch (error) {
@@ -803,6 +805,7 @@ export async function getUserPermissions(userId: number) {
       canViewProcesses: users.canViewProcesses,
       canViewClients: users.canViewClients,
       canManageParcelas: users.canManageParcelas,
+      canViewArchivo: users.canViewArchivo,
     }).from(users).where(eq(users.id, userId)).limit(1);
 
     if (result.length > 0) {
@@ -814,6 +817,7 @@ export async function getUserPermissions(userId: number) {
         canViewProcesses: result[0].canViewProcesses === 1,
         canViewClients: result[0].canViewClients === 1,
         canManageParcelas: result[0].canManageParcelas === 1,
+        canViewArchivo: result[0].canViewArchivo === 1,
       };
     }
     return null;
@@ -1253,10 +1257,14 @@ export async function getStatusProtocoloPaginated(page: number = 1, limit: numbe
 export async function arquivarProtocolo(statusProtocoloId: number, observacoesArquivo?: string): Promise<number | null> {
   const db = await getDb();
   if (!db) return null;
-
   try {
+    // Get the statusProtocolo to extract clienteId
+    const statusProto = await db.select().from(statusProtocolo).where(eq(statusProtocolo.id, statusProtocoloId)).limit(1);
+    const clienteId = statusProto.length > 0 ? statusProto[0].clienteId : null;
+    
     const result = await db.insert(arquivo).values({
       statusProtocoloId,
+      clienteId: clienteId || undefined,
       observacoesArquivo,
       totalGasto: "0.00",
       totalRecebido: "0.00",
@@ -1273,7 +1281,25 @@ export async function getArquivados(): Promise<any[]> {
   if (!db) return [];
 
   try {
-    const result = await db.select().from(arquivo);
+    // Get arquivos with related client and protocol data
+    const result = await db.select({
+      id: arquivo.id,
+      statusProtocoloId: arquivo.statusProtocoloId,
+      processoId: arquivo.processoId,
+      clienteId: arquivo.clienteId,
+      dataArquivamento: arquivo.dataArquivamento,
+      observacoesArquivo: arquivo.observacoesArquivo,
+      totalGasto: arquivo.totalGasto,
+      totalRecebido: arquivo.totalRecebido,
+      clienteNome: clientes.nome,
+      numeroProtocolo: statusProtocolo.numeroProtocolo,
+      processoTitulo: processos.titulo,
+    })
+    .from(arquivo)
+    .leftJoin(clientes, eq(arquivo.clienteId, clientes.id))
+    .leftJoin(statusProtocolo, eq(arquivo.statusProtocoloId, statusProtocolo.id))
+    .leftJoin(processos, eq(arquivo.processoId, processos.id));
+    
     return result;
   } catch (error) {
     console.error("[Database] Failed to get arquivados:", error);

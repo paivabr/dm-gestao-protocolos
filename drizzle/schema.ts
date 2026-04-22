@@ -24,6 +24,7 @@ export const users = mysqlTable("users", {
   canViewProcesses: tinyint("canViewProcesses").default(0).notNull(),
   canViewClients: tinyint("canViewClients").default(0).notNull(),
   canManageParcelas: tinyint("canManageParcelas").default(0).notNull(),
+  canViewArchivo: tinyint("canViewArchivo").default(0).notNull(),
   // Google Calendar Integration
   googleAccessToken: text("googleAccessToken"),
   googleRefreshToken: text("googleRefreshToken"),
@@ -163,7 +164,9 @@ export type InsertStatusProtocolo = typeof statusProtocolo.$inferInsert;
 // ============ ARQUIVO TABLE ============
 export const arquivo = mysqlTable("arquivo", {
   id: int("id").autoincrement().primaryKey(),
-  statusProtocoloId: int("statusProtocoloId").notNull(),
+  statusProtocoloId: int("statusProtocoloId"),
+  processoId: int("processoId"),
+  clienteId: int("clienteId"),
   dataArquivamento: timestamp("dataArquivamento").defaultNow().notNull(),
   observacoesArquivo: text("observacoesArquivo"),
   totalGasto: decimal("totalGasto", { precision: 10, scale: 2 }).default("0.00"),

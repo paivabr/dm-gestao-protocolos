@@ -70,6 +70,7 @@ export default function Arquivo() {
               <thead className="bg-gray-50 border-b">
                 <tr>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">ID</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Cliente</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Protocolo</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Data Arquivamento</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Total Gasto</th>
@@ -81,7 +82,8 @@ export default function Arquivo() {
                 {arquivados.map((item: any) => (
                   <tr key={item.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 text-sm text-gray-900">{item.id}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{item.statusProtocoloId}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{item.clienteNome || '-'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{item.numeroProtocolo || item.processoTitulo || '-'}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{formatarData(item.dataArquivamento)}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{formatarValor(item.totalGasto)}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{formatarValor(item.totalRecebido)}</td>
@@ -128,8 +130,12 @@ export default function Arquivo() {
                   <p className="font-semibold">{selectedArquivo.id}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Protocolo ID</p>
-                  <p className="font-semibold">{selectedArquivo.statusProtocoloId}</p>
+                  <p className="text-sm text-gray-600">Cliente</p>
+                  <p className="font-semibold">{selectedArquivo.clienteNome || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Protocolo</p>
+                  <p className="font-semibold">{selectedArquivo.numeroProtocolo || selectedArquivo.processoTitulo || '-'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Data Arquivamento</p>

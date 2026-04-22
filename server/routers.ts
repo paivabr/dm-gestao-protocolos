@@ -733,6 +733,7 @@ export const appRouter = router({
         canViewProcesses: z.boolean().optional(),
         canViewClients: z.boolean().optional(),
         canManageParcelas: z.boolean().optional(),
+        canViewArchivo: z.boolean().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         // Only admins can update permissions
@@ -748,6 +749,7 @@ export const appRouter = router({
           canViewProcesses: input.canViewProcesses,
           canViewClients: input.canViewClients,
           canManageParcelas: input.canManageParcelas,
+          canViewArchivo: input.canViewArchivo,
         });
 
         return { success: true };

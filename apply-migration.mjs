@@ -1,20 +1,16 @@
 import mysql from 'mysql2/promise';
 import fs from 'fs';
 
-const sql = fs.readFileSync('./drizzle/0015_light_magdalene.sql', 'utf-8');
+const sql = fs.readFileSync('./drizzle/0016_mature_darwin.sql', 'utf-8');
 const connection = await mysql.createConnection(process.env.DATABASE_URL);
 
 const statements = sql.split('--> statement-breakpoint').map(s => s.trim()).filter(s => s);
 for (const stmt of statements) {
   try {
     await connection.execute(stmt);
-    console.log('✓ Executed:', stmt.substring(0, 50));
+    console.log('✓ Executed:', stmt.substring(0, 60));
   } catch (e) {
-    if (e.code === 'ER_TABLE_EXISTS_ERROR') {
-      console.log('✓ Table already exists');
-    } else {
-      console.error('✗ Error:', e.message);
-    }
+    console.error('✗ Error:', e.message);
   }
 }
 

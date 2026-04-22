@@ -285,6 +285,7 @@ function PermissionsManager({ userId, userName }: { userId: number; userName: st
     canViewProcesses: false,
     canViewClients: false,
     canManageParcelas: false,
+    canViewArchivo: false,
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -294,7 +295,10 @@ function PermissionsManager({ userId, userName }: { userId: number; userName: st
 
   useEffect(() => {
     if (getPermissionsQuery.data) {
-      setPermissions(getPermissionsQuery.data);
+      setPermissions({
+        ...getPermissionsQuery.data,
+        canViewArchivo: getPermissionsQuery.data.canViewArchivo ?? false,
+      });
     }
   }, [getPermissionsQuery.data]);
 
@@ -390,6 +394,15 @@ function PermissionsManager({ userId, userName }: { userId: number; userName: st
               className="w-4 h-4"
             />
             <span className="text-sm font-medium">Gerenciar Parcelas</span>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-blue-100 transition-colors">
+            <input
+              type="checkbox"
+              checked={permissions.canViewArchivo}
+              onChange={() => handlePermissionChange("canViewArchivo")}
+              className="w-4 h-4"
+            />
+            <span className="text-sm font-medium">Ver Arquivo</span>
           </label>
         </div>
         <Button

@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `canViewArchivo` tinyint DEFAULT 0 NOT NULL;
