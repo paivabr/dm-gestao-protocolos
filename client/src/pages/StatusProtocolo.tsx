@@ -269,7 +269,6 @@ export default function StatusProtocolo() {
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
                   {tiposProcesso.map(tipo => (
                     <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>
                   ))}
@@ -286,7 +285,6 @@ export default function StatusProtocolo() {
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
                   {STATUS_OPTIONS.map(status => (
                     <SelectItem key={status} value={status}>{status}</SelectItem>
                   ))}
@@ -303,7 +301,6 @@ export default function StatusProtocolo() {
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
                   {cartorios.map(cartorio => (
                     <SelectItem key={cartorio} value={cartorio}>{cartorio}</SelectItem>
                   ))}
