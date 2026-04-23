@@ -225,7 +225,7 @@ export type InsertArquivo = typeof arquivo.$inferInsert;
 // ============ DESPESAS TABLE ============
 export const despesas = mysqlTable("despesas", {
   id: int("id").autoincrement().primaryKey(),
-  statusProtocoloId: int("statusProtocoloId").notNull(),
+  statusProtocoloId: int("statusProtocoloId"),
   processoId: int("processoId"),
   descricao: varchar("descricao", { length: 255 }).notNull(),
   valor: decimal("valor", { precision: 10, scale: 2 }).notNull(),

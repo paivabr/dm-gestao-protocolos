@@ -1046,7 +1046,7 @@ export const appRouter = router({
 
     listarPorProtocolo: protectedProcedure
       .input(z.object({ 
-        statusProtocoloId: z.number(),
+        statusProtocoloId: z.number().optional(),
         processoId: z.number().optional()
       }))
       .query(async ({ input }) => {

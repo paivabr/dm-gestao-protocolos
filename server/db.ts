@@ -1440,12 +1440,19 @@ export async function updateArquivo(id: number, data: any): Promise<boolean> {
 
 // ============ DESPESAS FUNCTIONS ============
 
-export async function createDespesa(data: InsertDespesa): Promise<number | null> {
+export async function createDespesa(data: any): Promise<number | null> {
   const db = await getDb();
   if (!db) return null;
 
   try {
-    const result = await db.insert(despesas).values(data);
+    // Garantir que se statusProtocoloId for 0 ou inválido, ele seja tratado como null se a coluna permitir,
+    // mas como a coluna é NOT NULL no schema original, vamos garantir que pelo menos um ID exista.
+    const insertData = { ...data };
+    if (insertData.statusProtocoloId === 0) {
+      delete insertData.statusProtocoloId;
+    }
+
+    const result = await db.insert(despesas).values(insertData);
     return (result as any)[0]?.insertId as number || null;
   } catch (error) {
     console.error("[Database] Failed to create despesa:", error);
@@ -1453,20 +1460,26 @@ export async function createDespesa(data: InsertDespesa): Promise<number | null>
   }
 }
 
-export async function getDespesasByProtocolo(statusProtocoloId: number, processoId?: number): Promise<Despesa[]> {
+export async function getDespesasByProtocolo(statusProtocoloId?: number, processoId?: number): Promise<Despesa[]> {
   const db = await getDb();
   if (!db) return [];
 
   try {
-    let query = db.select().from(despesas).where(eq(despesas.statusProtocoloId, statusProtocoloId));
+    let query;
     
-    if (processoId) {
+    if (statusProtocoloId && processoId) {
       query = db.select().from(despesas).where(
         and(
           eq(despesas.statusProtocoloId, statusProtocoloId),
           eq(despesas.processoId, processoId)
         )
-      ) as any;
+      );
+    } else if (statusProtocoloId) {
+      query = db.select().from(despesas).where(eq(despesas.statusProtocoloId, statusProtocoloId));
+    } else if (processoId) {
+      query = db.select().from(despesas).where(eq(despesas.processoId, processoId));
+    } else {
+      return [];
     }
     
     const result = await query;
