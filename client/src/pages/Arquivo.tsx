@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Trash2, Eye, RotateCcw } from "lucide-react";
+import { toast } from "sonner";
 
 
 export default function Arquivo() {
-  const toast = (msg: any) => console.log(msg);
   const [selectedArquivo, setSelectedArquivo] = useState<any>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -18,35 +18,35 @@ export default function Arquivo() {
   const utils = trpc.useUtils();
   const deleteMutation = trpc.arquivo.deletar.useMutation({
     onSuccess: () => {
-      toast({ title: "Sucesso", description: "Arquivo deletado com sucesso" });
+      toast.success("Arquivo deletado com sucesso");
       utils.arquivo.listar.invalidate();
       setIsDeleteDialogOpen(false);
     },
     onError: (error) => {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      toast.error("Erro ao deletar arquivo: " + error.message);
     },
   });
   const updateMutation = trpc.arquivo.atualizar.useMutation({
     onSuccess: () => {
-      toast({ title: "Sucesso", description: "Arquivo atualizado com sucesso" });
+      toast.success("Arquivo atualizado com sucesso");
       utils.arquivo.listar.invalidate();
       setIsEditDialogOpen(false);
     },
     onError: (error) => {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      toast.error("Erro ao atualizar arquivo: " + error.message);
     },
   });
 
   const desarquivarMutation = trpc.arquivo.desarquivar.useMutation({
     onSuccess: () => {
-      toast({ title: "Sucesso", description: "Item desarquivado com sucesso" });
+      toast.success("Item desarquivado com sucesso");
       utils.arquivo.listar.invalidate();
       // Também invalidar as listas de protocolos e processos para que apareçam como ativos
       utils.statusProtocolo.listPaginated.invalidate();
       utils.processos.listPaginated.invalidate();
     },
     onError: (error) => {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      toast.error("Erro ao desarquivar item: " + error.message);
     },
   });
 
