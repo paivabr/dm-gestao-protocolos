@@ -294,6 +294,7 @@ function PermissionsManager({ userId, userName }: { userId: number; userName: st
     canViewArchivo: false,
     canViewDespesas: false,
     canViewRelatorio: false,
+    canViewAnalytics: false,
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -308,6 +309,7 @@ function PermissionsManager({ userId, userName }: { userId: number; userName: st
         canViewArchivo: getPermissionsQuery.data.canViewArchivo ?? false,
         canViewDespesas: getPermissionsQuery.data.canViewDespesas ?? false,
         canViewRelatorio: getPermissionsQuery.data.canViewRelatorio ?? false,
+        canViewAnalytics: getPermissionsQuery.data.canViewAnalytics ?? false,
       });
     }
   }, [getPermissionsQuery.data]);
@@ -431,6 +433,15 @@ function PermissionsManager({ userId, userName }: { userId: number; userName: st
               className="w-4 h-4"
             />
             <span className="text-sm font-medium">Ver Relatório</span>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-blue-100 transition-colors">
+            <input
+              type="checkbox"
+              checked={permissions.canViewAnalytics}
+              onChange={() => handlePermissionChange("canViewAnalytics")}
+              className="w-4 h-4"
+            />
+            <span className="text-sm font-medium">Ver Análise</span>
           </label>
         </div>
         <Button

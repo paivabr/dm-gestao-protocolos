@@ -27,6 +27,7 @@ export const users = mysqlTable("users", {
   canViewArchivo: tinyint("canViewArchivo").default(0).notNull(),
   canViewDespesas: tinyint("canViewDespesas").default(0).notNull(),
   canViewRelatorio: tinyint("canViewRelatorio").default(0).notNull(),
+  canViewAnalytics: tinyint("canViewAnalytics").default(0).notNull(),
   // Google Calendar Integration
   googleAccessToken: text("googleAccessToken"),
   googleRefreshToken: text("googleRefreshToken"),

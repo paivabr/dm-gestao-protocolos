@@ -798,6 +798,7 @@ export async function updateUserPermissions(userId: number, permissions: {
   canViewArchivo?: boolean;
   canViewDespesas?: boolean;
   canViewRelatorio?: boolean;
+  canViewAnalytics?: boolean;
 }) {
   const db = await getDb();
   if (!db) {
@@ -815,6 +816,7 @@ export async function updateUserPermissions(userId: number, permissions: {
     if (permissions.canViewClients !== undefined) updateData.canViewClients = permissions.canViewClients ? 1 : 0;
     if (permissions.canViewDespesas !== undefined) updateData.canViewDespesas = permissions.canViewDespesas ? 1 : 0;
     if (permissions.canViewRelatorio !== undefined) updateData.canViewRelatorio = permissions.canViewRelatorio ? 1 : 0;
+    if (permissions.canViewAnalytics !== undefined) updateData.canViewAnalytics = permissions.canViewAnalytics ? 1 : 0;
     if (permissions.canManageParcelas !== undefined) updateData.canManageParcelas = permissions.canManageParcelas ? 1 : 0;
     if (permissions.canViewArchivo !== undefined) updateData.canViewArchivo = permissions.canViewArchivo ? 1 : 0;
 
@@ -843,6 +845,7 @@ export async function getUserPermissions(userId: number) {
       canViewArchivo: users.canViewArchivo,
       canViewDespesas: users.canViewDespesas,
       canViewRelatorio: users.canViewRelatorio,
+      canViewAnalytics: users.canViewAnalytics,
     }).from(users).where(eq(users.id, userId)).limit(1);
 
     if (result.length > 0) {
@@ -855,6 +858,7 @@ export async function getUserPermissions(userId: number) {
         canViewClients: result[0].canViewClients === 1,
         canViewDespesas: result[0].canViewDespesas === 1,
         canViewRelatorio: result[0].canViewRelatorio === 1,
+        canViewAnalytics: result[0].canViewAnalytics === 1,
         canManageParcelas: result[0].canManageParcelas === 1,
         canViewArchivo: result[0].canViewArchivo === 1,
       };
