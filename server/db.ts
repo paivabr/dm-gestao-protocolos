@@ -1453,7 +1453,8 @@ export async function createDespesa(data: any): Promise<number | null> {
     }
 
     const result = await db.insert(despesas).values(insertData);
-    return (result as any)[0]?.insertId as number || null;
+    const insertId = (result as any)[0]?.insertId;
+    return (insertId !== undefined && insertId !== null) ? Number(insertId) : null;
   } catch (error) {
     console.error("[Database] Failed to create despesa:", error);
     return null;
@@ -1691,6 +1692,9 @@ export async function getRelatorioProtocolos(protocoloIds: number[]) {
     // Enrich with financial data
     const enriched = await Promise.all(
       result.map(async (proto: any) => {
+        // Obter despesas vinculadas ao protocolo OU a qualquer processo vinculado ao mesmo cliente deste protocolo
+        // No entanto, para ser mais preciso, vamos pegar apenas as despesas do protocolo.
+        // Se o usuário quiser despesas do processo, ele gera o relatório do processo.
         const despesasList = await getDespesasByProtocolo(proto.id);
         const receitasList = await getReceitasByProtocolo(proto.id);
         
@@ -1718,8 +1722,14 @@ export async function getRelatorioProtocolos(protocoloIds: number[]) {
           totalReceitas,
           totalRecebido,
           totalPendente,
-          despesasList,
-          receitasList,
+          despesasList: despesasList.map(d => ({
+            ...d,
+            valor: parseFloat(d.valor as any)
+          })),
+          receitasList: receitasList.map(r => ({
+            ...r,
+            valor: parseFloat(r.valor as any)
+          })),
           isArchived: !!arquivoInfo,
           dataArquivamento: arquivoInfo?.dataArquivamento,
           custas: arquivoInfo?.custas || "0.00",
@@ -1761,29 +1771,50 @@ export async function getRelatorioProcessos(processoIds: number[]) {
       .leftJoin(clientes, eq(processos.clienteId, clientes.id))
       .where(inArray(processos.id, processoIds));
 
-    // Enrich with financial data (parcelas)
+    // Enrich with financial data (parcelas and additional expenses)
     const enriched = await Promise.all(result.map(async (p: any) => {
       const pParcelas = await db.select().from(parcelas).where(eq(parcelas.processoId, p.id));
+      const pDespesasAdicionais = await getDespesasByProtocolo(undefined, p.id);
       
-      const totalDespesas = pParcelas.reduce((sum, item) => sum + parseFloat(item.valorParcela), 0);
+      // Calculate from parcelas
+      const totalParcelas = pParcelas.reduce((sum, item) => sum + parseFloat(item.valorParcela), 0);
       const totalDesconto = pParcelas.reduce((sum, item) => sum + parseFloat(item.desconto || "0"), 0);
-      const totalDespesasPagas = pParcelas
+      const totalParcelasPagas = pParcelas
         .filter(item => item.pago === 1)
         .reduce((sum, item) => sum + (parseFloat(item.valorParcela) - parseFloat(item.desconto || "0")), 0);
       
-      const totalDespesasPendentes = (totalDespesas - totalDesconto) - totalDespesasPagas;
+      // Calculate from additional expenses (Custas)
+      const totalCustasAdicionais = pDespesasAdicionais.reduce((sum, d) => sum + parseFloat(d.valor as any), 0);
+      const totalCustasPagas = pDespesasAdicionais
+        .filter(d => d.pago === 1)
+        .reduce((sum, d) => sum + parseFloat(d.valor as any), 0);
 
-      return {
-        ...p,
-        totalDespesas: totalDespesas - totalDesconto, // Show total with discount
-        totalDespesasPagas,
-        totalDespesasPendentes,
-        despesasList: pParcelas.map(d => ({
-          dataDespesa: d.dataPagamento,
+      const totalDespesas = (totalParcelas - totalDesconto) + totalCustasAdicionais;
+      const totalDespesasPagas = totalParcelasPagas + totalCustasPagas;
+      const totalDespesasPendentes = totalDespesas - totalDespesasPagas;
+
+      // Merge both lists
+      const despesasList = [
+        ...pParcelas.map(d => ({
+          dataDespesa: d.dataPagamento || d.createdAt,
           descricao: `Parcela ${d.id}${d.desconto && parseFloat(d.desconto) > 0 ? ' (com desconto)' : ''}`,
           valor: parseFloat(d.valorParcela) - parseFloat(d.desconto || "0"),
           pago: d.pago
+        })),
+        ...pDespesasAdicionais.map(d => ({
+          dataDespesa: d.dataDespesa,
+          descricao: d.descricao,
+          valor: parseFloat(d.valor as any),
+          pago: d.pago
         }))
+      ].sort((a, b) => new Date(a.dataDespesa).getTime() - new Date(b.dataDespesa).getTime());
+
+      return {
+        ...p,
+        totalDespesas,
+        totalDespesasPagas,
+        totalDespesasPendentes,
+        despesasList
       };
     }));
 

@@ -58,6 +58,7 @@ export default function Despesas() {
       toast.success("Despesa adicionada com sucesso!");
       setFormData({ descricao: "", valor: "" });
       setDialogOpen(false);
+      createMutation.reset();
       utils.despesas.listarPorProtocolo.invalidate();
     },
     onError: (error: any) => {
