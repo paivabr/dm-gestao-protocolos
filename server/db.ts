@@ -1375,6 +1375,58 @@ export async function arquivarProtocolo(statusProtocoloId: number, observacoesAr
   }
 }
 
+export async function arquivarProcesso(processoId: number, observacoesArquivo?: string): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+  try {
+    // Get the processo to extract clienteId
+    const proc = await db.select().from(processos).where(eq(processos.id, processoId)).limit(1);
+    const clienteId = proc.length > 0 ? proc[0].clienteId : null;
+
+    // Calculate financial data
+    const pParcelas = await db.select().from(parcelas).where(eq(parcelas.processoId, processoId));
+    const pDespesasAdicionais = await getDespesasByProtocolo(undefined, processoId);
+    
+    const totalParcelas = pParcelas.reduce((sum, item) => sum + parseFloat(item.valorParcela), 0);
+    const totalDesconto = pParcelas.reduce((sum, item) => sum + parseFloat(item.desconto || "0"), 0);
+    const totalParcelasPagas = pParcelas
+      .filter(item => item.pago === 1)
+      .reduce((sum, item) => sum + (parseFloat(item.valorParcela) - parseFloat(item.desconto || "0")), 0);
+    
+    const totalCustasAdicionais = pDespesasAdicionais.reduce((sum, d) => sum + parseFloat(d.valor as any), 0);
+    const totalCustasPagas = pDespesasAdicionais
+      .filter(d => d.pago === 1)
+      .reduce((sum, d) => sum + parseFloat(d.valor as any), 0);
+
+    const totalGeral = totalParcelas + totalCustasAdicionais;
+    const totalPago = totalParcelasPagas + totalCustasPagas;
+    const totalPendente = (totalGeral - totalDesconto) - totalPago;
+    
+    // Insert into arquivo
+    const result = await db.insert(arquivo).values({
+      processoId,
+      clienteId: clienteId || undefined,
+      observacoesArquivo,
+      totalGasto: totalGeral.toFixed(2),
+      totalRecebido: totalPago.toFixed(2),
+      custas: totalCustasAdicionais.toFixed(2),
+      despesas: totalParcelas.toFixed(2),
+      valorAPagar: totalPendente.toFixed(2),
+      valorFaltaPagar: totalPendente.toFixed(2),
+      valorRecebido: totalPago.toFixed(2),
+      valorBaixa: totalPago.toFixed(2),
+    });
+    
+    // Mark processo as archived
+    await db.update(processos).set({ isArchived: 1 }).where(eq(processos.id, processoId));
+    
+    return (result as any)[0]?.insertId as number || null;
+  } catch (error) {
+    console.error("[Database] Failed to archive processo:", error);
+    return null;
+  }
+}
+
 export async function getArquivados(): Promise<any[]> {
   const db = await getDb();
   if (!db) return [];

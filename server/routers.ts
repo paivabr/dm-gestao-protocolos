@@ -1000,6 +1000,18 @@ export const appRouter = router({
         return { success: id !== null, id };
       }),
 
+    criarProcesso: protectedProcedure
+      .input(z.object({
+        processoId: z.number(),
+        observacoes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        const id = await db.arquivarProcesso(input.processoId, input.observacoes);
+        return { success: id !== null, id };
+      }),
+
     listar: protectedProcedure
       .query(async ({ ctx }) => {
         if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });

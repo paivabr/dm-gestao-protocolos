@@ -51,6 +51,7 @@ export default function Processos() {
   const createMutation = trpc.processos.create.useMutation();
   const updateMutation = trpc.processos.update.useMutation();
   const deleteMutation = trpc.processos.delete.useMutation();
+  const archiveMutation = trpc.arquivo.criarProcesso.useMutation();
 
   const processos = paginatedData?.data || [];
   const totalItems = paginatedData?.total || 0;
@@ -135,6 +136,7 @@ export default function Processos() {
   const handleArquivarProcesso = async (id: number) => {
     if (confirm("Tem certeza que deseja arquivar este processo?")) {
       try {
+        await archiveMutation.mutateAsync({ processoId: id });
         toast.success("Processo arquivado com sucesso!");
         utils.processos.listPaginated.invalidate();
       } catch (error) {
