@@ -1751,7 +1751,7 @@ export async function getRelatorioProcessos(processoIds: number[]) {
         totalDespesasPagas,
         totalDespesasPendentes,
         despesasList: pParcelas.map(d => ({
-          dataDespesa: d.dataVencimento,
+          dataDespesa: d.dataPagamento,
           descricao: `Parcela ${d.id}${d.desconto && parseFloat(d.desconto) > 0 ? ' (com desconto)' : ''}`,
           valor: parseFloat(d.valorParcela) - parseFloat(d.desconto || "0"),
           pago: d.pago

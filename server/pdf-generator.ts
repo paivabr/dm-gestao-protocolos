@@ -2,6 +2,7 @@ import PDFDocument from 'pdfkit';
 import { format } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { ptBR } from 'date-fns/locale';
+import * as db from './db';
 
 const TIMEZONE = 'America/Sao_Paulo';
 
@@ -38,9 +39,18 @@ interface RelatorioData {
 }
 
 export async function gerarRelatorioPDF(data: RelatorioData[]): Promise<Buffer> {
-  const empresa = await db.getEmpresaConfig();
-  const empresaNome = empresa?.nomeFantasia || 'DM Engenharia e Consultoria';
-  const empresaInfo = empresa?.cnpj ? `${empresaNome} - CNPJ: ${empresa.cnpj}` : empresaNome;
+  let empresaNome = 'DM Engenharia e Consultoria';
+  let empresaInfo = 'DM Engenharia e Consultoria';
+  try {
+    const empresa = await db.getEmpresaConfig();
+    if (empresa) {
+      empresaNome = empresa.nomeFantasia || 'DM Engenharia e Consultoria';
+      empresaInfo = empresa.cnpj ? `${empresaNome} - CNPJ: ${empresa.cnpj}` : empresaNome;
+    }
+  } catch (e) {
+    // Se a tabela empresaConfig não existir ou houver erro, usa valores padrão
+    console.warn('[PDF] Não foi possível carregar configurações da empresa, usando padrão.');
+  }
 
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({
