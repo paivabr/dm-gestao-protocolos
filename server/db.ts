@@ -1453,12 +1453,23 @@ export async function createDespesa(data: InsertDespesa): Promise<number | null>
   }
 }
 
-export async function getDespesasByProtocolo(statusProtocoloId: number): Promise<Despesa[]> {
+export async function getDespesasByProtocolo(statusProtocoloId: number, processoId?: number): Promise<Despesa[]> {
   const db = await getDb();
   if (!db) return [];
 
   try {
-    const result = await db.select().from(despesas).where(eq(despesas.statusProtocoloId, statusProtocoloId));
+    let query = db.select().from(despesas).where(eq(despesas.statusProtocoloId, statusProtocoloId));
+    
+    if (processoId) {
+      query = db.select().from(despesas).where(
+        and(
+          eq(despesas.statusProtocoloId, statusProtocoloId),
+          eq(despesas.processoId, processoId)
+        )
+      ) as any;
+    }
+    
+    const result = await query;
     return result;
   } catch (error) {
     console.error("[Database] Failed to get despesas:", error);

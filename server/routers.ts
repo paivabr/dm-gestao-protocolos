@@ -1043,9 +1043,12 @@ export const appRouter = router({
       }),
 
     listarPorProtocolo: protectedProcedure
-      .input(z.object({ statusProtocoloId: z.number() }))
+      .input(z.object({ 
+        statusProtocoloId: z.number(),
+        processoId: z.number().optional()
+      }))
       .query(async ({ input }) => {
-        return await db.getDespesasByProtocolo(input.statusProtocoloId);
+        return await db.getDespesasByProtocolo(input.statusProtocoloId, input.processoId);
       }),
 
     atualizar: protectedProcedure

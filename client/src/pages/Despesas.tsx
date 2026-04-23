@@ -44,7 +44,10 @@ export default function Despesas() {
 
   // Carregar despesas do protocolo selecionado
   const { data: despesas = [] } = trpc.despesas.listarPorProtocolo.useQuery(
-    { statusProtocoloId: parseInt(selectedProtocolo) },
+    { 
+      statusProtocoloId: parseInt(selectedProtocolo),
+      processoId: selectedProcesso ? parseInt(selectedProcesso) : undefined
+    },
     { enabled: !!selectedProtocolo }
   );
 
@@ -107,6 +110,7 @@ export default function Despesas() {
     try {
       await createMutation.mutateAsync({
         statusProtocoloId: parseInt(selectedProtocolo),
+        processoId: selectedProcesso ? parseInt(selectedProcesso) : undefined,
         descricao: formData.descricao,
         valor: formData.valor,
       });
