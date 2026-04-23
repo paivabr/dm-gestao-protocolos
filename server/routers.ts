@@ -1015,7 +1015,7 @@ export const appRouter = router({
     listar: protectedProcedure
       .query(async ({ ctx }) => {
         if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
-        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        // Permitir que usuários com permissão de ver arquivo também listem
         return await db.getArquivados();
       }),
 
@@ -1042,6 +1042,20 @@ export const appRouter = router({
         if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
         if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
         return await db.updateArquivo(input.id, input);
+      }),
+
+    desarquivar: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        
+        // Try unarchiving as protocol first, then as process
+        const unarchivedProtocol = await db.desarquivarProtocolo(input.id);
+        if (unarchivedProtocol) return { success: true };
+        
+        const unarchivedProcess = await db.desarquivarProcesso(input.id);
+        return { success: unarchivedProcess };
       }),
   }),
 

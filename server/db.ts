@@ -1457,10 +1457,59 @@ export async function getArquivados(): Promise<any[]> {
     .leftJoin(statusProtocolo, eq(arquivo.statusProtocoloId, statusProtocolo.id))
     .leftJoin(processos, eq(arquivo.processoId, processos.id));
     
+    console.log(`[Database] getArquivados returned ${result.length} items`);
     return result;
   } catch (error) {
     console.error("[Database] Failed to get arquivados:", error);
     return [];
+  }
+}
+
+export async function desarquivarProtocolo(id: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    // Get arquivo record to find the statusProtocoloId
+    const arquivados = await db.select().from(arquivo).where(eq(arquivo.id, id)).limit(1);
+    if (arquivados.length === 0 || !arquivados[0].statusProtocoloId) return false;
+
+    const statusProtocoloId = arquivados[0].statusProtocoloId;
+
+    // Update statusProtocolo to unarchived
+    await db.update(statusProtocolo).set({ isArchived: 0 }).where(eq(statusProtocolo.id, statusProtocoloId));
+
+    // Delete from arquivo table
+    await db.delete(arquivo).where(eq(arquivo.id, id));
+
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to unarchive protocolo:", error);
+    return false;
+  }
+}
+
+export async function desarquivarProcesso(id: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    // Get arquivo record to find the processoId
+    const arquivados = await db.select().from(arquivo).where(eq(arquivo.id, id)).limit(1);
+    if (arquivados.length === 0 || !arquivados[0].processoId) return false;
+
+    const processoId = arquivados[0].processoId;
+
+    // Update processo to unarchived
+    await db.update(processos).set({ isArchived: 0 }).where(eq(processos.id, processoId));
+
+    // Delete from arquivo table
+    await db.delete(arquivo).where(eq(arquivo.id, id));
+
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to unarchive processo:", error);
+    return false;
   }
 }
 

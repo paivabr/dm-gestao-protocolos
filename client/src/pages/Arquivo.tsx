@@ -3,7 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Trash2, Eye } from "lucide-react";
+import { Trash2, Eye, RotateCcw } from "lucide-react";
 
 
 export default function Arquivo() {
@@ -37,6 +37,19 @@ export default function Arquivo() {
     },
   });
 
+  const desarquivarMutation = trpc.arquivo.desarquivar.useMutation({
+    onSuccess: () => {
+      toast({ title: "Sucesso", description: "Item desarquivado com sucesso" });
+      utils.arquivo.listar.invalidate();
+      // Também invalidar as listas de protocolos e processos para que apareçam como ativos
+      utils.statusProtocolo.listPaginated.invalidate();
+      utils.processos.listPaginated.invalidate();
+    },
+    onError: (error) => {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    },
+  });
+
   const handleDelete = async () => {
     if (deleteId) {
       await deleteMutation.mutateAsync({ id: deleteId });
@@ -62,6 +75,12 @@ export default function Arquivo() {
         id: selectedArquivo.id,
         ...editFormData,
       });
+    }
+  };
+
+  const handleDesarquivar = async (id: number) => {
+    if (confirm("Tem certeza que deseja desarquivar este item? Ele voltará para a lista de itens ativos.")) {
+      await desarquivarMutation.mutateAsync({ id });
     }
   };
 
@@ -149,17 +168,27 @@ export default function Arquivo() {
                       >
                         ✏️
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setDeleteId(item.id);
-                          setIsDeleteDialogOpen(true);
-                        }}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+	                      <Button
+	                        variant="ghost"
+	                        size="sm"
+	                        onClick={() => handleDesarquivar(item.id)}
+	                        className="text-orange-600 hover:text-orange-800"
+	                        title="Desarquivar"
+	                        disabled={desarquivarMutation.isPending}
+	                      >
+	                        <RotateCcw className="w-4 h-4" />
+	                      </Button>
+	                      <Button
+	                        variant="ghost"
+	                        size="sm"
+	                        onClick={() => {
+	                          setDeleteId(item.id);
+	                          setIsDeleteDialogOpen(true);
+	                        }}
+	                        className="text-red-600 hover:text-red-800"
+	                      >
+	                        <Trash2 className="w-4 h-4" />
+	                      </Button>
                     </td>
                   </tr>
                 ))}
