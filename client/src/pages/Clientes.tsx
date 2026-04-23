@@ -31,6 +31,7 @@ export default function Clientes() {
     {
       page: currentPage,
       limit: ITEMS_PER_PAGE,
+      searchTerm: searchTerm || undefined,
     },
     {
       enabled: user?.role === "admin" || permissions?.canViewClients,
