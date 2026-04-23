@@ -45,10 +45,10 @@ export default function Despesas() {
   // Carregar despesas do protocolo ou processo selecionado
   const { data: despesas = [] } = trpc.despesas.listarPorProtocolo.useQuery(
     { 
-      statusProtocoloId: selectedProtocolo ? parseInt(selectedProtocolo) : undefined,
-      processoId: selectedProcesso ? parseInt(selectedProcesso) : undefined
+      statusProtocoloId: selectedProtocolo && selectedProtocolo !== "none" ? parseInt(selectedProtocolo) : undefined,
+      processoId: selectedProcesso && selectedProcesso !== "none" ? parseInt(selectedProcesso) : undefined
     },
-    { enabled: !!selectedProtocolo || !!selectedProcesso }
+    { enabled: (!!selectedProtocolo && selectedProtocolo !== "none") || (!!selectedProcesso && selectedProcesso !== "none") }
   );
 
   const utils = trpc.useUtils();
@@ -59,7 +59,11 @@ export default function Despesas() {
       setFormData({ descricao: "", valor: "" });
       setDialogOpen(false);
       createMutation.reset();
-      utils.despesas.listarPorProtocolo.invalidate();
+      // Invalidate with exact parameters to ensure UI update
+      utils.despesas.listarPorProtocolo.invalidate({
+        statusProtocoloId: selectedProtocolo && selectedProtocolo !== "none" ? parseInt(selectedProtocolo) : undefined,
+        processoId: selectedProcesso && selectedProcesso !== "none" ? parseInt(selectedProcesso) : undefined
+      });
     },
     onError: (error: any) => {
       console.error("Erro ao criar despesa:", error);

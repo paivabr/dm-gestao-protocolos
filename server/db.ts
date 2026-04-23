@@ -1452,8 +1452,10 @@ export async function createDespesa(data: any): Promise<number | null> {
       delete insertData.statusProtocoloId;
     }
 
+    console.log("[Database] Inserting despesa:", insertData);
     const result = await db.insert(despesas).values(insertData);
     const insertId = (result as any)[0]?.insertId;
+    console.log("[Database] Despesa inserted with ID:", insertId);
     return (insertId !== undefined && insertId !== null) ? Number(insertId) : null;
   } catch (error) {
     console.error("[Database] Failed to create despesa:", error);
