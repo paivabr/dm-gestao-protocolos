@@ -1308,6 +1308,7 @@ export async function getStatusProtocoloPaginated(page: number = 1, limit: numbe
     let countQuery = db.select({ count: sql`COUNT(*)` }).from(statusProtocolo);
 
     if (!includeArchived) {
+      // Usar a coluna correta (isArchived) que existe no banco de dados para filtrar
       query = query.where(eq(statusProtocolo.isArchived, 0)) as any;
       countQuery = countQuery.where(eq(statusProtocolo.isArchived, 0)) as any;
     }
