@@ -20,11 +20,13 @@ export default function RelatorioProtocolos() {
   const { data: protocolos = [] } = trpc.statusProtocolo.listPaginated.useQuery({
     page: 1,
     limit: 100,
+    includeArchived: true,
   });
 
   const { data: processos = [] } = trpc.processos.listPaginated.useQuery({
     page: 1,
     limit: 100,
+    includeArchived: true,
   });
 
   const gerarProtocolosPDF = trpc.relatorio.gerarProtocolosPDF.useMutation();
@@ -240,7 +242,14 @@ export default function RelatorioProtocolos() {
                           onCheckedChange={() => handleSelectProtocolo(protocolo.id)}
                         />
                       </TableCell>
-                      <TableCell className="font-medium">{protocolo.numeroProtocolo}</TableCell>
+                      <TableCell className="font-medium">
+                        {protocolo.numeroProtocolo}
+                        {protocolo.isArchived === 1 && (
+                          <span className="ml-2 px-2 py-0.5 text-[10px] font-medium bg-slate-100 text-slate-600 rounded-full">
+                            Arquivado
+                          </span>
+                        )}
+                      </TableCell>
                       <TableCell>{protocolo.cliente?.nome || "-"}</TableCell>
                       <TableCell>{protocolo.status}</TableCell>
                       <TableCell>
@@ -296,7 +305,14 @@ export default function RelatorioProtocolos() {
                           onCheckedChange={() => handleSelectProcesso(processo.id)}
                         />
                       </TableCell>
-                      <TableCell className="font-medium">{processo.titulo}</TableCell>
+                      <TableCell className="font-medium">
+                        {processo.titulo}
+                        {processo.isArchived === 1 && (
+                          <span className="ml-2 px-2 py-0.5 text-[10px] font-medium bg-slate-100 text-slate-600 rounded-full">
+                            Arquivado
+                          </span>
+                        )}
+                      </TableCell>
                       <TableCell>{processo.cliente?.nome || "-"}</TableCell>
                       <TableCell>{processo.status}</TableCell>
                       <TableCell>

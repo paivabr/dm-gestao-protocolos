@@ -1217,7 +1217,7 @@ export async function getClientesPaginated(page: number = 1, limit: number = 10,
   }
 }
 
-export async function getProcessosPaginated(page: number = 1, limit: number = 10) {
+export async function getProcessosPaginated(page: number = 1, limit: number = 10, includeArchived: boolean = false) {
   const db = await getDb();
   if (!db) {
     console.warn("[Database] Cannot get processos paginated: database not available");
@@ -1226,13 +1226,16 @@ export async function getProcessosPaginated(page: number = 1, limit: number = 10
 
   try {
     const offset = (page - 1) * limit;
-    const result = await db
-      .select()
-      .from(processos)
-      .limit(limit)
-      .offset(offset);
+    let query = db.select().from(processos);
+    let countQuery = db.select({ count: sql`COUNT(*)` }).from(processos);
 
-    const countResult: any = await db.select({ count: sql`COUNT(*)` }).from(processos);
+    if (!includeArchived) {
+      query = query.where(eq(processos.isArchived, 0)) as any;
+      countQuery = countQuery.where(eq(processos.isArchived, 0)) as any;
+    }
+
+    const result = await query.limit(limit).offset(offset);
+    const countResult: any = await countQuery;
     const total = (countResult[0]?.count as number) || 0;
 
     // Enrich with cliente data
@@ -1270,7 +1273,7 @@ export async function getProcessosPaginated(page: number = 1, limit: number = 10
   }
 }
 
-export async function getStatusProtocoloPaginated(page: number = 1, limit: number = 10) {
+export async function getStatusProtocoloPaginated(page: number = 1, limit: number = 10, includeArchived: boolean = false) {
   const db = await getDb();
   if (!db) {
     console.warn("[Database] Cannot get status protocolo paginated: database not available");
@@ -1279,7 +1282,7 @@ export async function getStatusProtocoloPaginated(page: number = 1, limit: numbe
 
   try {
     const offset = (page - 1) * limit;
-    const result = await db
+    let query = db
       .select({
         id: statusProtocolo.id,
         numeroProtocolo: statusProtocolo.numeroProtocolo,
@@ -1300,12 +1303,17 @@ export async function getStatusProtocoloPaginated(page: number = 1, limit: numbe
         },
       })
       .from(statusProtocolo)
-      .leftJoin(clientes, eq(statusProtocolo.clienteId, clientes.id))
-      .where(eq(statusProtocolo.isArchived, 0))
-      .limit(limit)
-      .offset(offset);
+      .leftJoin(clientes, eq(statusProtocolo.clienteId, clientes.id));
 
-    const countResult: any = await db.select({ count: sql`COUNT(*)` }).from(statusProtocolo).where(eq(statusProtocolo.isArchived, 0));
+    let countQuery = db.select({ count: sql`COUNT(*)` }).from(statusProtocolo);
+
+    if (!includeArchived) {
+      query = query.where(eq(statusProtocolo.isArchived, 0)) as any;
+      countQuery = countQuery.where(eq(statusProtocolo.isArchived, 0)) as any;
+    }
+
+    const result = await query.limit(limit).offset(offset);
+    const countResult: any = await countQuery;
     const total = (countResult[0]?.count as number) || 0;
 
     return { data: result, total, page, limit };
