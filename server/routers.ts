@@ -904,6 +904,7 @@ export const appRouter = router({
     create: protectedProcedure
       .input(z.object({
         clienteId: z.number(),
+        processoId: z.number().optional(),
         numeroProtocolo: z.string(),
         tipoProcesso: z.string(),
         dataAbertura: z.date(),
@@ -913,7 +914,7 @@ export const appRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
-        const id = await db.createStatusProtocolo(input);
+        const id = await db.createStatusProtocolo(input as any);
         if (id) {
           await db.createAuditoria({
             usuarioId: ctx.user.id,
@@ -930,6 +931,7 @@ export const appRouter = router({
       .input(z.object({
         id: z.number(),
         clienteId: z.number().optional(),
+        processoId: z.number().optional(),
         numeroProtocolo: z.string().optional(),
         tipoProcesso: z.string().optional(),
         dataAbertura: z.date().optional(),
@@ -940,7 +942,7 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
         const { id, ...updateData } = input;
-        const success = await db.updateStatusProtocolo(id, updateData);
+        const success = await db.updateStatusProtocolo(id, updateData as any);
         if (success) {
           await db.createAuditoria({
             usuarioId: ctx.user.id,

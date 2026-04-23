@@ -151,6 +151,20 @@ export default function Despesas() {
   const protocoloSelecionado = protocolos.find((p: any) => p.id === parseInt(selectedProtocolo));
   const processoSelecionado = processos.find((p: any) => p.id === parseInt(selectedProcesso));
 
+  // Efeito para selecionar automaticamente o protocolo quando um processo é escolhido
+  useMemo(() => {
+    if (selectedProcesso && processos.length > 0) {
+      const proc = processos.find((p: any) => p.id === parseInt(selectedProcesso));
+      if (proc) {
+        // Procurar um protocolo que tenha o mesmo clienteId do processo
+        const prot = protocolos.find((p: any) => p.clienteId === proc.clienteId);
+        if (prot && selectedProtocolo !== prot.id.toString()) {
+          setSelectedProtocolo(prot.id.toString());
+        }
+      }
+    }
+  }, [selectedProcesso, processos, protocolos, selectedProtocolo]);
+
   return (
     <div className="space-y-6">
       <div>

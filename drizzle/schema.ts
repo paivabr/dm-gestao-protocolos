@@ -178,6 +178,7 @@ export type InsertParcela = typeof parcelas.$inferInsert;
 export const statusProtocolo = mysqlTable("statusProtocolo", {
   id: int("id").autoincrement().primaryKey(),
   clienteId: int("clienteId"),
+  processoId: int("processoId"),
   numeroProtocolo: varchar("numeroProtocolo", { length: 50 }).notNull(),
   tipoProcesso: varchar("tipoProcesso", { length: 100 }).notNull(),
   dataAbertura: timestamp("dataAbertura").notNull(),
