@@ -2054,18 +2054,30 @@ export async function getRelatorioProcessos(processoIds: number[]) {
 
       // Merge both lists
       const despesasList = [
-        ...pParcelas.map(d => ({
-          dataDespesa: d.dataPagamento || d.createdAt,
-          descricao: `Parcela ${d.id}${d.desconto && parseFloat(d.desconto) > 0 ? ' (com desconto)' : ''}`,
-          valor: parseFloat(d.valorParcela) - parseFloat(d.desconto || "0"),
-          pago: d.pago
-        })),
-        ...pDespesasAdicionais.map(d => ({
-          dataDespesa: d.dataDespesa,
-          descricao: d.descricao,
-          valor: parseFloat(d.valor as any),
-          pago: d.pago
-        }))
+        ...pParcelas.map(d => {
+          const valorComDesconto = parseFloat(d.valorParcela) - parseFloat(d.desconto || "0");
+          const valorPago = parseFloat(d.valorPago || "0");
+          return {
+            dataDespesa: d.dataPagamento || d.createdAt,
+            descricao: `Parcela ${d.numeroParcela}${d.desconto && parseFloat(d.desconto) > 0 ? ' (com desconto)' : ''}`,
+            valor: valorComDesconto,
+            valorPago: valorPago,
+            saldoRestante: Math.max(0, valorComDesconto - valorPago),
+            pago: d.pago
+          };
+        }),
+        ...pDespesasAdicionais.map(d => {
+          const valor = parseFloat(d.valor as any);
+          const valorPago = d.pago === 1 ? valor : 0;
+          return {
+            dataDespesa: d.dataDespesa,
+            descricao: d.descricao,
+            valor: valor,
+            valorPago: valorPago,
+            saldoRestante: Math.max(0, valor - valorPago),
+            pago: d.pago
+          };
+        })
       ].sort((a, b) => new Date(a.dataDespesa).getTime() - new Date(b.dataDespesa).getTime());
 
       return {

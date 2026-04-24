@@ -150,11 +150,13 @@ export async function gerarRelatorioPDF(data: RelatorioData[]): Promise<Buffer> 
         
         // Table Header
         const tableTop = doc.y;
-        doc.fontSize(8).fillColor('#475569');
+        doc.fontSize(8).fillColor('#475569').font('Helvetica-Bold');
         doc.text('Data', 60, tableTop);
         doc.text('Descrição / Item', 120, tableTop);
-        doc.text('Valor', 400, tableTop, { width: 60, align: 'right' });
-        doc.text('Status', 480, tableTop, { width: 65, align: 'right' });
+        doc.text('Valor', 340, tableTop, { width: 50, align: 'right' });
+        doc.text('Pago', 400, tableTop, { width: 50, align: 'right' });
+        doc.text('Saldo', 460, tableTop, { width: 50, align: 'right' });
+        doc.text('Status', 520, tableTop, { width: 25, align: 'right' });
         
         doc.moveDown(0.2);
         doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(50, doc.y).lineTo(545, doc.y).stroke();
@@ -169,13 +171,18 @@ export async function gerarRelatorioPDF(data: RelatorioData[]): Promise<Buffer> 
           }
 
           const currentY = doc.y;
-          const statusText = d.pago ? 'PAGO' : 'PENDENTE';
+          const statusText = d.pago ? 'P' : 'X';
           const statusColor = d.pago ? '#16a34a' : '#dc2626';
+          const valorPago = d.valorPago || 0;
+          const saldoRestante = d.saldoRestante || 0;
 
           doc.fontSize(8).fillColor('#64748b').text(formatDate(d.dataDespesa), 60, currentY);
-          doc.fillColor('#1e293b').text(d.descricao, 120, currentY, { width: 270 });
-          doc.text(formatCurrency(d.valor), 400, currentY, { width: 60, align: 'right' });
-          doc.fillColor(statusColor).text(statusText, 480, currentY, { width: 65, align: 'right' });
+          doc.fillColor('#1e293b').text(d.descricao, 120, currentY, { width: 210 });
+          doc.text(formatCurrency(d.valor), 340, currentY, { width: 50, align: 'right' });
+          doc.fillColor('#16a34a').text(formatCurrency(valorPago), 400, currentY, { width: 50, align: 'right' });
+          doc.fillColor(saldoRestante > 0 ? '#dc2626' : '#16a34a').text(formatCurrency(saldoRestante), 460, currentY, { width: 50, align: 'right' });
+          doc.fillColor(statusColor).fontSize(9).font('Helvetica-Bold').text(statusText, 520, currentY, { width: 25, align: 'center' });
+          doc.font('Helvetica').fontSize(8);
           
           doc.moveDown(0.8);
           doc.strokeColor('#f1f5f9').lineWidth(0.3).moveTo(60, doc.y).lineTo(545, doc.y).stroke();
