@@ -805,9 +805,51 @@ export async function marcarParcelaComoNaoPaga(id: number) {
     await db.update(parcelas).set({
       pago: 0,
       dataPagamento: null,
+      valorPago: "0",
     }).where(eq(parcelas.id, id));
   } catch (error) {
     console.error("[Database] Failed to mark parcela as unpaid:", error);
+  }
+}
+
+export async function atualizarValorPagoParcela(id: number, valorPago: string, dataPagamento?: Date): Promise<boolean> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot update parcela: database not available");
+    return false;
+  }
+
+  try {
+    const parcela = await getParcelaById(id);
+    if (!parcela) {
+      console.error("[Database] Parcela not found:", id);
+      return false;
+    }
+
+    const valorParcelaNum = parseFloat(parcela.valorParcela);
+    const valorPagoNum = parseFloat(valorPago);
+    const descontoNum = parseFloat(parcela.desconto || "0");
+    const valorComDesconto = valorParcelaNum - descontoNum;
+
+    // Validar se o valor pago nao excede o valor da parcela com desconto
+    if (valorPagoNum > valorComDesconto) {
+      console.warn("[Database] Valor pago maior que o valor da parcela");
+      return false;
+    }
+
+    // Determinar se esta pago (valor pago >= valor com desconto)
+    const estaPago = valorPagoNum >= valorComDesconto ? 1 : 0;
+
+    await db.update(parcelas).set({
+      valorPago,
+      pago: estaPago,
+      dataPagamento: estaPago === 1 ? (dataPagamento || new Date()) : null,
+    }).where(eq(parcelas.id, id));
+
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to update valor pago:", error);
+    return false;
   }
 }
 

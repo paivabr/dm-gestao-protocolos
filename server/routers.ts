@@ -670,6 +670,19 @@ export const appRouter = router({
         await db.updateParcela(input.id, { desconto: input.desconto });
         return { success: true };
       }),
+
+    updateValorPago: protectedProcedure
+      .input(z.object({ id: z.number(), valorPago: z.string() }))
+      .mutation(async ({ input }) => {
+        const success = await db.atualizarValorPagoParcela(input.id, input.valorPago);
+        if (!success) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Valor pago inválido ou maior que o valor da parcela",
+          });
+        }
+        return { success: true };
+      }),
   }),
 
   // ============ CALENDARIO ROUTES ============

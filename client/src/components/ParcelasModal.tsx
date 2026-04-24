@@ -30,6 +30,8 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
   const [descontoEditando, setDescontoEditando] = useState("");
   const [descontoUnico, setDescontoUnico] = useState("");
   const [aplicandoDescontoUnico, setAplicandoDescontoUnico] = useState(false);
+  const [editandoValorPagoId, setEditandoValorPagoId] = useState<number | null>(null);
+  const [valorPagoEditando, setValorPagoEditando] = useState("");
 
   const { data: parcelas = [], refetch } = trpc.parcelas.getByProcesso.useQuery(
     { processoId },
@@ -77,6 +79,18 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
     },
     onError: (error: any) => {
       toast.error(error.message || "Erro ao atualizar desconto");
+    },
+  });
+
+  const updateValorPagoMutation = trpc.parcelas.updateValorPago.useMutation({
+    onSuccess: () => {
+      refetch();
+      setEditandoValorPagoId(null);
+      setValorPagoEditando("");
+      toast.success("Valor pago atualizado com sucesso!");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Erro ao atualizar valor pago");
     },
   });
 
@@ -145,6 +159,34 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
     });
   };
 
+  const handleSalvarValorPago = async (parcelaId: number) => {
+    if (valorPagoEditando === "" || parseFloat(valorPagoEditando) < 0) {
+      toast.error("Valor pago inválido");
+      return;
+    }
+    
+    const parcela = parcelas.find(p => p.id === parcelaId);
+    if (!parcela) {
+      toast.error("Parcela não encontrada");
+      return;
+    }
+    
+    const valorPago = parseFloat(valorPagoEditando);
+    const valorParcela = parseFloat(parcela.valorParcela);
+    const desconto = parseFloat(parcela.desconto || "0");
+    const valorComDesconto = valorParcela - desconto;
+    
+    if (valorPago > valorComDesconto) {
+      toast.error(`Valor pago não pode ser maior que R$ ${valorComDesconto.toFixed(2)}`);
+      return;
+    }
+    
+    await updateValorPagoMutation.mutateAsync({
+      id: parcelaId,
+      valorPago: valorPagoEditando,
+    });
+  };
+
   const handleAplicarDescontoUnico = async () => {
     if (descontoUnico === "" || parseFloat(descontoUnico) <= 0) {
       toast.error("Desconto inválido");
@@ -181,13 +223,15 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
 
   const totalDesconto = parcelas.reduce((sum, p) => sum + parseFloat(p.desconto || "0"), 0);
 
-  const totalPago = parcelas
-    .filter((p) => p.pago === 1)
-    .reduce((sum, p) => sum + (parseFloat(p.valorParcela) - parseFloat(p.desconto || "0")), 0);
+  const totalPago = parcelas.reduce((sum, p) => sum + parseFloat(p.valorPago || "0"), 0);
 
-  const totalAPagar = parcelas
-    .filter((p) => p.pago === 0)
-    .reduce((sum, p) => sum + (parseFloat(p.valorParcela) - parseFloat(p.desconto || "0")), 0);
+  const totalAPagar = parcelas.reduce((sum, p) => {
+    const valorParcela = parseFloat(p.valorParcela);
+    const desconto = parseFloat(p.desconto || "0");
+    const valorPago = parseFloat(p.valorPago || "0");
+    const valorComDesconto = valorParcela - desconto;
+    return sum + (valorComDesconto - valorPago);
+  }, 0);
 
   const totalGeral = parcelas.reduce((sum, p) => sum + parseFloat(p.valorParcela), 0);
   const totalGeralComDesconto = totalGeral - totalDesconto;
@@ -295,9 +339,9 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
                       Aplicar
                     </Button>
                   </div>
-                  {descontoUnico && parcelas.length > 0 && (
-                    <p className="text-xs text-gray-600 mt-2">
-                      Cada parcela receberá: R$ {(parseFloat(descontoUnico) / parcelas.length).toFixed(2)}
+                  {totalGeralComDesconto > 0 && (
+                    <p className="text-sm text-gray-600 mt-2">
+                      Total com desconto: <span className="font-semibold">R$ {totalGeralComDesconto.toFixed(2)}</span>
                     </p>
                   )}
                 </CardContent>
@@ -350,109 +394,172 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
               {/* Lista de parcelas */}
               <div className="space-y-3">
                 <h3 className="font-semibold text-gray-900">Parcelas</h3>
-                {parcelas.map((parcela) => (
-                  <div
-                    key={parcela.id}
-                    className={`flex items-center justify-between p-4 rounded-lg border-2 ${
-                      parcela.pago === 1
-                        ? "bg-green-50 border-green-200"
-                        : "bg-gray-50 border-gray-200"
-                    }`}
-                  >
-                    <div className="flex items-center gap-4 flex-1">
-                      <button
-                        onClick={() => handleTogglePago(parcela.id, parcela.pago)}
-                        className={`flex-shrink-0 w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
-                          parcela.pago === 1
-                            ? "bg-green-500 border-green-500"
-                            : "border-gray-300 hover:border-green-500"
-                        }`}
-                      >
-                        {parcela.pago === 1 && (
-                          <Check className="h-4 w-4 text-white" />
-                        )}
-                      </button>
-                      <div className="flex-1">
-                        <p className="font-semibold text-gray-900">
-                          Parcela {parcela.numeroParcela}
-                        </p>
-                        {editandoDescontoId === parcela.id ? (
-                          <div className="flex items-center gap-2 mt-2">
-                            <span className="text-sm text-gray-600">R$ {parseFloat(parcela.valorParcela).toFixed(2)}</span>
-                            <span className="text-sm">-</span>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              value={descontoEditando}
-                              onChange={(e) => setDescontoEditando(e.target.value)}
-                              placeholder="0.00"
-                              className="w-20 h-8 text-xs"
-                            />
-                            <span className="text-sm">=</span>
-                            <span className="text-sm font-semibold">
-                              R$ {(parseFloat(parcela.valorParcela) - parseFloat(descontoEditando || "0")).toFixed(2)}
-                            </span>
-                            <Button
-                              size="sm"
-                              className="h-8 text-xs ml-2"
-                              onClick={() => handleSalvarDesconto(parcela.id)}
-                              disabled={updateDescontoMutation.isPending}
-                            >
-                              Salvar
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-8 text-xs"
-                              onClick={() => {
-                                setEditandoDescontoId(null);
-                                setDescontoEditando("");
-                              }}
-                            >
-                              Cancelar
-                            </Button>
+                {parcelas.map((parcela) => {
+                  const valorParcela = parseFloat(parcela.valorParcela);
+                  const desconto = parseFloat(parcela.desconto || "0");
+                  const valorComDesconto = valorParcela - desconto;
+                  const valorPago = parseFloat(parcela.valorPago || "0");
+                  const saldoRestante = valorComDesconto - valorPago;
+                  const percentualPago = valorComDesconto > 0 ? (valorPago / valorComDesconto) * 100 : 0;
+
+                  return (
+                    <div
+                      key={parcela.id}
+                      className={`flex flex-col gap-3 p-4 rounded-lg border-2 ${
+                        saldoRestante <= 0
+                          ? "bg-green-50 border-green-200"
+                          : "bg-gray-50 border-gray-200"
+                      }`}
+                    >
+                      {/* Cabeçalho da parcela */}
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold text-gray-900">
+                            Parcela {parcela.numeroParcela}
+                          </p>
+                          {parcela.dataPagamento && (
+                            <p className="text-xs text-green-600">
+                              Pago em {new Date(parcela.dataPagamento).toLocaleDateString("pt-BR")}
+                            </p>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => handleDeleteParcela(parcela.id)}
+                          disabled={deleteMutation.isPending}
+                          className="text-red-600 hover:text-red-700 p-2"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      {/* Barra de progresso */}
+                      {valorComDesconto > 0 && (
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-xs text-gray-600">
+                            <span>Progresso de pagamento</span>
+                            <span>{percentualPago.toFixed(1)}%</span>
                           </div>
-                        ) : (
-                          <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
-                            <span>R$ {parseFloat(parcela.valorParcela).toFixed(2)}</span>
-                            {parseFloat(parcela.desconto || "0") > 0 && (
-                              <>
-                                <span>-</span>
-                                <span className="text-red-600 font-semibold">R$ {parseFloat(parcela.desconto).toFixed(2)}</span>
-                                <span>=</span>
-                                <span className="font-semibold text-gray-900">
-                                  R$ {(parseFloat(parcela.valorParcela) - parseFloat(parcela.desconto || "0")).toFixed(2)}
-                                </span>
-                              </>
-                            )}
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-green-600 h-2 rounded-full transition-all"
+                              style={{ width: `${Math.min(percentualPago, 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Valores */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                        {/* Valor da parcela */}
+                        <div className="bg-white p-2 rounded border border-gray-200">
+                          <p className="text-xs text-gray-600">Valor</p>
+                          <p className="font-semibold text-gray-900">R$ {valorParcela.toFixed(2)}</p>
+                        </div>
+
+                        {/* Desconto */}
+                        <div className="bg-white p-2 rounded border border-gray-200">
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs text-gray-600">Desconto</p>
                             <button
                               onClick={() => {
                                 setEditandoDescontoId(parcela.id);
                                 setDescontoEditando(parcela.desconto || "0");
                               }}
-                              className="text-blue-600 hover:text-blue-700 ml-2"
+                              className="text-blue-600 hover:text-blue-700"
                               title="Editar desconto"
                             >
                               <Edit2 className="h-3 w-3" />
                             </button>
                           </div>
-                        )}
-                        {parcela.pago === 1 && parcela.dataPagamento && (
-                          <p className="text-xs text-green-600 mt-1">
-                            Pago em {new Date(parcela.dataPagamento).toLocaleDateString("pt-BR")}
+                          {editandoDescontoId === parcela.id ? (
+                            <div className="flex gap-1 mt-1">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={descontoEditando}
+                                onChange={(e) => setDescontoEditando(e.target.value)}
+                                placeholder="0.00"
+                                className="h-7 text-xs flex-1"
+                              />
+                              <Button
+                                size="sm"
+                                className="h-7 text-xs px-2"
+                                onClick={() => handleSalvarDesconto(parcela.id)}
+                                disabled={updateDescontoMutation.isPending}
+                              >
+                                OK
+                              </Button>
+                            </div>
+                          ) : (
+                            <p className={`font-semibold ${desconto > 0 ? "text-red-600" : "text-gray-900"}`}>
+                              {desconto > 0 ? "-" : ""}R$ {desconto.toFixed(2)}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Valor com desconto */}
+                        <div className="bg-white p-2 rounded border border-gray-200">
+                          <p className="text-xs text-gray-600">Total</p>
+                          <p className="font-semibold text-gray-900">R$ {valorComDesconto.toFixed(2)}</p>
+                        </div>
+                      </div>
+
+                      {/* Valor pago e saldo */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                        {/* Valor pago */}
+                        <div className="bg-white p-2 rounded border border-gray-200">
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs text-gray-600">Valor Pago</p>
+                            <button
+                              onClick={() => {
+                                setEditandoValorPagoId(parcela.id);
+                                setValorPagoEditando(parcela.valorPago || "0");
+                              }}
+                              className="text-blue-600 hover:text-blue-700"
+                              title="Editar valor pago"
+                            >
+                              <Edit2 className="h-3 w-3" />
+                            </button>
+                          </div>
+                          {editandoValorPagoId === parcela.id ? (
+                            <div className="flex gap-1 mt-1">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                max={valorComDesconto.toFixed(2)}
+                                value={valorPagoEditando}
+                                onChange={(e) => setValorPagoEditando(e.target.value)}
+                                placeholder="0.00"
+                                className="h-7 text-xs flex-1"
+                              />
+                              <Button
+                                size="sm"
+                                className="h-7 text-xs px-2"
+                                onClick={() => handleSalvarValorPago(parcela.id)}
+                                disabled={updateValorPagoMutation.isPending}
+                              >
+                                OK
+                              </Button>
+                            </div>
+                          ) : (
+                            <p className={`font-semibold ${valorPago > 0 ? "text-green-600" : "text-gray-900"}`}>
+                              R$ {valorPago.toFixed(2)}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Saldo restante */}
+                        <div className="bg-white p-2 rounded border border-gray-200">
+                          <p className="text-xs text-gray-600">Saldo Restante</p>
+                          <p className={`font-semibold ${saldoRestante > 0 ? "text-orange-600" : "text-green-600"}`}>
+                            R$ {Math.max(0, saldoRestante).toFixed(2)}
                           </p>
-                        )}
+                        </div>
                       </div>
                     </div>
-                    <button
-                      onClick={() => handleDeleteParcela(parcela.id)}
-                      disabled={deleteMutation.isPending}
-                      className="text-red-600 hover:text-red-700 p-2"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </>
           )}

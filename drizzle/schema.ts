@@ -164,6 +164,7 @@ export const parcelas = mysqlTable("parcelas", {
   numeroParcela: int("numeroParcela").notNull(),
   valorParcela: varchar("valorParcela", { length: 20 }).notNull(),
   desconto: varchar("desconto", { length: 20 }).default("0").notNull(),
+  valorPago: varchar("valorPago", { length: 20 }).default("0").notNull(),
   dataPagamento: timestamp("dataPagamento"),
   pago: int("pago").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
