@@ -2033,9 +2033,14 @@ export async function getRelatorioProcessos(processoIds: number[]) {
       // Calculate from parcelas
       const totalParcelas = pParcelas.reduce((sum, item) => sum + parseFloat(item.valorParcela), 0);
       const totalDesconto = pParcelas.reduce((sum, item) => sum + parseFloat(item.desconto || "0"), 0);
-      const totalParcelasPagas = pParcelas
-        .filter(item => item.pago === 1)
-        .reduce((sum, item) => sum + (parseFloat(item.valorParcela) - parseFloat(item.desconto || "0")), 0);
+      
+      // Calcular valor pago considerando valorPago (pagamentos parciais)
+      const totalParcelasPagas = pParcelas.reduce((sum, item) => {
+        const valorComDesconto = parseFloat(item.valorParcela) - parseFloat(item.desconto || "0");
+        const valorPago = parseFloat(item.valorPago || "0");
+        // Usar o menor entre valorPago e valorComDesconto para nao contar excedentes
+        return sum + Math.min(valorPago, valorComDesconto);
+      }, 0);
       
       // Calculate from additional expenses (Custas)
       const totalCustasAdicionais = pDespesasAdicionais.reduce((sum, d) => sum + parseFloat(d.valor as any), 0);

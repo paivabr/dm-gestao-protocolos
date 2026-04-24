@@ -114,12 +114,33 @@ export async function gerarRelatorioPDF(data: RelatorioData[]): Promise<Buffer> 
       // --- SECTION: CUSTAS E DESPESAS ---
       renderSectionHeader(doc, 'Informações Financeiras');
       
-      const financialSummary = [
-        ['Valor Total:', formatCurrency(item.totalDespesas)],
-        ['Valor Pago:', formatCurrency(item.totalDespesasPagas)],
-        ['Valor Falta Pagar:', formatCurrency(item.totalDespesasPendentes)]
-      ];
-      renderInfoTable(doc, financialSummary);
+      // Resumo financeiro em 3 colunas com destaque visual
+      const financialBoxY = doc.y;
+      const boxWidth = 140;
+      const boxHeight = 55;
+      const boxSpacing = 8;
+      const startX = 55;
+      
+      // Box 1: Total (cinza)
+      doc.fillColor('#f1f5f9').rect(startX, financialBoxY, boxWidth, boxHeight).fill();
+      doc.strokeColor('#cbd5e1').rect(startX, financialBoxY, boxWidth, boxHeight).stroke();
+      doc.fontSize(8).fillColor('#64748b').font('Helvetica-Bold').text('VALOR TOTAL', startX + 5, financialBoxY + 5, { width: boxWidth - 10 });
+      doc.fontSize(11).fillColor('#1e293b').font('Helvetica-Bold').text(formatCurrency(item.totalDespesas), startX + 5, financialBoxY + 20, { width: boxWidth - 10, align: 'center' });
+      
+      // Box 2: Pago (verde)
+      doc.fillColor('#dcfce7').rect(startX + boxWidth + boxSpacing, financialBoxY, boxWidth, boxHeight).fill();
+      doc.strokeColor('#16a34a').rect(startX + boxWidth + boxSpacing, financialBoxY, boxWidth, boxHeight).stroke();
+      doc.fontSize(8).fillColor('#16a34a').font('Helvetica-Bold').text('JA PAGO', startX + boxWidth + boxSpacing + 5, financialBoxY + 5, { width: boxWidth - 10 });
+      doc.fontSize(11).fillColor('#16a34a').font('Helvetica-Bold').text(formatCurrency(item.totalDespesasPagas), startX + boxWidth + boxSpacing + 5, financialBoxY + 20, { width: boxWidth - 10, align: 'center' });
+      
+      // Box 3: A Pagar (vermelho)
+      doc.fillColor('#fee2e2').rect(startX + (boxWidth + boxSpacing) * 2, financialBoxY, boxWidth, boxHeight).fill();
+      doc.strokeColor('#dc2626').rect(startX + (boxWidth + boxSpacing) * 2, financialBoxY, boxWidth, boxHeight).stroke();
+      doc.fontSize(8).fillColor('#dc2626').font('Helvetica-Bold').text('A PAGAR', startX + (boxWidth + boxSpacing) * 2 + 5, financialBoxY + 5, { width: boxWidth - 10 });
+      doc.fontSize(11).fillColor('#dc2626').font('Helvetica-Bold').text(formatCurrency(item.totalDespesasPendentes), startX + (boxWidth + boxSpacing) * 2 + 5, financialBoxY + 20, { width: boxWidth - 10, align: 'center' });
+      
+      doc.moveDown(3.5);
+      doc.font('Helvetica');
 
       // List detailed expenses if available
       if (item.despesasList && item.despesasList.length > 0) {
