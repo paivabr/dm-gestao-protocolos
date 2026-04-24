@@ -104,14 +104,17 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
 
     const numParcelas = parseInt(formData.numeroParcelas);
     const valorTotal = parseFloat(formData.valorTotal);
-    const valorPorParcela = (valorTotal / numParcelas).toFixed(2);
+    const valorPorParcela = valorTotal / numParcelas;
+    const valorParcelaBase = Math.floor(valorPorParcela * 100) / 100; // Arredonda para baixo
+    const valorUltimaParcela = valorTotal - (valorParcelaBase * (numParcelas - 1)); // Ultima parcela absorve a diferenca
 
     try {
       for (let i = 1; i <= numParcelas; i++) {
+        const valor = i === numParcelas ? valorUltimaParcela : valorParcelaBase;
         await createMutation.mutateAsync({
           processoId,
           numeroParcela: i,
-          valorParcela: valorPorParcela,
+          valorParcela: valor.toFixed(2),
         });
       }
     } catch (error) {
