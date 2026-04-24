@@ -1389,11 +1389,14 @@ export async function getProcessosPaginated(page: number = 1, limit: number = 10
       
       const totalGeral = pParcelas.reduce((sum, item) => sum + parseFloat(item.valorParcela), 0);
       const totalDesconto = pParcelas.reduce((sum, item) => sum + parseFloat(item.desconto || "0"), 0);
-      const totalPago = pParcelas
-        .filter(item => item.pago === 1)
-        .reduce((sum, item) => sum + (parseFloat(item.valorParcela) - parseFloat(item.desconto || "0")), 0);
       
-      const totalAPagar = (totalGeral - totalDesconto) - totalPago;
+      // Calcular valor pago real somando todos os valorPago das parcelas
+      const totalPago = pParcelas.reduce((sum, item) => {
+        return sum + parseFloat(item.valorPago || "0");
+      }, 0);
+      
+      const totalComDesconto = totalGeral - totalDesconto;
+      const totalAPagar = Math.max(0, totalComDesconto - totalPago);
 
       return {
         ...p,
