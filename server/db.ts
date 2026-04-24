@@ -1,6 +1,6 @@
 import { eq, and, like, sql, asc, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, clientes, processos, checklistItens, auditoria, calendario, parcelas, statusProtocolo, arquivo, despesas, receitas, tiposProcesso, cartorios, Cliente, InsertCliente, Processo, InsertProcesso, ChecklistItem, InsertChecklistItem, Auditoria, InsertAuditoria, Calendario, InsertCalendario, Parcela, InsertParcela, StatusProtocolo, InsertStatusProtocolo, Arquivo, InsertArquivo, Despesa, InsertDespesa, Receita, InsertReceita, TipoProcesso, InsertTipoProcesso, Cartorio, InsertCartorio, empresaConfig, EmpresaConfig, InsertEmpresaConfig } from "../drizzle/schema";
+import { InsertUser, users, clientes, processos, checklistItens, auditoria, calendario, parcelas, statusProtocolo, arquivo, despesas, receitas, tiposProcesso, cartorios, Cliente, InsertCliente, Processo, InsertProcesso, ChecklistItem, InsertChecklistItem, Auditoria, InsertAuditoria, Calendario, InsertCalendario, Parcela, InsertParcela, StatusProtocolo, InsertStatusProtocolo, Arquivo, InsertArquivo, Despesa, InsertDespesa, Receita, InsertReceita, TipoProcesso, InsertTipoProcesso, Cartorio, InsertCartorio, empresaConfig, EmpresaConfig, InsertEmpresaConfig, checklistTemplates, checklistTemplateItems, ChecklistTemplate, ChecklistTemplateItem } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -385,7 +385,12 @@ export async function createChecklistItem(item: InsertChecklistItem): Promise<nu
   }
 
   try {
-    const result = await db.insert(checklistItens).values(item);
+    // Calcular a próxima ordem para o processo
+    const existing = await db.select({ id: checklistItens.id })
+      .from(checklistItens)
+      .where(eq(checklistItens.processoId, item.processoId));
+    const nextOrdem = existing.length;
+    const result = await db.insert(checklistItens).values({ ...item, ordem: nextOrdem });
     return result[0].insertId as number;
   } catch (error) {
     console.error("[Database] Failed to create checklist item:", error);
@@ -401,10 +406,32 @@ export async function getChecklistItens(processoId: number): Promise<ChecklistIt
   }
 
   try {
-    return await db.select().from(checklistItens).where(eq(checklistItens.processoId, processoId));
+    return await db.select().from(checklistItens)
+      .where(eq(checklistItens.processoId, processoId))
+      .orderBy(asc(checklistItens.ordem));
   } catch (error) {
     console.error("[Database] Failed to get checklist itens:", error);
     return [];
+  }
+}
+
+export async function reorderChecklistItens(processoId: number, orderedIds: number[]): Promise<boolean> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot reorder checklist itens: database not available");
+    return false;
+  }
+
+  try {
+    for (let i = 0; i < orderedIds.length; i++) {
+      await db.update(checklistItens)
+        .set({ ordem: i })
+        .where(and(eq(checklistItens.id, orderedIds[i]), eq(checklistItens.processoId, processoId)));
+    }
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to reorder checklist itens:", error);
+    return false;
   }
 }
 
@@ -1051,16 +1078,22 @@ export async function deleteUser(userId: number) {
 
 // ============ CHECKLIST TEMPLATES FUNCTIONS ============
 
-export async function getChecklistTemplates() {
+export async function getChecklistTemplates(): Promise<(ChecklistTemplate & { items: ChecklistTemplateItem[] })[]> {
   const db = await getDb();
   if (!db) {
     console.warn("[Database] Cannot get checklist templates: database not available");
     return [];
   }
   try {
-    // Nota: Esta função retorna templates salvos. Por enquanto, retorna array vazio
-    // pois a tabela checklistTemplates ainda precisa ser criada no schema
-    return [];
+    const templates = await db.select().from(checklistTemplates).orderBy(asc(checklistTemplates.createdAt));
+    const result = [];
+    for (const template of templates) {
+      const items = await db.select().from(checklistTemplateItems)
+        .where(eq(checklistTemplateItems.templateId, template.id))
+        .orderBy(asc(checklistTemplateItems.ordem));
+      result.push({ ...template, items });
+    }
+    return result;
   } catch (error) {
     console.error("[Database] Failed to get checklist templates:", error);
     return [];
@@ -1072,20 +1105,50 @@ export async function createChecklistTemplate(data: {
   nome: string;
   descricao: string;
   itens: string[];
-}) {
+}): Promise<number | null> {
   const db = await getDb();
   if (!db) {
     console.warn("[Database] Cannot create checklist template: database not available");
     return null;
   }
   try {
-    // Nota: Esta função salva um template. Por enquanto, retorna um ID dummy
-    // pois a tabela checklistTemplates ainda precisa ser criada no schema
-    console.log("[Database] Template salvo:", data.nome);
-    return Math.floor(Math.random() * 10000);
+    const result = await db.insert(checklistTemplates).values({
+      usuarioId: data.usuarioId,
+      nome: data.nome,
+      descricao: data.descricao,
+    });
+    const templateId = result[0].insertId as number;
+
+    // Inserir os itens do template
+    for (let i = 0; i < data.itens.length; i++) {
+      await db.insert(checklistTemplateItems).values({
+        templateId,
+        descricao: data.itens[i],
+        ordem: i,
+      });
+    }
+
+    console.log("[Database] Template salvo com ID:", templateId);
+    return templateId;
   } catch (error) {
     console.error("[Database] Failed to create checklist template:", error);
     return null;
+  }
+}
+
+export async function deleteChecklistTemplate(id: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot delete checklist template: database not available");
+    return false;
+  }
+  try {
+    await db.delete(checklistTemplateItems).where(eq(checklistTemplateItems.templateId, id));
+    await db.delete(checklistTemplates).where(eq(checklistTemplates.id, id));
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to delete checklist template:", error);
+    return false;
   }
 }
 

@@ -1,14 +1,30 @@
 "use client";
-import { Trash2, Plus, Check, Download, Save } from "lucide-react";
+import { Trash2, Plus, Check, Download, Save, GripVertical, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import type { Processo } from "@/types";
 import { useState } from "react";
 import { SelectNoPortal, SelectNoPortalContent, SelectNoPortalItem, SelectNoPortalTrigger, SelectNoPortalValue } from "@/components/ui/select-no-portal";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface ChecklistModalProps {
   processoId: number;
@@ -56,6 +72,85 @@ const TEMPLATES = {
   },
 };
 
+// ---- Componente de item arrastável ----
+interface SortableItemProps {
+  id: number;
+  item: string;
+  concluido: number;
+  onToggle: () => void;
+  onDelete: () => void;
+}
+
+function SortableItem({ id, item, concluido, onToggle, onDelete }: SortableItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors"
+    >
+      {/* Handle de drag */}
+      <button
+        {...attributes}
+        {...listeners}
+        className="flex-shrink-0 text-slate-400 hover:text-slate-600 cursor-grab active:cursor-grabbing touch-none"
+        title="Arrastar para reordenar"
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+
+      {/* Checkbox */}
+      <button
+        onClick={onToggle}
+        className={`flex-shrink-0 w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
+          concluido === 1
+            ? "bg-green-600 border-green-600"
+            : "border-slate-300 hover:border-green-600"
+        }`}
+      >
+        {concluido === 1 && <Check className="h-4 w-4 text-white" />}
+      </button>
+
+      {/* Texto */}
+      <span
+        className={`flex-1 text-sm ${
+          concluido === 1
+            ? "line-through text-slate-500"
+            : "text-slate-900"
+        }`}
+      >
+        {item}
+      </span>
+
+      {/* Botão deletar */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onDelete}
+        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
+
+// ---- Componente principal ----
 export default function ChecklistModal({
   processoId,
   open,
@@ -68,16 +163,27 @@ export default function ChecklistModal({
   const [templateName, setTemplateName] = useState("");
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
 
+  const utils = trpc.useUtils();
+
   const { data: itens, isLoading, refetch } = trpc.checklist.getByProcesso.useQuery({
     processoId,
   });
 
-  const { data: savedTemplates = [] } = trpc.checklistTemplates.list.useQuery() as any;
+  const { data: savedTemplates = [] } = trpc.checklistTemplates.list.useQuery();
 
   const addItemMutation = trpc.checklist.addItem.useMutation();
   const toggleItemMutation = trpc.checklist.toggleItem.useMutation();
   const deleteItemMutation = trpc.checklist.deleteItem.useMutation();
+  const reorderMutation = trpc.checklist.reorderItens.useMutation();
   const saveTemplateMutation = trpc.checklistTemplates.create.useMutation();
+  const deleteTemplateMutation = trpc.checklistTemplates.delete.useMutation();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,16 +229,52 @@ export default function ChecklistModal({
     }
   };
 
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id || !itens) return;
+
+    const oldIndex = itens.findIndex(i => i.id === active.id);
+    const newIndex = itens.findIndex(i => i.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const newOrder = arrayMove(itens, oldIndex, newIndex);
+    const orderedIds = newOrder.map(i => i.id);
+
+    // Atualizar otimisticamente via refetch após salvar
+    try {
+      await reorderMutation.mutateAsync({ processoId, orderedIds });
+      refetch();
+    } catch (error) {
+      toast.error("Erro ao reordenar itens");
+      refetch();
+    }
+  };
+
   const handleLoadTemplate = async () => {
-    if (selectedTemplate) {
-      // Verificar se é um template pré-definido
-      if (selectedTemplate in TEMPLATES) {
-        const template = TEMPLATES[selectedTemplate as keyof typeof TEMPLATES];
+    if (!selectedTemplate) return;
+
+    // Verificar se é um template pré-definido
+    if (selectedTemplate in TEMPLATES) {
+      const template = TEMPLATES[selectedTemplate as keyof typeof TEMPLATES];
+      try {
+        for (const item of template.itens) {
+          await addItemMutation.mutateAsync({ processoId, item });
+        }
+        toast.success(`Template "${template.nome}" carregado!`);
+        setSelectedTemplate("");
+        refetch();
+      } catch (error) {
+        toast.error("Erro ao carregar template");
+      }
+    } else {
+      // Carregar template salvo
+      const template = (savedTemplates as any[]).find((t: any) => t.id.toString() === selectedTemplate);
+      if (template) {
         try {
-          for (const item of template.itens) {
+          for (const item of (template as any).items) {
             await addItemMutation.mutateAsync({
               processoId,
-              item,
+              item: item.descricao,
             });
           }
           toast.success(`Template "${template.nome}" carregado!`);
@@ -140,24 +282,6 @@ export default function ChecklistModal({
           refetch();
         } catch (error) {
           toast.error("Erro ao carregar template");
-        }
-      } else {
-        // Carregar template salvo
-        const template = (savedTemplates as any[]).find((t: any) => t.id.toString() === selectedTemplate);
-        if (template) {
-          try {
-            for (const item of (template as any).items) {
-              await addItemMutation.mutateAsync({
-                processoId,
-                item: item.descricao,
-              });
-            }
-            toast.success(`Template "${template.nome}" carregado!`);
-            setSelectedTemplate("");
-            refetch();
-          } catch (error) {
-            toast.error("Erro ao carregar template");
-          }
         }
       }
     }
@@ -178,10 +302,23 @@ export default function ChecklistModal({
       toast.success(`Template "${templateName}" salvo com sucesso!`);
       setTemplateName("");
       setShowSaveTemplate(false);
-      refetch();
+      // Invalidar cache dos templates para que apareça na lista
+      utils.checklistTemplates.list.invalidate();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Erro ao salvar template";
       toast.error(message);
+    }
+  };
+
+  const handleDeleteTemplate = async (id: number, nome: string) => {
+    if (!confirm(`Tem certeza que deseja deletar o template "${nome}"?`)) return;
+    try {
+      await deleteTemplateMutation.mutateAsync({ id });
+      toast.success(`Template "${nome}" deletado!`);
+      utils.checklistTemplates.list.invalidate();
+      if (selectedTemplate === id.toString()) setSelectedTemplate("");
+    } catch (error) {
+      toast.error("Erro ao deletar template");
     }
   };
 
@@ -192,6 +329,9 @@ export default function ChecklistModal({
   const completedCount = itens?.filter(i => i.concluido === 1).length || 0;
   const totalCount = itens?.length || 0;
   const progressPercent = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+
+  // IDs para o DnD (usa os itens filtrados ou todos se não há filtro)
+  const dndItems = filterSearch ? [] : (itens ?? []);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -220,7 +360,7 @@ export default function ChecklistModal({
             </div>
           </div>
 
-          {/* Template Selection - Pré-definidos */}
+          {/* Template Selection */}
           <div className="space-y-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
             <label className="text-sm font-semibold text-blue-900">Usar Template Pronto</label>
             <div className="flex gap-2">
@@ -234,12 +374,14 @@ export default function ChecklistModal({
                       {template.nome}
                     </SelectNoPortalItem>
                   ))}
-                  {savedTemplates.length > 0 && (
+                  {(savedTemplates as any[]).length > 0 && (
                     <>
                       <div className="border-t my-1" />
                       {(savedTemplates as any[]).map((template: any) => (
                         <SelectNoPortalItem key={`saved-${template.id}`} value={template.id.toString()}>
-                          {template.nome} (Salvo)
+                          <span className="flex items-center gap-2 w-full">
+                            <span className="flex-1">{template.nome} (Salvo)</span>
+                          </span>
                         </SelectNoPortalItem>
                       ))}
                     </>
@@ -250,9 +392,24 @@ export default function ChecklistModal({
                 onClick={handleLoadTemplate}
                 disabled={!selectedTemplate}
                 className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400"
+                title="Carregar template"
               >
                 <Download className="h-4 w-4" />
               </Button>
+              {/* Botão deletar template salvo selecionado */}
+              {selectedTemplate && !(selectedTemplate in TEMPLATES) && (
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    const t = (savedTemplates as any[]).find((t: any) => t.id.toString() === selectedTemplate);
+                    if (t) handleDeleteTemplate(t.id, t.nome);
+                  }}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  title="Deletar template salvo"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
 
@@ -295,6 +452,13 @@ export default function ChecklistModal({
               >
                 Salvar
               </Button>
+              <Button
+                variant="ghost"
+                onClick={() => { setShowSaveTemplate(false); setTemplateName(""); }}
+                className="text-slate-500"
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
           )}
 
@@ -311,47 +475,80 @@ export default function ChecklistModal({
           <div className="space-y-2">
             {isLoading ? (
               <div className="text-center py-8 text-slate-600">Carregando...</div>
-            ) : filteredItens && filteredItens.length > 0 ? (
-              filteredItens.map(item => (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors"
+            ) : filterSearch ? (
+              // Modo busca: sem drag-and-drop
+              filteredItens && filteredItens.length > 0 ? (
+                filteredItens.map(item => (
+                  <div
+                    key={item.id}
+                    className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors"
+                  >
+                    <button
+                      onClick={() => handleToggleItem(item.id, item.concluido)}
+                      className={`flex-shrink-0 w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
+                        item.concluido === 1
+                          ? "bg-green-600 border-green-600"
+                          : "border-slate-300 hover:border-green-600"
+                      }`}
+                    >
+                      {item.concluido === 1 && <Check className="h-4 w-4 text-white" />}
+                    </button>
+                    <span
+                      className={`flex-1 text-sm ${
+                        item.concluido === 1 ? "line-through text-slate-500" : "text-slate-900"
+                      }`}
+                    >
+                      {item.item}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteItem(item.id)}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-slate-600">Nenhum item encontrado.</div>
+              )
+            ) : dndItems.length > 0 ? (
+              // Modo normal: com drag-and-drop
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={dndItems.map(i => i.id)}
+                  strategy={verticalListSortingStrategy}
                 >
-                  <button
-                    onClick={() => handleToggleItem(item.id, item.concluido)}
-                    className={`flex-shrink-0 w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
-                      item.concluido === 1
-                        ? "bg-green-600 border-green-600"
-                        : "border-slate-300 hover:border-green-600"
-                    }`}
-                  >
-                    {item.concluido === 1 && <Check className="h-4 w-4 text-white" />}
-                  </button>
-                  <span
-                    className={`flex-1 ${
-                      item.concluido === 1
-                        ? "line-through text-slate-500"
-                        : "text-slate-900"
-                    }`}
-                  >
-                    {item.item}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteItem(item.id)}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))
+                  {dndItems.map(item => (
+                    <SortableItem
+                      key={item.id}
+                      id={item.id}
+                      item={item.item}
+                      concluido={item.concluido}
+                      onToggle={() => handleToggleItem(item.id, item.concluido)}
+                      onDelete={() => handleDeleteItem(item.id)}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
             ) : (
               <div className="text-center py-8 text-slate-600">
                 Nenhum item no checklist. Adicione um novo item para começar.
               </div>
             )}
           </div>
+
+          {/* Dica de drag */}
+          {dndItems.length > 1 && !filterSearch && (
+            <p className="text-xs text-slate-400 text-center">
+              Arraste pelo ícone <GripVertical className="inline h-3 w-3" /> para reordenar os itens
+            </p>
+          )}
         </div>
       </DialogContent>
     </Dialog>

@@ -112,6 +112,7 @@ export const checklistItens = mysqlTable("checklistItens", {
   processoId: int("processoId").notNull(),
   item: varchar("item", { length: 255 }).notNull(),
   concluido: int("concluido").default(0).notNull(),
+  ordem: int("ordem").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -272,3 +273,34 @@ export const empresaConfig = mysqlTable("empresaConfig", {
 
 export type EmpresaConfig = typeof empresaConfig.$inferSelect;
 export type InsertEmpresaConfig = typeof empresaConfig.$inferInsert;
+
+// ============ CHECKLIST TEMPLATES TABLES ============
+
+/**
+ * ChecklistTemplates table for storing reusable checklist templates.
+ */
+export const checklistTemplates = mysqlTable("checklistTemplates", {
+  id: int("id").autoincrement().primaryKey(),
+  usuarioId: int("usuarioId").notNull(),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  descricao: text("descricao"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ChecklistTemplate = typeof checklistTemplates.$inferSelect;
+export type InsertChecklistTemplate = typeof checklistTemplates.$inferInsert;
+
+/**
+ * ChecklistTemplateItems table for items within a checklist template.
+ */
+export const checklistTemplateItems = mysqlTable("checklistTemplateItems", {
+  id: int("id").autoincrement().primaryKey(),
+  templateId: int("templateId").notNull(),
+  descricao: varchar("descricao", { length: 255 }).notNull(),
+  ordem: int("ordem").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ChecklistTemplateItem = typeof checklistTemplateItems.$inferSelect;
+export type InsertChecklistTemplateItem = typeof checklistTemplateItems.$inferInsert;

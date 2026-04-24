@@ -483,6 +483,24 @@ export const appRouter = router({
         
         return { success: true };
       }),
+
+    reorderItens: protectedProcedure
+      .input(
+        z.object({
+          processoId: z.number(),
+          orderedIds: z.array(z.number()),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const success = await db.reorderChecklistItens(input.processoId, input.orderedIds);
+        if (!success) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Erro ao reordenar itens",
+          });
+        }
+        return { success: true };
+      }),
   }),
 
   checklistTemplates: router({
@@ -525,6 +543,28 @@ export const appRouter = router({
         }
 
         return { success: true, templateId };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const success = await db.deleteChecklistTemplate(input.id);
+        if (!success) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Erro ao deletar template",
+          });
+        }
+        if (ctx.user) {
+          await db.createAuditoria({
+            usuarioId: ctx.user.id,
+            tabela: 'checklistTemplates',
+            registroId: input.id,
+            acao: 'deletar',
+            alteracoes: 'Deletou template de checklist',
+          });
+        }
+        return { success: true };
       }),
   }),
 
