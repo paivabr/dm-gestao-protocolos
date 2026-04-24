@@ -171,15 +171,8 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
       return;
     }
     
-    const valorPago = parseFloat(valorPagoEditando);
-    const valorParcela = parseFloat(parcela.valorParcela);
-    const desconto = parseFloat(parcela.desconto || "0");
-    const valorComDesconto = valorParcela - desconto;
-    
-    if (valorPago > valorComDesconto) {
-      toast.error(`Valor pago não pode ser maior que R$ ${valorComDesconto.toFixed(2)}`);
-      return;
-    }
+    // Permitir pagamentos maiores que o valor da parcela (amortizacao)
+    // O sistema distribuira o excedente nas proximas parcelas automaticamente
     
     await updateValorPagoMutation.mutateAsync({
       id: parcelaId,

@@ -678,7 +678,7 @@ export const appRouter = router({
         if (!success) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "Valor pago inválido ou maior que o valor da parcela",
+            message: "Valor pago inválido. Verifique se o valor eh maior ou igual a zero.",
           });
         }
         return { success: true };

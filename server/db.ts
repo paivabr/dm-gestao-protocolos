@@ -831,20 +831,57 @@ export async function atualizarValorPagoParcela(id: number, valorPago: string, d
     const descontoNum = parseFloat(parcela.desconto || "0");
     const valorComDesconto = valorParcelaNum - descontoNum;
 
-    // Validar se o valor pago nao excede o valor da parcela com desconto
-    if (valorPagoNum > valorComDesconto) {
-      console.warn("[Database] Valor pago maior que o valor da parcela");
+    // Validar se o valor pago eh negativo
+    if (valorPagoNum < 0) {
+      console.warn("[Database] Valor pago nao pode ser negativo");
       return false;
     }
 
     // Determinar se esta pago (valor pago >= valor com desconto)
     const estaPago = valorPagoNum >= valorComDesconto ? 1 : 0;
 
+    // Atualizar a parcela atual
     await db.update(parcelas).set({
       valorPago,
       pago: estaPago,
       dataPagamento: estaPago === 1 ? (dataPagamento || new Date()) : null,
     }).where(eq(parcelas.id, id));
+
+    // Se o valor pago eh maior que o valor com desconto, distribuir o excedente nas proximas parcelas
+    if (valorPagoNum > valorComDesconto) {
+      const excedente = valorPagoNum - valorComDesconto;
+      
+      // Buscar as proximas parcelas nao pagas
+      const proximasParcelas = await db.select().from(parcelas)
+        .where(and(
+          eq(parcelas.processoId, parcela.processoId),
+          sql`${parcelas.numeroParcela} > ${parcela.numeroParcela}`
+        ))
+        .orderBy(asc(parcelas.numeroParcela));
+
+      let saldoExcedente = excedente;
+      for (const proximaParcela of proximasParcelas) {
+        if (saldoExcedente <= 0) break;
+
+        const proximaValorComDesconto = parseFloat(proximaParcela.valorParcela) - parseFloat(proximaParcela.desconto || "0");
+        const proximaValorPagoAtual = parseFloat(proximaParcela.valorPago || "0");
+        const proximaSaldoRestante = proximaValorComDesconto - proximaValorPagoAtual;
+
+        // Calcular quanto do excedente sera aplicado nesta proxima parcela
+        const aplicarNestaParcela = Math.min(saldoExcedente, proximaSaldoRestante);
+        const novoValorPago = proximaValorPagoAtual + aplicarNestaParcela;
+        const novaEstaPago = novoValorPago >= proximaValorComDesconto ? 1 : 0;
+
+        // Atualizar a proxima parcela
+        await db.update(parcelas).set({
+          valorPago: novoValorPago.toFixed(2),
+          pago: novaEstaPago,
+          dataPagamento: novaEstaPago === 1 ? (dataPagamento || new Date()) : null,
+        }).where(eq(parcelas.id, proximaParcela.id));
+
+        saldoExcedente -= aplicarNestaParcela;
+      }
+    }
 
     return true;
   } catch (error) {
