@@ -1090,16 +1090,17 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
         try {
-          console.log("[PDF] Gerando relatório para protocolos:", input.protocoloIds);
-          const { gerarPDFProtocolos } = await import("./pdf-generator-simple");
+          console.log("[CSV] Gerando relatório para protocolos:", input.protocoloIds);
+          const { gerarCSVProtocolos, gerarCSVBuffer } = await import("./csv-generator");
           const protocolos = await db.getRelatorioProtocolos(input.protocoloIds);
-          console.log("[PDF] Dados obtidos:", protocolos.length, "registros");
-          const pdfBuffer = await gerarPDFProtocolos(protocolos as any);
-          console.log("[PDF] PDF gerado:", pdfBuffer.length, "bytes");
-          return { success: true, pdf: pdfBuffer.toString("base64") };
+          console.log("[CSV] Dados obtidos:", protocolos.length, "registros");
+          const csv = gerarCSVProtocolos(protocolos as any);
+          const csvBuffer = gerarCSVBuffer(csv);
+          console.log("[CSV] CSV gerado:", csvBuffer.length, "bytes");
+          return { success: true, csv: csvBuffer.toString("base64") };
         } catch (error) {
-          console.error("[PDF] Erro:", error);
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao gerar PDF" });
+          console.error("[CSV] Erro:", error);
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao gerar relatório" });
         }
       }),
 
@@ -1108,13 +1109,14 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
         try {
-          const { gerarPDFProtocolos } = await import("./pdf-generator-simple");
+          const { gerarCSVProtocolos, gerarCSVBuffer } = await import("./csv-generator");
           const processos = await db.getRelatorioProcessos(input.processoIds);
-          const pdfBuffer = await gerarPDFProtocolos(processos as any);
-          return { success: true, pdf: pdfBuffer.toString("base64") };
+          const csv = gerarCSVProtocolos(processos as any);
+          const csvBuffer = gerarCSVBuffer(csv);
+          return { success: true, csv: csvBuffer.toString("base64") };
         } catch (error) {
-          console.error("[PDF] Erro ao gerar PDF:", error);
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao gerar PDF" });
+          console.error("[CSV] Erro ao gerar relatório:", error);
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao gerar relatório" });
         }
       }),
   }),

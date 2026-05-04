@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Trash2, Check, X } from "lucide-react";
+import { Plus, Trash2, Check, X, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +17,9 @@ export default function Despesas() {
     descricao: "",
     valor: "",
   });
+  const [editingDespesa, setEditingDespesa] = useState<any>(null);
+  const [dataPagamentoModal, setDataPagamentoModal] = useState(false);
+  const [dataPagamento, setDataPagamento] = useState("");
 
   // Carregar protocolos
   const { data: protocolosResponse } = trpc.statusProtocolo.listPaginated.useQuery({
@@ -116,14 +119,42 @@ export default function Despesas() {
   };
 
   const handleTogglePago = async (despesa: any) => {
+    if (!despesa.pago) {
+      // Abrir modal para escolher data de pagamento
+      setEditingDespesa(despesa);
+      setDataPagamento(despesa.dataPagamento ? new Date(despesa.dataPagamento).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+      setDataPagamentoModal(true);
+    } else {
+      // Desmarcar como pago
+      try {
+        await updateMutation.mutateAsync({
+          id: despesa.id,
+          pago: 0,
+          dataPagamento: undefined,
+        });
+      } catch (error) {
+        console.error("Erro ao atualizar status:", error);
+      }
+    }
+  };
+
+  const handleConfirmPagamento = async () => {
+    if (!editingDespesa || !dataPagamento) {
+      toast.error("Selecione uma data de pagamento");
+      return;
+    }
+
     try {
       await updateMutation.mutateAsync({
-        id: despesa.id,
-        pago: despesa.pago ? 0 : 1,
-        dataPagamento: despesa.pago ? undefined : new Date(),
+        id: editingDespesa.id,
+        pago: 1,
+        dataPagamento: new Date(dataPagamento),
       });
+      setDataPagamentoModal(false);
+      setEditingDespesa(null);
+      setDataPagamento("");
     } catch (error) {
-      console.error("Erro ao atualizar status:", error);
+      console.error("Erro ao confirmar pagamento:", error);
     }
   };
 
@@ -296,7 +327,12 @@ export default function Despesas() {
                           <TableCell>{new Date(despesa.dataDespesa).toLocaleDateString("pt-BR")}</TableCell>
                           <TableCell>
                             {despesa.pago ? (
-                              <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-sm">Pago</span>
+                              <div className="flex flex-col">
+                                <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-sm">Pago</span>
+                                {despesa.dataPagamento && (
+                                  <span className="text-xs text-slate-600 mt-1">{new Date(despesa.dataPagamento).toLocaleDateString("pt-BR")}</span>
+                                )}
+                              </div>
                             ) : (
                               <span className="px-2 py-1 bg-amber-100 text-amber-800 rounded text-sm">Pendente</span>
                             )}
@@ -331,6 +367,44 @@ export default function Despesas() {
               )}
             </CardContent>
           </Card>
+
+          {/* Modal de Data de Pagamento */}
+          <Dialog open={dataPagamentoModal} onOpenChange={setDataPagamentoModal}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Data de Pagamento</DialogTitle>
+                <DialogDescription>Selecione a data em que o pagamento foi realizado</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Data do Pagamento</label>
+                  <Input
+                    type="date"
+                    value={dataPagamento}
+                    onChange={(e) => setDataPagamento(e.target.value)}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setDataPagamentoModal(false);
+                      setEditingDespesa(null);
+                    }}
+                    className="flex-1"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={handleConfirmPagamento}
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                  >
+                    Confirmar Pagamento
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* Dialog */}
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
