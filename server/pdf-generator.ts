@@ -1,214 +1,251 @@
-import PDFDocument from "pdfkit";
-import { Readable } from "stream";
+import PDFDocument from 'pdfkit';
+import { format } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
+import { ptBR } from 'date-fns/locale';
+import * as db from './db';
 
-interface ProtocoloData {
+const TIMEZONE = 'America/Sao_Paulo';
+
+interface RelatorioData {
   id: number;
-  numeroProtocolo: string;
-  tipoProcesso: string;
-  dataAbertura: Date;
+  numeroProtocolo?: string;
+  titulo?: string;
+  tipoProcesso?: string;
+  dataAbertura?: Date;
   status: string;
-  cartorio: string;
+  cartorio?: string;
   observacoes?: string;
-  clienteNome?: string;
-  clienteCpfCnpj?: string;
-  clienteContato?: string;
-  totalDespesas: number;
-  totalDespesasPagas: number;
-  totalDespesasPendentes: number;
-  totalReceitas: number;
-  totalRecebido: number;
-  totalPendente: number;
+  clienteNome: string;
+  clienteCpfCnpj: string;
+  clienteContato: string;
+  // Financial data
+  totalDespesas?: number;
+  totalDespesasPagas?: number;
+  totalDespesasPendentes?: number;
+  totalReceitas?: number;
+  totalRecebido?: number;
+  totalPendente?: number;
+  despesasList?: any[];
+  receitasList?: any[];
+  // Archive data
   isArchived?: boolean;
   dataArquivamento?: Date;
-  custas?: string | number;
-  despesas?: string | number;
-  valorAPagar?: string | number;
-  valorFaltaPagar?: string | number;
-  valorBaixa?: string | number;
-  valorRecebido?: string | number;
+  custas?: string;
+  despesas?: string;
+  valorAPagar?: string;
+  valorFaltaPagar?: string;
+  valorBaixa?: string;
+  valorRecebido?: string;
 }
 
-interface ProcessoData {
-  id: number;
-  titulo: string;
-  status: string;
-  prazoVencimento?: Date;
-  isArchived: number;
-  dataArquivamento?: Date;
-  clienteNome?: string;
-  clienteCpfCnpj?: string;
-  clienteContato?: string;
-}
+export async function gerarRelatorioPDF(data: RelatorioData[]): Promise<Buffer> {
+  let empresaNome = 'DM Engenharia e Consultoria';
+  let empresaInfo = 'DM Engenharia e Consultoria';
+  try {
+    const empresa = await db.getEmpresaConfig();
+    if (empresa) {
+      empresaNome = empresa.nomeFantasia || 'DM Engenharia e Consultoria';
+      empresaInfo = empresa.cnpj ? `${empresaNome} - CNPJ: ${empresa.cnpj}` : empresaNome;
+    }
+  } catch (e) {
+    // Se a tabela empresaConfig não existir ou houver erro, usa valores padrão
+    console.warn('[PDF] Não foi possível carregar configurações da empresa, usando padrão.');
+  }
 
-export function generateProtocolosReport(protocolos: ProtocoloData[]): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({
-      size: "A4",
-      margin: 40,
+      margin: 50,
+      size: 'A4',
+      bufferPages: true
     });
 
-    const chunks: Buffer[] = [];
+    const buffers: Buffer[] = [];
+    doc.on('data', buffers.push.bind(buffers));
+    doc.on('end', () => resolve(Buffer.concat(buffers)));
+    doc.on('error', reject);
 
-    doc.on("data", (chunk) => chunks.push(chunk));
-    doc.on("end", () => resolve(Buffer.concat(chunks)));
-    doc.on("error", reject);
+    // Helper for currency formatting
+    const formatCurrency = (value: any) => {
+      const num = typeof value === 'string' ? parseFloat(value) : (value || 0);
+      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(num);
+    };
 
-    // Header
-    doc.fontSize(24).font("Helvetica-Bold").text("Relatório de Protocolos", { align: "center" });
-    doc.fontSize(10).font("Helvetica").text(`Gerado em: ${new Date().toLocaleDateString("pt-BR")}`, { align: "center" });
-    doc.moveDown();
+    // Helper for date formatting
+    const formatDate = (date: any) => {
+      if (!date) return 'N/A';
+      try {
+        // Use formatInTimeZone to ensure Brazil time regardless of server TZ
+        return formatInTimeZone(new Date(date), TIMEZONE, 'dd/MM/yyyy', { locale: ptBR });
+      } catch (e) {
+        return 'Data Inválida';
+      }
+    };
 
-    // Summary
-    const totalDespesas = protocolos.reduce((sum, p) => sum + p.totalDespesas, 0);
-    const totalReceitas = protocolos.reduce((sum, p) => sum + p.totalReceitas, 0);
-    const totalRecebido = protocolos.reduce((sum, p) => sum + p.totalRecebido, 0);
+    data.forEach((item, index) => {
+      if (index > 0) doc.addPage();
 
-    doc.fontSize(12).font("Helvetica-Bold").text("Resumo Financeiro");
-    doc.fontSize(10).font("Helvetica");
-    doc.text(`Total de Despesas: R$ ${totalDespesas.toFixed(2)}`);
-    doc.text(`Total de Receitas: R$ ${totalReceitas.toFixed(2)}`);
-    doc.text(`Total Recebido: R$ ${totalRecebido.toFixed(2)}`);
-    doc.moveDown();
+      // --- HEADER ---
+      doc.fillColor('#1e293b').fontSize(20).text('Relatório de Protocolo', { align: 'center' });
+      doc.fontSize(10).fillColor('#64748b').text(empresaNome, { align: 'center' });
+      doc.fontSize(9).text(`Gerado em: ${formatInTimeZone(new Date(), TIMEZONE, "dd/MM/yyyy HH:mm", { locale: ptBR })}`, { align: 'center' });
+      doc.moveDown(2);
 
-    // Table Header
-    const tableTop = doc.y;
-    const col1 = 50;
-    const col2 = 150;
-    const col3 = 250;
-    const col4 = 350;
-    const col5 = 450;
-    const rowHeight = 20;
+      // --- SECTION: INFORMAÇÕES GERAIS ---
+      renderSectionHeader(doc, 'Informações Gerais');
+      
+      const generalInfo = [
+        ['Protocolo/Título:', item.numeroProtocolo || item.titulo || 'N/A'],
+        ['Tipo:', item.tipoProcesso || 'Processo Imobiliário'],
+        ['Status:', item.status],
+        ['Data Abertura:', formatDate(item.dataAbertura)],
+        ['Cartório:', item.cartorio || 'N/A']
+      ];
+      renderInfoTable(doc, generalInfo);
 
-    doc.fontSize(10).font("Helvetica-Bold");
-    doc.text("Protocolo", col1, tableTop);
-    doc.text("Cliente", col2, tableTop);
-    doc.text("Tipo", col3, tableTop);
-    doc.text("Status", col4, tableTop);
-    doc.text("Despesas", col5, tableTop);
+      // --- SECTION: CLIENTE ---
+      renderSectionHeader(doc, 'Dados do Cliente');
+      const clienteInfo = [
+        ['Nome:', item.clienteNome],
+        ['CPF/CNPJ:', item.clienteCpfCnpj],
+        ['Contato:', item.clienteContato || 'N/A']
+      ];
+      renderInfoTable(doc, clienteInfo);
 
-    doc.moveTo(50, tableTop + 15).lineTo(550, tableTop + 15).stroke();
-    doc.moveDown();
+      // --- SECTION: CUSTAS E DESPESAS ---
+      renderSectionHeader(doc, 'Informações Financeiras');
+      
+      // Resumo financeiro em 3 colunas com destaque visual
+      const financialBoxY = doc.y;
+      const boxWidth = 140;
+      const boxHeight = 55;
+      const boxSpacing = 8;
+      const startX = 55;
+      
+      // Box 1: Total (cinza)
+      doc.fillColor('#f1f5f9').rect(startX, financialBoxY, boxWidth, boxHeight).fill();
+      doc.strokeColor('#cbd5e1').rect(startX, financialBoxY, boxWidth, boxHeight).stroke();
+      doc.fontSize(8).fillColor('#64748b').font('Helvetica-Bold').text('VALOR TOTAL', startX + 5, financialBoxY + 5, { width: boxWidth - 10 });
+      doc.fontSize(11).fillColor('#1e293b').font('Helvetica-Bold').text(formatCurrency(item.totalDespesas), startX + 5, financialBoxY + 20, { width: boxWidth - 10, align: 'center' });
+      
+      // Box 2: Pago (verde)
+      doc.fillColor('#dcfce7').rect(startX + boxWidth + boxSpacing, financialBoxY, boxWidth, boxHeight).fill();
+      doc.strokeColor('#16a34a').rect(startX + boxWidth + boxSpacing, financialBoxY, boxWidth, boxHeight).stroke();
+      doc.fontSize(8).fillColor('#16a34a').font('Helvetica-Bold').text('JA PAGO', startX + boxWidth + boxSpacing + 5, financialBoxY + 5, { width: boxWidth - 10 });
+      doc.fontSize(11).fillColor('#16a34a').font('Helvetica-Bold').text(formatCurrency(item.totalDespesasPagas), startX + boxWidth + boxSpacing + 5, financialBoxY + 20, { width: boxWidth - 10, align: 'center' });
+      
+      // Box 3: A Pagar (vermelho)
+      doc.fillColor('#fee2e2').rect(startX + (boxWidth + boxSpacing) * 2, financialBoxY, boxWidth, boxHeight).fill();
+      doc.strokeColor('#dc2626').rect(startX + (boxWidth + boxSpacing) * 2, financialBoxY, boxWidth, boxHeight).stroke();
+      doc.fontSize(8).fillColor('#dc2626').font('Helvetica-Bold').text('A PAGAR', startX + (boxWidth + boxSpacing) * 2 + 5, financialBoxY + 5, { width: boxWidth - 10 });
+      doc.fontSize(11).fillColor('#dc2626').font('Helvetica-Bold').text(formatCurrency(item.totalDespesasPendentes), startX + (boxWidth + boxSpacing) * 2 + 5, financialBoxY + 20, { width: boxWidth - 10, align: 'center' });
+      
+      doc.moveDown(3.5);
+      doc.font('Helvetica');
 
-    // Table Rows
-    doc.fontSize(9).font("Helvetica");
-    protocolos.forEach((protocolo) => {
-      const y = doc.y;
+      // List detailed expenses if available
+      if (item.despesasList && item.despesasList.length > 0) {
+        doc.moveDown(0.5);
+        doc.fontSize(10).fillColor('#334155').font('Helvetica-Bold').text('Detalhamento de Custas e Despesas:', { underline: true });
+        doc.moveDown(0.5);
+        
+        // Table Header
+        const tableTop = doc.y;
+        doc.fontSize(8).fillColor('#475569').font('Helvetica-Bold');
+        doc.text('Data', 60, tableTop);
+        doc.text('Descrição / Item', 120, tableTop);
+        doc.text('Valor', 340, tableTop, { width: 50, align: 'right' });
+        doc.text('Pago', 400, tableTop, { width: 50, align: 'right' });
+        doc.text('Saldo', 460, tableTop, { width: 50, align: 'right' });
+        doc.text('Status', 520, tableTop, { width: 25, align: 'right' });
+        
+        doc.moveDown(0.2);
+        doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+        doc.moveDown(0.3);
+        doc.font('Helvetica');
 
-      // Wrap text if needed
-      doc.text(protocolo.numeroProtocolo, col1, y, { width: 90 });
-      doc.text(protocolo.clienteNome || "-", col2, y, { width: 90 });
-      doc.text(protocolo.tipoProcesso, col3, y, { width: 90 });
-      doc.text(protocolo.status, col4, y, { width: 90 });
-      doc.text(`R$ ${protocolo.totalDespesas.toFixed(2)}`, col5, y, { width: 90 });
+        item.despesasList.forEach((d: any) => {
+          // Check if we need a new page
+          if (doc.y > 700) {
+            doc.addPage();
+            renderSectionHeader(doc, 'Detalhamento de Custas (Cont.)');
+          }
 
-      doc.moveDown();
+          const currentY = doc.y;
+          const statusText = d.pago ? 'P' : 'X';
+          const statusColor = d.pago ? '#16a34a' : '#dc2626';
+          const valorPago = d.valorPago || 0;
+          const saldoRestante = d.saldoRestante || 0;
 
-      // Add financial details
-      doc.fontSize(8).font("Helvetica").fillColor("gray");
-      doc.text(`Despesas Pagas: R$ ${protocolo.totalDespesasPagas.toFixed(2)} | Pendentes: R$ ${protocolo.totalDespesasPendentes.toFixed(2)}`, col1, doc.y, { width: 500 });
-      doc.text(`Receitas: R$ ${protocolo.totalReceitas.toFixed(2)} | Recebido: R$ ${protocolo.totalRecebido.toFixed(2)} | Pendente: R$ ${protocolo.totalPendente.toFixed(2)}`, col1, doc.y, { width: 500 });
-
-      // Add arquivo data if archived
-      if (protocolo.isArchived && protocolo.dataArquivamento) {
-        doc.text(`[ARQUIVADO em ${new Date(protocolo.dataArquivamento).toLocaleDateString("pt-BR")}]`, col1, doc.y, { width: 500 });
-        doc.text(`Custas: R$ ${parseFloat(protocolo.custas as any).toFixed(2)} | Despesas: R$ ${parseFloat(protocolo.despesas as any).toFixed(2)} | A Pagar: R$ ${parseFloat(protocolo.valorAPagar as any).toFixed(2)} | Falta Pagar: R$ ${parseFloat(protocolo.valorFaltaPagar as any).toFixed(2)}`, col1, doc.y, { width: 500 });
+          doc.fontSize(8).fillColor('#64748b').text(formatDate(d.dataDespesa), 60, currentY);
+          doc.fillColor('#1e293b').text(d.descricao, 120, currentY, { width: 210 });
+          doc.text(formatCurrency(d.valor), 340, currentY, { width: 50, align: 'right' });
+          doc.fillColor('#16a34a').text(formatCurrency(valorPago), 400, currentY, { width: 50, align: 'right' });
+          doc.fillColor(saldoRestante > 0 ? '#dc2626' : '#16a34a').text(formatCurrency(saldoRestante), 460, currentY, { width: 50, align: 'right' });
+          doc.fillColor(statusColor).fontSize(9).font('Helvetica-Bold').text(statusText, 520, currentY, { width: 25, align: 'center' });
+          doc.font('Helvetica').fontSize(8);
+          
+          doc.moveDown(0.8);
+          doc.strokeColor('#f1f5f9').lineWidth(0.3).moveTo(60, doc.y).lineTo(545, doc.y).stroke();
+          doc.moveDown(0.3);
+        });
+        doc.moveDown(1);
       }
 
-      doc.fillColor("black");
-      doc.moveDown();
-
-      // Add separator
-      if (doc.y > 700) {
-        doc.addPage();
+      // --- SECTION: ARQUIVO (Se houver) ---
+      if (item.isArchived) {
+        renderSectionHeader(doc, 'Informações de Arquivamento');
+        const arquivoInfo = [
+          ['Data Arquivamento:', formatDate(item.dataArquivamento)],
+          ['Custas:', formatCurrency(item.custas)],
+          ['Valor Recebido:', formatCurrency(item.valorRecebido)],
+          ['Valor a Pagar:', formatCurrency(item.valorAPagar)],
+          ['Valor Falta Pagar:', formatCurrency(item.valorFaltaPagar)]
+        ];
+        renderInfoTable(doc, arquivoInfo);
       }
+
+      // --- SECTION: OBSERVAÇÕES ---
+      if (item.observacoes || (item as any).observacoesArquivo) {
+        renderSectionHeader(doc, 'Observações / Diagnóstico');
+        doc.fontSize(10).fillColor('#1e293b')
+           .text(item.observacoes || (item as any).observacoesArquivo || 'Sem observações registradas.', {
+             align: 'justify',
+             lineGap: 2
+           });
+      }
+
+      // --- FOOTER ---
+      const pageCount = doc.bufferedPageRange().count;
+      doc.fontSize(8).fillColor('#94a3b8')
+         .text(`${empresaInfo} - Gestão de Protocolos`, 50, doc.page.height - 50, { align: 'center' });
     });
-
-    // Footer
-    doc.moveDown();
-    doc.fontSize(8).font("Helvetica").fillColor("gray");
-    doc.text("DM Gestão de Protocolos - Sistema de Gerenciamento", { align: "center" });
 
     doc.end();
   });
 }
 
-export function generateProcessosReport(processos: ProcessoData[]): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({
-      size: "A4",
-      margin: 40,
-    });
+function renderSectionHeader(doc: PDFKit.PDFDocument, title: string) {
+  doc.moveDown(1);
+  const currentY = doc.y;
+  doc.rect(50, currentY, 495, 20).fill('#f1f5f9');
+  doc.fillColor('#475569').fontSize(11).font('Helvetica-Bold').text(title, 60, currentY + 5);
+  doc.moveDown(1);
+  doc.font('Helvetica'); // Reset font
+}
 
-    const chunks: Buffer[] = [];
-
-    doc.on("data", (chunk) => chunks.push(chunk));
-    doc.on("end", () => resolve(Buffer.concat(chunks)));
-    doc.on("error", reject);
-
-    // Header
-    doc.fontSize(24).font("Helvetica-Bold").text("Relatório de Processos", { align: "center" });
-    doc.fontSize(10).font("Helvetica").text(`Gerado em: ${new Date().toLocaleDateString("pt-BR")}`, { align: "center" });
-    doc.moveDown();
-
-    // Summary
-    const totalProcessos = processos.length;
-    const processosAtivos = processos.filter((p) => p.isArchived === 0).length;
-    const processosArquivados = processos.filter((p) => p.isArchived === 1).length;
-
-    doc.fontSize(12).font("Helvetica-Bold").text("Resumo");
-    doc.fontSize(10).font("Helvetica");
-    doc.text(`Total de Processos: ${totalProcessos}`);
-    doc.text(`Processos Ativos: ${processosAtivos}`);
-    doc.text(`Processos Arquivados: ${processosArquivados}`);
-    doc.moveDown();
-
-    // Table Header
-    const tableTop = doc.y;
-    const col1 = 50;
-    const col2 = 180;
-    const col3 = 320;
-    const col4 = 420;
-
-    doc.fontSize(10).font("Helvetica-Bold");
-    doc.text("Título", col1, tableTop);
-    doc.text("Cliente", col2, tableTop);
-    doc.text("Status", col3, tableTop);
-    doc.text("Vencimento", col4, tableTop);
-
-    doc.moveTo(50, tableTop + 15).lineTo(550, tableTop + 15).stroke();
-    doc.moveDown();
-
-    // Table Rows
-    doc.fontSize(9).font("Helvetica");
-    processos.forEach((processo) => {
-      const y = doc.y;
-
-      doc.text(processo.titulo, col1, y, { width: 120 });
-      doc.text(processo.clienteNome || "-", col2, y, { width: 130 });
-      doc.text(processo.status, col3, y, { width: 90 });
-      doc.text(processo.prazoVencimento ? new Date(processo.prazoVencimento).toLocaleDateString("pt-BR") : "-", col4, y, { width: 90 });
-
-      doc.moveDown();
-
-      // Add status info
-      doc.fontSize(8).font("Helvetica").fillColor("gray");
-      const statusText = processo.isArchived === 1 ? `Arquivado em ${new Date(processo.dataArquivamento!).toLocaleDateString("pt-BR")}` : "Ativo";
-      doc.text(statusText, col1, doc.y, { width: 500 });
-
-      doc.fillColor("black");
-      doc.moveDown();
-
-      // Add separator
-      if (doc.y > 700) {
-        doc.addPage();
-      }
-    });
-
-    // Footer
-    doc.moveDown();
-    doc.fontSize(8).font("Helvetica").fillColor("gray");
-    doc.text("DM Gestão de Protocolos - Sistema de Gerenciamento", { align: "center" });
-
-    doc.end();
+function renderInfoTable(doc: PDFKit.PDFDocument, rows: string[][]) {
+  const startX = 60;
+  const col1Width = 150;
+  
+  rows.forEach(row => {
+    const currentY = doc.y;
+    doc.fontSize(10).fillColor('#64748b').text(row[0], startX, currentY);
+    doc.fillColor('#1e293b').text(row[1], startX + col1Width, currentY);
+    doc.moveDown(0.5);
+    
+    // Draw thin line
+    doc.strokeColor('#e2e8f0').lineWidth(0.5)
+       .moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+    doc.moveDown(0.5);
   });
 }

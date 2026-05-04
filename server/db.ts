@@ -1,6 +1,6 @@
 import { eq, and, like, sql, asc, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, clientes, processos, checklistItens, auditoria, calendario, parcelas, statusProtocolo, arquivo, despesas, receitas, tiposProcesso, cartorios, Cliente, InsertCliente, Processo, InsertProcesso, ChecklistItem, InsertChecklistItem, Auditoria, InsertAuditoria, Calendario, InsertCalendario, Parcela, InsertParcela, StatusProtocolo, InsertStatusProtocolo, Arquivo, InsertArquivo, Despesa, InsertDespesa, Receita, InsertReceita, TipoProcesso, InsertTipoProcesso, Cartorio, InsertCartorio } from "../drizzle/schema";
+import { InsertUser, users, clientes, processos, checklistItens, auditoria, calendario, parcelas, statusProtocolo, arquivo, despesas, receitas, tiposProcesso, cartorios, Cliente, InsertCliente, Processo, InsertProcesso, ChecklistItem, InsertChecklistItem, Auditoria, InsertAuditoria, Calendario, InsertCalendario, Parcela, InsertParcela, StatusProtocolo, InsertStatusProtocolo, Arquivo, InsertArquivo, Despesa, InsertDespesa, Receita, InsertReceita, TipoProcesso, InsertTipoProcesso, Cartorio, InsertCartorio, empresaConfig, EmpresaConfig, InsertEmpresaConfig, checklistTemplates, checklistTemplateItems, ChecklistTemplate, ChecklistTemplateItem } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -16,6 +16,37 @@ export async function getDb() {
     }
   }
   return _db;
+}
+
+// ============ EMPRESA CONFIG FUNCTIONS ============
+
+export async function getEmpresaConfig(): Promise<EmpresaConfig | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  try {
+    const result = await db.select().from(empresaConfig).limit(1);
+    return result.length > 0 ? result[0] : undefined;
+  } catch (error) {
+    console.error("[Database] Failed to get empresa config:", error);
+    return undefined;
+  }
+}
+
+export async function updateEmpresaConfig(data: Partial<InsertEmpresaConfig>): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  try {
+    const existing = await getEmpresaConfig();
+    if (existing) {
+      await db.update(empresaConfig).set(data).where(eq(empresaConfig.id, existing.id));
+    } else {
+      await db.insert(empresaConfig).values(data as InsertEmpresaConfig);
+    }
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to update empresa config:", error);
+    return false;
+  }
 }
 
 // ============ USER FUNCTIONS ============
@@ -354,7 +385,12 @@ export async function createChecklistItem(item: InsertChecklistItem): Promise<nu
   }
 
   try {
-    const result = await db.insert(checklistItens).values(item);
+    // Calcular a próxima ordem para o processo
+    const existing = await db.select({ id: checklistItens.id })
+      .from(checklistItens)
+      .where(eq(checklistItens.processoId, item.processoId));
+    const nextOrdem = existing.length;
+    const result = await db.insert(checklistItens).values({ ...item, ordem: nextOrdem });
     return result[0].insertId as number;
   } catch (error) {
     console.error("[Database] Failed to create checklist item:", error);
@@ -370,10 +406,32 @@ export async function getChecklistItens(processoId: number): Promise<ChecklistIt
   }
 
   try {
-    return await db.select().from(checklistItens).where(eq(checklistItens.processoId, processoId));
+    return await db.select().from(checklistItens)
+      .where(eq(checklistItens.processoId, processoId))
+      .orderBy(asc(checklistItens.ordem));
   } catch (error) {
     console.error("[Database] Failed to get checklist itens:", error);
     return [];
+  }
+}
+
+export async function reorderChecklistItens(processoId: number, orderedIds: number[]): Promise<boolean> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot reorder checklist itens: database not available");
+    return false;
+  }
+
+  try {
+    for (let i = 0; i < orderedIds.length; i++) {
+      await db.update(checklistItens)
+        .set({ ordem: i })
+        .where(and(eq(checklistItens.id, orderedIds[i]), eq(checklistItens.processoId, processoId)));
+    }
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to reorder checklist itens:", error);
+    return false;
   }
 }
 
@@ -747,9 +805,88 @@ export async function marcarParcelaComoNaoPaga(id: number) {
     await db.update(parcelas).set({
       pago: 0,
       dataPagamento: null,
+      valorPago: "0",
     }).where(eq(parcelas.id, id));
   } catch (error) {
     console.error("[Database] Failed to mark parcela as unpaid:", error);
+  }
+}
+
+export async function atualizarValorPagoParcela(id: number, valorPago: string, dataPagamento?: Date): Promise<boolean> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot update parcela: database not available");
+    return false;
+  }
+
+  try {
+    const parcela = await getParcelaById(id);
+    if (!parcela) {
+      console.error("[Database] Parcela not found:", id);
+      return false;
+    }
+
+    const valorParcelaNum = parseFloat(parcela.valorParcela);
+    const valorPagoNum = parseFloat(valorPago);
+    const descontoNum = parseFloat(parcela.desconto || "0");
+    const valorComDesconto = valorParcelaNum - descontoNum;
+
+    // Validar se o valor pago eh negativo
+    if (valorPagoNum < 0) {
+      console.warn("[Database] Valor pago nao pode ser negativo");
+      return false;
+    }
+
+    // Determinar se esta pago (valor pago >= valor com desconto)
+    const estaPago = valorPagoNum >= valorComDesconto ? 1 : 0;
+
+    // Atualizar a parcela atual
+    await db.update(parcelas).set({
+      valorPago,
+      pago: estaPago,
+      dataPagamento: estaPago === 1 ? (dataPagamento || new Date()) : null,
+    }).where(eq(parcelas.id, id));
+
+    // Se o valor pago eh maior que o valor com desconto, distribuir o excedente nas proximas parcelas
+    if (valorPagoNum > valorComDesconto) {
+      const excedente = valorPagoNum - valorComDesconto;
+      
+      // Buscar as proximas parcelas nao pagas
+      const proximasParcelas = await db.select().from(parcelas)
+        .where(and(
+          eq(parcelas.processoId, parcela.processoId),
+          sql`${parcelas.numeroParcela} > ${parcela.numeroParcela}`
+        ))
+        .orderBy(asc(parcelas.numeroParcela));
+
+      let saldoExcedente = excedente;
+      for (const proximaParcela of proximasParcelas) {
+        if (saldoExcedente <= 0) break;
+
+        const proximaValorComDesconto = parseFloat(proximaParcela.valorParcela) - parseFloat(proximaParcela.desconto || "0");
+        const proximaValorPagoAtual = parseFloat(proximaParcela.valorPago || "0");
+        const proximaSaldoRestante = proximaValorComDesconto - proximaValorPagoAtual;
+
+        // Calcular quanto do excedente sera aplicado nesta proxima parcela
+        const aplicarNestaParcela = Math.min(saldoExcedente, proximaSaldoRestante);
+        const novoValorPago = proximaValorPagoAtual + aplicarNestaParcela;
+        const novaEstaPago = novoValorPago >= proximaValorComDesconto ? 1 : 0;
+
+        // Atualizar a proxima parcela
+        await db.update(parcelas).set({
+          valorPago: novoValorPago.toFixed(2),
+          pago: novaEstaPago,
+          dataPagamento: novaEstaPago === 1 ? (dataPagamento || new Date()) : null,
+        }).where(eq(parcelas.id, proximaParcela.id));
+
+        saldoExcedente -= aplicarNestaParcela;
+      }
+    }
+
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to update valor pago:", error);
+    return false;
   }
 }
 
@@ -767,6 +904,7 @@ export async function updateUserPermissions(userId: number, permissions: {
   canViewArchivo?: boolean;
   canViewDespesas?: boolean;
   canViewRelatorio?: boolean;
+  canViewAnalytics?: boolean;
 }) {
   const db = await getDb();
   if (!db) {
@@ -784,6 +922,7 @@ export async function updateUserPermissions(userId: number, permissions: {
     if (permissions.canViewClients !== undefined) updateData.canViewClients = permissions.canViewClients ? 1 : 0;
     if (permissions.canViewDespesas !== undefined) updateData.canViewDespesas = permissions.canViewDespesas ? 1 : 0;
     if (permissions.canViewRelatorio !== undefined) updateData.canViewRelatorio = permissions.canViewRelatorio ? 1 : 0;
+    if (permissions.canViewAnalytics !== undefined) updateData.canViewAnalytics = permissions.canViewAnalytics ? 1 : 0;
     if (permissions.canManageParcelas !== undefined) updateData.canManageParcelas = permissions.canManageParcelas ? 1 : 0;
     if (permissions.canViewArchivo !== undefined) updateData.canViewArchivo = permissions.canViewArchivo ? 1 : 0;
 
@@ -812,6 +951,7 @@ export async function getUserPermissions(userId: number) {
       canViewArchivo: users.canViewArchivo,
       canViewDespesas: users.canViewDespesas,
       canViewRelatorio: users.canViewRelatorio,
+      canViewAnalytics: users.canViewAnalytics,
     }).from(users).where(eq(users.id, userId)).limit(1);
 
     if (result.length > 0) {
@@ -824,6 +964,7 @@ export async function getUserPermissions(userId: number) {
         canViewClients: result[0].canViewClients === 1,
         canViewDespesas: result[0].canViewDespesas === 1,
         canViewRelatorio: result[0].canViewRelatorio === 1,
+        canViewAnalytics: result[0].canViewAnalytics === 1,
         canManageParcelas: result[0].canManageParcelas === 1,
         canViewArchivo: result[0].canViewArchivo === 1,
       };
@@ -1016,16 +1157,22 @@ export async function deleteUser(userId: number) {
 
 // ============ CHECKLIST TEMPLATES FUNCTIONS ============
 
-export async function getChecklistTemplates() {
+export async function getChecklistTemplates(): Promise<(ChecklistTemplate & { items: ChecklistTemplateItem[] })[]> {
   const db = await getDb();
   if (!db) {
     console.warn("[Database] Cannot get checklist templates: database not available");
     return [];
   }
   try {
-    // Nota: Esta função retorna templates salvos. Por enquanto, retorna array vazio
-    // pois a tabela checklistTemplates ainda precisa ser criada no schema
-    return [];
+    const templates = await db.select().from(checklistTemplates).orderBy(asc(checklistTemplates.createdAt));
+    const result = [];
+    for (const template of templates) {
+      const items = await db.select().from(checklistTemplateItems)
+        .where(eq(checklistTemplateItems.templateId, template.id))
+        .orderBy(asc(checklistTemplateItems.ordem));
+      result.push({ ...template, items });
+    }
+    return result;
   } catch (error) {
     console.error("[Database] Failed to get checklist templates:", error);
     return [];
@@ -1037,20 +1184,50 @@ export async function createChecklistTemplate(data: {
   nome: string;
   descricao: string;
   itens: string[];
-}) {
+}): Promise<number | null> {
   const db = await getDb();
   if (!db) {
     console.warn("[Database] Cannot create checklist template: database not available");
     return null;
   }
   try {
-    // Nota: Esta função salva um template. Por enquanto, retorna um ID dummy
-    // pois a tabela checklistTemplates ainda precisa ser criada no schema
-    console.log("[Database] Template salvo:", data.nome);
-    return Math.floor(Math.random() * 10000);
+    const result = await db.insert(checklistTemplates).values({
+      usuarioId: data.usuarioId,
+      nome: data.nome,
+      descricao: data.descricao,
+    });
+    const templateId = result[0].insertId as number;
+
+    // Inserir os itens do template
+    for (let i = 0; i < data.itens.length; i++) {
+      await db.insert(checklistTemplateItems).values({
+        templateId,
+        descricao: data.itens[i],
+        ordem: i,
+      });
+    }
+
+    console.log("[Database] Template salvo com ID:", templateId);
+    return templateId;
   } catch (error) {
     console.error("[Database] Failed to create checklist template:", error);
     return null;
+  }
+}
+
+export async function deleteChecklistTemplate(id: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot delete checklist template: database not available");
+    return false;
+  }
+  try {
+    await db.delete(checklistTemplateItems).where(eq(checklistTemplateItems.templateId, id));
+    await db.delete(checklistTemplates).where(eq(checklistTemplates.id, id));
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to delete checklist template:", error);
+    return false;
   }
 }
 
@@ -1182,7 +1359,7 @@ export async function getClientesPaginated(page: number = 1, limit: number = 10,
   }
 }
 
-export async function getProcessosPaginated(page: number = 1, limit: number = 10) {
+export async function getProcessosPaginated(page: number = 1, limit: number = 10, includeArchived: boolean = false) {
   const db = await getDb();
   if (!db) {
     console.warn("[Database] Cannot get processos paginated: database not available");
@@ -1191,22 +1368,47 @@ export async function getProcessosPaginated(page: number = 1, limit: number = 10
 
   try {
     const offset = (page - 1) * limit;
-    const result = await db
-      .select()
-      .from(processos)
-      .limit(limit)
-      .offset(offset);
+    let query = db.select().from(processos);
+    let countQuery = db.select({ count: sql`COUNT(*)` }).from(processos);
 
-    const countResult: any = await db.select({ count: sql`COUNT(*)` }).from(processos);
+    if (!includeArchived) {
+      query = query.where(eq(processos.isArchived, 0)) as any;
+      countQuery = countQuery.where(eq(processos.isArchived, 0)) as any;
+    }
+
+    const result = await query.limit(limit).offset(offset);
+    const countResult: any = await countQuery;
     const total = (countResult[0]?.count as number) || 0;
 
     // Enrich with cliente data
     const clientes_list = await getClientes();
     const clienteMap = new Map(clientes_list.map(c => [c.id, c]));
 
-    const enriched = result.map(p => ({
-      ...p,
-      cliente: clienteMap.get(p.clienteId),
+    const enriched = await Promise.all(result.map(async (p) => {
+      const pParcelas = await db.select().from(parcelas).where(eq(parcelas.processoId, p.id));
+      
+      const totalGeral = pParcelas.reduce((sum, item) => sum + parseFloat(item.valorParcela), 0);
+      const totalDesconto = pParcelas.reduce((sum, item) => sum + parseFloat(item.desconto || "0"), 0);
+      
+      // Calcular valor pago real somando todos os valorPago das parcelas
+      const totalPago = pParcelas.reduce((sum, item) => {
+        return sum + parseFloat(item.valorPago || "0");
+      }, 0);
+      
+      const totalComDesconto = totalGeral - totalDesconto;
+      const totalAPagar = Math.max(0, totalComDesconto - totalPago);
+
+      return {
+        ...p,
+        cliente: clienteMap.get(p.clienteId),
+        financeiro: {
+          totalGeral,
+          totalDesconto,
+          totalPago,
+          totalAPagar,
+          totalComDesconto: totalGeral - totalDesconto
+        }
+      };
     }));
 
     return { data: enriched, total, page, limit };
@@ -1216,7 +1418,7 @@ export async function getProcessosPaginated(page: number = 1, limit: number = 10
   }
 }
 
-export async function getStatusProtocoloPaginated(page: number = 1, limit: number = 10) {
+export async function getStatusProtocoloPaginated(page: number = 1, limit: number = 10, includeArchived: boolean = false) {
   const db = await getDb();
   if (!db) {
     console.warn("[Database] Cannot get status protocolo paginated: database not available");
@@ -1225,7 +1427,7 @@ export async function getStatusProtocoloPaginated(page: number = 1, limit: numbe
 
   try {
     const offset = (page - 1) * limit;
-    const result = await db
+    let query = db
       .select({
         id: statusProtocolo.id,
         numeroProtocolo: statusProtocolo.numeroProtocolo,
@@ -1246,12 +1448,18 @@ export async function getStatusProtocoloPaginated(page: number = 1, limit: numbe
         },
       })
       .from(statusProtocolo)
-      .leftJoin(clientes, eq(statusProtocolo.clienteId, clientes.id))
-      .where(eq(statusProtocolo.isArchived, 0))
-      .limit(limit)
-      .offset(offset);
+      .leftJoin(clientes, eq(statusProtocolo.clienteId, clientes.id));
 
-    const countResult: any = await db.select({ count: sql`COUNT(*)` }).from(statusProtocolo).where(eq(statusProtocolo.isArchived, 0));
+    let countQuery = db.select({ count: sql`COUNT(*)` }).from(statusProtocolo);
+
+    if (!includeArchived) {
+      // Usar a coluna correta (isArchived) que existe no banco de dados para filtrar
+      query = query.where(eq(statusProtocolo.isArchived, 0)) as any;
+      countQuery = countQuery.where(eq(statusProtocolo.isArchived, 0)) as any;
+    }
+
+    const result = await query.limit(limit).offset(offset);
+    const countResult: any = await countQuery;
     const total = (countResult[0]?.count as number) || 0;
 
     return { data: result, total, page, limit };
@@ -1271,14 +1479,35 @@ export async function arquivarProtocolo(statusProtocoloId: number, observacoesAr
     // Get the statusProtocolo to extract clienteId
     const statusProto = await db.select().from(statusProtocolo).where(eq(statusProtocolo.id, statusProtocoloId)).limit(1);
     const clienteId = statusProto.length > 0 ? statusProto[0].clienteId : null;
+
+    // Calculate financial data
+    const despesasList = await getDespesasByProtocolo(statusProtocoloId);
+    const receitasList = await getReceitasByProtocolo(statusProtocoloId);
+    
+    const totalDespesas = despesasList.reduce((sum, d) => sum + parseFloat(d.valor as any), 0);
+    const totalDespesasPagas = despesasList
+      .filter(d => d.pago === 1)
+      .reduce((sum, d) => sum + parseFloat(d.valor as any), 0);
+    const totalDespesasPendentes = totalDespesas - totalDespesasPagas;
+
+    const totalReceitas = receitasList.reduce((sum, r) => sum + parseFloat(r.valor as any), 0);
+    const totalRecebido = receitasList
+      .filter(r => r.recebido === 1)
+      .reduce((sum, r) => sum + parseFloat(r.valor as any), 0);
     
     // Insert into arquivo
     const result = await db.insert(arquivo).values({
       statusProtocoloId,
       clienteId: clienteId || undefined,
       observacoesArquivo,
-      totalGasto: "0.00",
-      totalRecebido: "0.00",
+      totalGasto: totalDespesas.toFixed(2),
+      totalRecebido: totalRecebido.toFixed(2),
+      custas: totalDespesas.toFixed(2),
+      despesas: totalDespesas.toFixed(2),
+      valorAPagar: totalDespesasPendentes.toFixed(2),
+      valorFaltaPagar: totalDespesasPendentes.toFixed(2),
+      valorRecebido: totalRecebido.toFixed(2),
+      valorBaixa: totalRecebido.toFixed(2),
     });
     
     // Mark statusProtocolo as archived
@@ -1287,6 +1516,58 @@ export async function arquivarProtocolo(statusProtocoloId: number, observacoesAr
     return (result as any)[0]?.insertId as number || null;
   } catch (error) {
     console.error("[Database] Failed to archive protocolo:", error);
+    return null;
+  }
+}
+
+export async function arquivarProcesso(processoId: number, observacoesArquivo?: string): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+  try {
+    // Get the processo to extract clienteId
+    const proc = await db.select().from(processos).where(eq(processos.id, processoId)).limit(1);
+    const clienteId = proc.length > 0 ? proc[0].clienteId : null;
+
+    // Calculate financial data
+    const pParcelas = await db.select().from(parcelas).where(eq(parcelas.processoId, processoId));
+    const pDespesasAdicionais = await getDespesasByProtocolo(undefined, processoId);
+    
+    const totalParcelas = pParcelas.reduce((sum, item) => sum + parseFloat(item.valorParcela), 0);
+    const totalDesconto = pParcelas.reduce((sum, item) => sum + parseFloat(item.desconto || "0"), 0);
+    const totalParcelasPagas = pParcelas
+      .filter(item => item.pago === 1)
+      .reduce((sum, item) => sum + (parseFloat(item.valorParcela) - parseFloat(item.desconto || "0")), 0);
+    
+    const totalCustasAdicionais = pDespesasAdicionais.reduce((sum, d) => sum + parseFloat(d.valor as any), 0);
+    const totalCustasPagas = pDespesasAdicionais
+      .filter(d => d.pago === 1)
+      .reduce((sum, d) => sum + parseFloat(d.valor as any), 0);
+
+    const totalGeral = totalParcelas + totalCustasAdicionais;
+    const totalPago = totalParcelasPagas + totalCustasPagas;
+    const totalPendente = (totalGeral - totalDesconto) - totalPago;
+    
+    // Insert into arquivo
+    const result = await db.insert(arquivo).values({
+      processoId,
+      clienteId: clienteId || undefined,
+      observacoesArquivo,
+      totalGasto: totalGeral.toFixed(2),
+      totalRecebido: totalPago.toFixed(2),
+      custas: totalCustasAdicionais.toFixed(2),
+      despesas: totalParcelas.toFixed(2),
+      valorAPagar: totalPendente.toFixed(2),
+      valorFaltaPagar: totalPendente.toFixed(2),
+      valorRecebido: totalPago.toFixed(2),
+      valorBaixa: totalPago.toFixed(2),
+    });
+    
+    // Mark processo as archived
+    await db.update(processos).set({ isArchived: 1 }).where(eq(processos.id, processoId));
+    
+    return (result as any)[0]?.insertId as number || null;
+  } catch (error) {
+    console.error("[Database] Failed to archive processo:", error);
     return null;
   }
 }
@@ -1321,10 +1602,59 @@ export async function getArquivados(): Promise<any[]> {
     .leftJoin(statusProtocolo, eq(arquivo.statusProtocoloId, statusProtocolo.id))
     .leftJoin(processos, eq(arquivo.processoId, processos.id));
     
+    console.log(`[Database] getArquivados returned ${result.length} items`);
     return result;
   } catch (error) {
     console.error("[Database] Failed to get arquivados:", error);
     return [];
+  }
+}
+
+export async function desarquivarProtocolo(id: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    // Get arquivo record to find the statusProtocoloId
+    const arquivados = await db.select().from(arquivo).where(eq(arquivo.id, id)).limit(1);
+    if (arquivados.length === 0 || !arquivados[0].statusProtocoloId) return false;
+
+    const statusProtocoloId = arquivados[0].statusProtocoloId;
+
+    // Update statusProtocolo to unarchived
+    await db.update(statusProtocolo).set({ isArchived: 0 }).where(eq(statusProtocolo.id, statusProtocoloId));
+
+    // Delete from arquivo table
+    await db.delete(arquivo).where(eq(arquivo.id, id));
+
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to unarchive protocolo:", error);
+    return false;
+  }
+}
+
+export async function desarquivarProcesso(id: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    // Get arquivo record to find the processoId
+    const arquivados = await db.select().from(arquivo).where(eq(arquivo.id, id)).limit(1);
+    if (arquivados.length === 0 || !arquivados[0].processoId) return false;
+
+    const processoId = arquivados[0].processoId;
+
+    // Update processo to unarchived
+    await db.update(processos).set({ isArchived: 0 }).where(eq(processos.id, processoId));
+
+    // Delete from arquivo table
+    await db.delete(arquivo).where(eq(arquivo.id, id));
+
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to unarchive processo:", error);
+    return false;
   }
 }
 
@@ -1365,25 +1695,52 @@ export async function updateArquivo(id: number, data: any): Promise<boolean> {
 
 // ============ DESPESAS FUNCTIONS ============
 
-export async function createDespesa(data: InsertDespesa): Promise<number | null> {
+export async function createDespesa(data: any): Promise<number | null> {
   const db = await getDb();
   if (!db) return null;
 
   try {
-    const result = await db.insert(despesas).values(data);
-    return (result as any)[0]?.insertId as number || null;
+    // Garantir que se statusProtocoloId for 0 ou inválido, ele seja tratado como null se a coluna permitir,
+    // mas como a coluna é NOT NULL no schema original, vamos garantir que pelo menos um ID exista.
+    const insertData = { ...data };
+    if (insertData.statusProtocoloId === 0) {
+      delete insertData.statusProtocoloId;
+    }
+
+    console.log("[Database] Inserting despesa:", insertData);
+    const result = await db.insert(despesas).values(insertData);
+    const insertId = (result as any)[0]?.insertId;
+    console.log("[Database] Despesa inserted with ID:", insertId);
+    return (insertId !== undefined && insertId !== null) ? Number(insertId) : null;
   } catch (error) {
     console.error("[Database] Failed to create despesa:", error);
     return null;
   }
 }
 
-export async function getDespesasByProtocolo(statusProtocoloId: number): Promise<Despesa[]> {
+export async function getDespesasByProtocolo(statusProtocoloId?: number, processoId?: number): Promise<Despesa[]> {
   const db = await getDb();
   if (!db) return [];
 
   try {
-    const result = await db.select().from(despesas).where(eq(despesas.statusProtocoloId, statusProtocoloId));
+    let query;
+    
+    if (statusProtocoloId && processoId) {
+      query = db.select().from(despesas).where(
+        and(
+          eq(despesas.statusProtocoloId, statusProtocoloId),
+          eq(despesas.processoId, processoId)
+        )
+      );
+    } else if (statusProtocoloId) {
+      query = db.select().from(despesas).where(eq(despesas.statusProtocoloId, statusProtocoloId));
+    } else if (processoId) {
+      query = db.select().from(despesas).where(eq(despesas.processoId, processoId));
+    } else {
+      return [];
+    }
+    
+    const result = await query;
     return result;
   } catch (error) {
     console.error("[Database] Failed to get despesas:", error);
@@ -1592,6 +1949,9 @@ export async function getRelatorioProtocolos(protocoloIds: number[]) {
     // Enrich with financial data
     const enriched = await Promise.all(
       result.map(async (proto: any) => {
+        // Obter despesas vinculadas ao protocolo OU a qualquer processo vinculado ao mesmo cliente deste protocolo
+        // No entanto, para ser mais preciso, vamos pegar apenas as despesas do protocolo.
+        // Se o usuário quiser despesas do processo, ele gera o relatório do processo.
         const despesasList = await getDespesasByProtocolo(proto.id);
         const receitasList = await getReceitasByProtocolo(proto.id);
         
@@ -1619,6 +1979,14 @@ export async function getRelatorioProtocolos(protocoloIds: number[]) {
           totalReceitas,
           totalRecebido,
           totalPendente,
+          despesasList: despesasList.map(d => ({
+            ...d,
+            valor: parseFloat(d.valor as any)
+          })),
+          receitasList: receitasList.map(r => ({
+            ...r,
+            valor: parseFloat(r.valor as any)
+          })),
           isArchived: !!arquivoInfo,
           dataArquivamento: arquivoInfo?.dataArquivamento,
           custas: arquivoInfo?.custas || "0.00",
@@ -1660,7 +2028,69 @@ export async function getRelatorioProcessos(processoIds: number[]) {
       .leftJoin(clientes, eq(processos.clienteId, clientes.id))
       .where(inArray(processos.id, processoIds));
 
-    return result;
+    // Enrich with financial data (parcelas and additional expenses)
+    const enriched = await Promise.all(result.map(async (p: any) => {
+      const pParcelas = await db.select().from(parcelas).where(eq(parcelas.processoId, p.id));
+      const pDespesasAdicionais = await getDespesasByProtocolo(undefined, p.id);
+      
+      // Calculate from parcelas
+      const totalParcelas = pParcelas.reduce((sum, item) => sum + parseFloat(item.valorParcela), 0);
+      const totalDesconto = pParcelas.reduce((sum, item) => sum + parseFloat(item.desconto || "0"), 0);
+      
+      // Calcular valor pago real somando todos os valorPago das parcelas
+      // Nao limitamos ao valor da parcela aqui para que amortizacoes (pagamentos maiores) sejam contados corretamente no total ja pago
+      const totalParcelasPagas = pParcelas.reduce((sum, item) => {
+        return sum + parseFloat(item.valorPago || "0");
+      }, 0);
+      
+      // Calculate from additional expenses (Custas)
+      const totalCustasAdicionais = pDespesasAdicionais.reduce((sum, d) => sum + parseFloat(d.valor as any), 0);
+      const totalCustasPagas = pDespesasAdicionais
+        .filter(d => d.pago === 1)
+        .reduce((sum, d) => sum + parseFloat(d.valor as any), 0);
+
+      const totalDespesas = (totalParcelas - totalDesconto) + totalCustasAdicionais;
+      const totalDespesasPagas = totalParcelasPagas + totalCustasPagas;
+      const totalDespesasPendentes = totalDespesas - totalDespesasPagas;
+
+      // Merge both lists
+      const despesasList = [
+        ...pParcelas.map(d => {
+          const valorComDesconto = parseFloat(d.valorParcela) - parseFloat(d.desconto || "0");
+          const valorPago = parseFloat(d.valorPago || "0");
+          return {
+            dataDespesa: d.dataPagamento || d.createdAt,
+            descricao: `Parcela ${d.numeroParcela}${d.desconto && parseFloat(d.desconto) > 0 ? ' (com desconto)' : ''}`,
+            valor: valorComDesconto,
+            valorPago: valorPago,
+            saldoRestante: Math.max(0, valorComDesconto - valorPago),
+            pago: d.pago
+          };
+        }),
+        ...pDespesasAdicionais.map(d => {
+          const valor = parseFloat(d.valor as any);
+          const valorPago = d.pago === 1 ? valor : 0;
+          return {
+            dataDespesa: d.dataDespesa,
+            descricao: d.descricao,
+            valor: valor,
+            valorPago: valorPago,
+            saldoRestante: Math.max(0, valor - valorPago),
+            pago: d.pago
+          };
+        })
+      ].sort((a, b) => new Date(a.dataDespesa).getTime() - new Date(b.dataDespesa).getTime());
+
+      return {
+        ...p,
+        totalDespesas,
+        totalDespesasPagas,
+        totalDespesasPendentes,
+        despesasList
+      };
+    }));
+
+    return enriched;
   } catch (error) {
     console.error("[Database] Failed to get relatorio processos:", error);
     return [];

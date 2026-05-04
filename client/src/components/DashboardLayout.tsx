@@ -25,6 +25,7 @@ import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Page 1", path: "/" },
@@ -47,6 +48,9 @@ export default function DashboardLayout({
   });
   const { loading, user } = useAuth();
   const [, navigate] = useLocation();
+  const { data: config } = trpc.empresa.getConfig.useQuery();
+  const empresaNome = config?.nomeFantasia || "DM Gestão de Protocolos";
+  const empresaLogo = config?.logoUrl || "/favicon.ico";
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
@@ -137,8 +141,8 @@ export default function DashboardLayout({
         <header className="flex items-center justify-between border-b px-4 py-3">
           <div className="flex items-center gap-3">
             <SidebarTrigger />
-            <img src="/favicon.ico" alt="DM Logo" className="h-6 w-6" />
-            <span className="font-semibold text-sm text-slate-900">DM Gestão de Protocolos</span>
+            <img src={empresaLogo} alt="Logo" className="h-6 w-6 object-contain" />
+            <span className="font-semibold text-sm text-slate-900">{empresaNome}</span>
           </div>
           <div className="flex items-center gap-2">
             <PanelLeft className="h-4 w-4" />

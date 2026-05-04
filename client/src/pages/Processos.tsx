@@ -51,6 +51,7 @@ export default function Processos() {
   const createMutation = trpc.processos.create.useMutation();
   const updateMutation = trpc.processos.update.useMutation();
   const deleteMutation = trpc.processos.delete.useMutation();
+  const archiveMutation = trpc.arquivo.criarProcesso.useMutation();
 
   const processos = paginatedData?.data || [];
   const totalItems = paginatedData?.total || 0;
@@ -83,7 +84,7 @@ export default function Processos() {
           titulo: formData.titulo,
           clienteId: parseInt(formData.clienteId),
           status: formData.status as "Pendente" | "Em Análise" | "Protocolado" | "Finalizado" | "Campo" | "Análise/Escritório" | "Pendente documento",
-          prazoVencimento: formData.prazoVencimento ? new Date(formData.prazoVencimento) : undefined,
+          prazoVencimento: formData.prazoVencimento ? new Date(`${formData.prazoVencimento}T12:00:00`) : undefined,
         });
         toast.success("Processo atualizado com sucesso!");
         setEditingProcesso(null);
@@ -93,7 +94,7 @@ export default function Processos() {
           titulo: formData.titulo,
           clienteId: parseInt(formData.clienteId),
           status: formData.status as "Pendente" | "Em Análise" | "Protocolado" | "Finalizado" | "Campo" | "Análise/Escritório" | "Pendente documento",
-          prazoVencimento: formData.prazoVencimento ? new Date(formData.prazoVencimento) : undefined,
+          prazoVencimento: formData.prazoVencimento ? new Date(`${formData.prazoVencimento}T12:00:00`) : undefined,
         });
         toast.success("Processo criado com sucesso!");
         setOpen(false);
@@ -135,6 +136,7 @@ export default function Processos() {
   const handleArquivarProcesso = async (id: number) => {
     if (confirm("Tem certeza que deseja arquivar este processo?")) {
       try {
+        await archiveMutation.mutateAsync({ processoId: id });
         toast.success("Processo arquivado com sucesso!");
         utils.processos.listPaginated.invalidate();
       } catch (error) {
@@ -298,7 +300,9 @@ export default function Processos() {
                       <TableHead>Título</TableHead>
                       <TableHead>Cliente</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Vencimento</TableHead>
+                      <TableHead>Valor Total</TableHead>
+                      <TableHead>Pago</TableHead>
+                      <TableHead>Falta Pagar</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -318,7 +322,13 @@ export default function Processos() {
                           </span>
                         </TableCell>
                         <TableCell>
-                          {processo.prazoVencimento ? new Date(processo.prazoVencimento).toLocaleDateString() : "-"}
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(processo.financeiro?.totalComDesconto || 0)}
+                        </TableCell>
+                        <TableCell className="text-green-600 font-medium">
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(processo.financeiro?.totalPago || 0)}
+                        </TableCell>
+                        <TableCell className="text-red-600 font-medium">
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(processo.financeiro?.totalAPagar || 0)}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex gap-2 justify-end">

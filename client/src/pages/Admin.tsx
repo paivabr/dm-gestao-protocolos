@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { TRPCError } from "@trpc/server";
+import EmpresaConfigManager from "@/components/EmpresaConfigManager";
 
 export default function Admin() {
   const { user } = useAuth();
@@ -114,11 +115,12 @@ export default function Admin() {
       </div>
 
       <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="usuarios">Histórico por Usuário</TabsTrigger>
           <TabsTrigger value="processos">Histórico por Processo</TabsTrigger>
           <TabsTrigger value="permissoes">Permissões</TabsTrigger>
           <TabsTrigger value="gerenciar">Gerenciar Usuários</TabsTrigger>
+          <TabsTrigger value="empresa" className="text-blue-600 font-semibold">Empresa</TabsTrigger>
         </TabsList>
 
         <TabsContent value="usuarios" className="space-y-4">
@@ -271,6 +273,10 @@ export default function Admin() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="empresa" className="space-y-4">
+          <EmpresaConfigManager />
+        </TabsContent>
       </Tabs>
     </div>
   );
@@ -288,6 +294,7 @@ function PermissionsManager({ userId, userName }: { userId: number; userName: st
     canViewArchivo: false,
     canViewDespesas: false,
     canViewRelatorio: false,
+    canViewAnalytics: false,
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -302,6 +309,7 @@ function PermissionsManager({ userId, userName }: { userId: number; userName: st
         canViewArchivo: getPermissionsQuery.data.canViewArchivo ?? false,
         canViewDespesas: getPermissionsQuery.data.canViewDespesas ?? false,
         canViewRelatorio: getPermissionsQuery.data.canViewRelatorio ?? false,
+        canViewAnalytics: getPermissionsQuery.data.canViewAnalytics ?? false,
       });
     }
   }, [getPermissionsQuery.data]);
@@ -425,6 +433,15 @@ function PermissionsManager({ userId, userName }: { userId: number; userName: st
               className="w-4 h-4"
             />
             <span className="text-sm font-medium">Ver Relatório</span>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-blue-100 transition-colors">
+            <input
+              type="checkbox"
+              checked={permissions.canViewAnalytics}
+              onChange={() => handlePermissionChange("canViewAnalytics")}
+              className="w-4 h-4"
+            />
+            <span className="text-sm font-medium">Ver Análise</span>
           </label>
         </div>
         <Button

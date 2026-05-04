@@ -27,6 +27,7 @@ export const users = mysqlTable("users", {
   canViewArchivo: tinyint("canViewArchivo").default(0).notNull(),
   canViewDespesas: tinyint("canViewDespesas").default(0).notNull(),
   canViewRelatorio: tinyint("canViewRelatorio").default(0).notNull(),
+  canViewAnalytics: tinyint("canViewAnalytics").default(0).notNull(),
   // Google Calendar Integration
   googleAccessToken: text("googleAccessToken"),
   googleRefreshToken: text("googleRefreshToken"),
@@ -63,6 +64,7 @@ export const processos = mysqlTable("processos", {
   clienteId: int("clienteId").notNull(),
   status: mysqlEnum("status", ["Pendente", "Em Análise", "Protocolado", "Finalizado", "Campo", "Análise/Escritório", "Pendente documento"]).default("Pendente").notNull(),
   prazoVencimento: timestamp("prazoVencimento"),
+  custo: decimal("custo", { precision: 10, scale: 2 }).default("0.00").notNull(),
   isArchived: tinyint("isArchived").default(0).notNull(),
   dataArquivamento: timestamp("dataArquivamento"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -110,6 +112,7 @@ export const checklistItens = mysqlTable("checklistItens", {
   processoId: int("processoId").notNull(),
   item: varchar("item", { length: 255 }).notNull(),
   concluido: int("concluido").default(0).notNull(),
+  ordem: int("ordem").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -161,6 +164,7 @@ export const parcelas = mysqlTable("parcelas", {
   numeroParcela: int("numeroParcela").notNull(),
   valorParcela: varchar("valorParcela", { length: 20 }).notNull(),
   desconto: varchar("desconto", { length: 20 }).default("0").notNull(),
+  valorPago: varchar("valorPago", { length: 20 }).default("0").notNull(),
   dataPagamento: timestamp("dataPagamento"),
   pago: int("pago").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -176,6 +180,7 @@ export type InsertParcela = typeof parcelas.$inferInsert;
 export const statusProtocolo = mysqlTable("statusProtocolo", {
   id: int("id").autoincrement().primaryKey(),
   clienteId: int("clienteId"),
+  processoId: int("processoId"),
   numeroProtocolo: varchar("numeroProtocolo", { length: 50 }).notNull(),
   tipoProcesso: varchar("tipoProcesso", { length: 100 }).notNull(),
   dataAbertura: timestamp("dataAbertura").notNull(),
@@ -183,6 +188,7 @@ export const statusProtocolo = mysqlTable("statusProtocolo", {
   cartorio: varchar("cartorio", { length: 100 }).notNull(),
   ultimaAtualizacao: timestamp("ultimaAtualizacao").defaultNow().onUpdateNow().notNull(),
   observacoes: text("observacoes"),
+  dataArquivamento: timestamp("dataArquivamento"),
   isArchived: tinyint("isArchived").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -219,7 +225,8 @@ export type InsertArquivo = typeof arquivo.$inferInsert;
 // ============ DESPESAS TABLE ============
 export const despesas = mysqlTable("despesas", {
   id: int("id").autoincrement().primaryKey(),
-  statusProtocoloId: int("statusProtocoloId").notNull(),
+  statusProtocoloId: int("statusProtocoloId"),
+  processoId: int("processoId"),
   descricao: varchar("descricao", { length: 255 }).notNull(),
   valor: decimal("valor", { precision: 10, scale: 2 }).notNull(),
   dataDespesa: timestamp("dataDespesa").defaultNow().notNull(),
@@ -249,3 +256,52 @@ export const receitas = mysqlTable("receitas", {
 
 export type Receita = typeof receitas.$inferSelect;
 export type InsertReceita = typeof receitas.$inferInsert;
+
+// ============ EMPRESA CONFIG TABLE ============
+export const empresaConfig = mysqlTable("empresaConfig", {
+  id: int("id").autoincrement().primaryKey(),
+  nomeFantasia: varchar("nomeFantasia", { length: 255 }).notNull(),
+  razaoSocial: varchar("razaoSocial", { length: 255 }),
+  cnpj: varchar("cnpj", { length: 20 }),
+  email: varchar("email", { length: 255 }),
+  telefone: varchar("telefone", { length: 20 }),
+  endereco: text("endereco"),
+  website: varchar("website", { length: 255 }),
+  logoUrl: text("logoUrl"),
+  corPrimaria: varchar("corPrimaria", { length: 7 }).default("#3b82f6"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type EmpresaConfig = typeof empresaConfig.$inferSelect;
+export type InsertEmpresaConfig = typeof empresaConfig.$inferInsert;
+
+// ============ CHECKLIST TEMPLATES TABLES ============
+
+/**
+ * ChecklistTemplates table for storing reusable checklist templates.
+ */
+export const checklistTemplates = mysqlTable("checklistTemplates", {
+  id: int("id").autoincrement().primaryKey(),
+  usuarioId: int("usuarioId").notNull(),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  descricao: text("descricao"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ChecklistTemplate = typeof checklistTemplates.$inferSelect;
+export type InsertChecklistTemplate = typeof checklistTemplates.$inferInsert;
+
+/**
+ * ChecklistTemplateItems table for items within a checklist template.
+ */
+export const checklistTemplateItems = mysqlTable("checklistTemplateItems", {
+  id: int("id").autoincrement().primaryKey(),
+  templateId: int("templateId").notNull(),
+  descricao: varchar("descricao", { length: 255 }).notNull(),
+  ordem: int("ordem").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ChecklistTemplateItem = typeof checklistTemplateItems.$inferSelect;
+export type InsertChecklistTemplateItem = typeof checklistTemplateItems.$inferInsert;

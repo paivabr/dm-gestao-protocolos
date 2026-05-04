@@ -10,6 +10,31 @@ import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import * as googleCalendar from "./google-calendar";
 
 export const appRouter = router({
+  // ============ EMPRESA ROUTES ============
+  empresa: router({
+    getConfig: publicProcedure.query(async () => {
+      return await db.getEmpresaConfig();
+    }),
+    updateConfig: protectedProcedure
+      .input(z.object({
+        nomeFantasia: z.string().min(1, "Nome fantasia é obrigatório"),
+        razaoSocial: z.string().optional(),
+        cnpj: z.string().optional(),
+        email: z.string().email().optional().or(z.literal("")),
+        telefone: z.string().optional(),
+        endereco: z.string().optional(),
+        website: z.string().optional(),
+        logoUrl: z.string().optional(),
+        corPrimaria: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user?.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Apenas administradores podem alterar as configurações da empresa" });
+        }
+        return await db.updateEmpresaConfig(input);
+      }),
+  }),
+
   // ============ AUTH ROUTES ============
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
@@ -156,10 +181,11 @@ export const appRouter = router({
         z.object({
           page: z.number().min(1).default(1),
           limit: z.number().min(1).max(100).default(10),
+          searchTerm: z.string().optional(),
         })
       )
       .query(async ({ input }) => {
-        return await db.getClientesPaginated(input.page, input.limit);
+        return await db.getClientesPaginated(input.page, input.limit, input.searchTerm);
       }),
 
     create: protectedProcedure
@@ -261,10 +287,11 @@ export const appRouter = router({
         z.object({
           page: z.number().min(1).default(1),
           limit: z.number().min(1).max(100).default(10),
+          includeArchived: z.boolean().optional().default(false),
         })
       )
       .query(async ({ input }) => {
-        return await db.getProcessosPaginated(input.page, input.limit);
+        return await db.getProcessosPaginated(input.page, input.limit, input.includeArchived);
       }),
 
     create: protectedProcedure
@@ -456,6 +483,24 @@ export const appRouter = router({
         
         return { success: true };
       }),
+
+    reorderItens: protectedProcedure
+      .input(
+        z.object({
+          processoId: z.number(),
+          orderedIds: z.array(z.number()),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const success = await db.reorderChecklistItens(input.processoId, input.orderedIds);
+        if (!success) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Erro ao reordenar itens",
+          });
+        }
+        return { success: true };
+      }),
   }),
 
   checklistTemplates: router({
@@ -498,6 +543,28 @@ export const appRouter = router({
         }
 
         return { success: true, templateId };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const success = await db.deleteChecklistTemplate(input.id);
+        if (!success) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Erro ao deletar template",
+          });
+        }
+        if (ctx.user) {
+          await db.createAuditoria({
+            usuarioId: ctx.user.id,
+            tabela: 'checklistTemplates',
+            registroId: input.id,
+            acao: 'deletar',
+            alteracoes: 'Deletou template de checklist',
+          });
+        }
+        return { success: true };
       }),
   }),
 
@@ -601,6 +668,19 @@ export const appRouter = router({
       .input(z.object({ id: z.number(), desconto: z.string() }))
       .mutation(async ({ input }) => {
         await db.updateParcela(input.id, { desconto: input.desconto });
+        return { success: true };
+      }),
+
+    updateValorPago: protectedProcedure
+      .input(z.object({ id: z.number(), valorPago: z.string() }))
+      .mutation(async ({ input }) => {
+        const success = await db.atualizarValorPagoParcela(input.id, input.valorPago);
+        if (!success) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Valor pago inválido. Verifique se o valor eh maior ou igual a zero.",
+          });
+        }
         return { success: true };
       }),
   }),
@@ -734,6 +814,9 @@ export const appRouter = router({
         canViewClients: z.boolean().optional(),
         canManageParcelas: z.boolean().optional(),
         canViewArchivo: z.boolean().optional(),
+        canViewDespesas: z.boolean().optional(),
+        canViewRelatorio: z.boolean().optional(),
+        canViewAnalytics: z.boolean().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         // Only admins can update permissions
@@ -750,6 +833,9 @@ export const appRouter = router({
           canViewClients: input.canViewClients,
           canManageParcelas: input.canManageParcelas,
           canViewArchivo: input.canViewArchivo,
+          canViewDespesas: input.canViewDespesas,
+          canViewRelatorio: input.canViewRelatorio,
+          canViewAnalytics: input.canViewAnalytics,
         });
 
         return { success: true };
@@ -863,16 +949,18 @@ export const appRouter = router({
         z.object({
           page: z.number().min(1).default(1),
           limit: z.number().min(1).max(100).default(10),
+          includeArchived: z.boolean().optional().default(false),
         })
       )
       .query(async ({ ctx, input }) => {
         if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
-        return await db.getStatusProtocoloPaginated(input.page, input.limit);
+        return await db.getStatusProtocoloPaginated(input.page, input.limit, input.includeArchived);
       }),
 
     create: protectedProcedure
       .input(z.object({
         clienteId: z.number(),
+        processoId: z.number().optional(),
         numeroProtocolo: z.string(),
         tipoProcesso: z.string(),
         dataAbertura: z.date(),
@@ -882,7 +970,7 @@ export const appRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
-        const id = await db.createStatusProtocolo(input);
+        const id = await db.createStatusProtocolo(input as any);
         if (id) {
           await db.createAuditoria({
             usuarioId: ctx.user.id,
@@ -899,6 +987,7 @@ export const appRouter = router({
       .input(z.object({
         id: z.number(),
         clienteId: z.number().optional(),
+        processoId: z.number().optional(),
         numeroProtocolo: z.string().optional(),
         tipoProcesso: z.string().optional(),
         dataAbertura: z.date().optional(),
@@ -909,7 +998,7 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
         const { id, ...updateData } = input;
-        const success = await db.updateStatusProtocolo(id, updateData);
+        const success = await db.updateStatusProtocolo(id, updateData as any);
         if (success) {
           await db.createAuditoria({
             usuarioId: ctx.user.id,
@@ -964,10 +1053,22 @@ export const appRouter = router({
         return { success: id !== null, id };
       }),
 
+    criarProcesso: protectedProcedure
+      .input(z.object({
+        processoId: z.number(),
+        observacoes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        const id = await db.arquivarProcesso(input.processoId, input.observacoes);
+        return { success: id !== null, id };
+      }),
+
     listar: protectedProcedure
       .query(async ({ ctx }) => {
         if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
-        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        // Permitir que usuários com permissão de ver arquivo também listem
         return await db.getArquivados();
       }),
 
@@ -995,6 +1096,20 @@ export const appRouter = router({
         if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
         return await db.updateArquivo(input.id, input);
       }),
+
+    desarquivar: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        
+        // Try unarchiving as protocol first, then as process
+        const unarchivedProtocol = await db.desarquivarProtocolo(input.id);
+        if (unarchivedProtocol) return { success: true };
+        
+        const unarchivedProcess = await db.desarquivarProcesso(input.id);
+        return { success: unarchivedProcess };
+      }),
   }),
 
   despesas: router({
@@ -1012,9 +1127,12 @@ export const appRouter = router({
       }),
 
     listarPorProtocolo: protectedProcedure
-      .input(z.object({ statusProtocoloId: z.number() }))
+      .input(z.object({ 
+        statusProtocoloId: z.number().optional(),
+        processoId: z.number().optional()
+      }))
       .query(async ({ input }) => {
-        return await db.getDespesasByProtocolo(input.statusProtocoloId);
+        return await db.getDespesasByProtocolo(input.statusProtocoloId, input.processoId);
       }),
 
     atualizar: protectedProcedure
@@ -1090,16 +1208,21 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
         try {
-          console.log("[PDF] Gerando relatório para protocolos:", input.protocoloIds);
-          const { generateProtocolosReport } = await import("./pdf-generator");
+          console.log("[PDF] Gerando relatório PDF para protocolos:", input.protocoloIds);
+          const { gerarRelatorioPDF } = await import("./pdf-generator");
           const protocolos = await db.getRelatorioProtocolos(input.protocoloIds);
-          console.log("[PDF] Dados obtidos:", protocolos.length, "registros");
-          const pdfBuffer = await generateProtocolosReport(protocolos as any);
+          
+          const pdfBuffer = await gerarRelatorioPDF(protocolos as any);
           console.log("[PDF] PDF gerado:", pdfBuffer.length, "bytes");
-          return { success: true, pdf: pdfBuffer.toString("base64") };
+          
+          return { 
+            success: true, 
+            pdf: pdfBuffer.toString("base64"),
+            filename: `relatorio-protocolos-${new Date().toISOString().split('T')[0]}.pdf`
+          };
         } catch (error) {
           console.error("[PDF] Erro:", error);
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao gerar PDF" });
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao gerar relatório PDF" });
         }
       }),
 
@@ -1108,13 +1231,19 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
         try {
-          const { generateProcessosReport } = await import("./pdf-generator");
+          const { gerarRelatorioPDF } = await import("./pdf-generator");
           const processos = await db.getRelatorioProcessos(input.processoIds);
-          const pdfBuffer = await generateProcessosReport(processos as any);
-          return { success: true, pdf: pdfBuffer.toString("base64") };
+          
+          const pdfBuffer = await gerarRelatorioPDF(processos as any);
+          
+          return { 
+            success: true, 
+            pdf: pdfBuffer.toString("base64"),
+            filename: `relatorio-processos-${new Date().toISOString().split('T')[0]}.pdf`
+          };
         } catch (error) {
-          console.error("[PDF] Failed to generate processos report:", error);
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao gerar PDF" });
+          console.error("[PDF] Erro ao gerar relatório PDF:", error);
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao gerar relatório PDF" });
         }
       }),
   }),

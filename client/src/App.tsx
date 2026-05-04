@@ -22,11 +22,13 @@ import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuButton,
 import { LayoutDashboard, Users, FileText, LogOut, Menu, Settings, Calendar, User, DollarSign, FileJson, TrendingUp, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { trpc } from "@/lib/trpc";
 
 const DM_LOGO = "https://d2xsxph8kpxj0f.cloudfront.net/310519663557675120/4ytvUVEtgZpREdobsNfbUD/dm-logo_b3d99471.jpg";
 
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
+  const { data: permissions } = trpc.permissions.getMyPermissions.useQuery();
   const [, navigate] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
@@ -86,44 +88,51 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
             open={sidebarOpen}
             onClick={() => navigate("/status-protocolo")}
           />
-          <NavItem
-            icon={Calendar}
-            label="Calendário"
-            href="/calendario"
-            open={sidebarOpen}
-            onClick={() => navigate("/calendario")}
-          />
-          {user?.role === "admin" && (
-            <>
-              <NavItem
-                icon={FileText}
-                label="Arquivo"
-                href="/arquivo"
-                open={sidebarOpen}
-                onClick={() => navigate("/arquivo")}
-              />
-              <NavItem
-                icon={DollarSign}
-                label="Custas"
-                href="/despesas"
-                open={sidebarOpen}
-                onClick={() => navigate("/despesas")}
-              />
-              <NavItem
-                icon={FileJson}
-                label="Relatório"
-                href="/relatorio"
-                open={sidebarOpen}
-                onClick={() => navigate("/relatorio")}
-              />
-              <NavItem
-                icon={BarChart3}
-                label="Análise"
-                href="/analytics"
-                open={sidebarOpen}
-                onClick={() => navigate("/analytics")}
-              />
-            </>
+          {(user?.role === "admin" || permissions?.canViewCalendar) && (
+            <NavItem
+              icon={Calendar}
+              label="Calendário"
+              href="/calendario"
+              open={sidebarOpen}
+              onClick={() => navigate("/calendario")}
+            />
+          )}
+          
+          {(user?.role === "admin" || permissions?.canViewArchivo) && (
+            <NavItem
+              icon={FileText}
+              label="Arquivo"
+              href="/arquivo"
+              open={sidebarOpen}
+              onClick={() => navigate("/arquivo")}
+            />
+          )}
+          {(user?.role === "admin" || permissions?.canViewDespesas) && (
+            <NavItem
+              icon={DollarSign}
+              label="Custas"
+              href="/despesas"
+              open={sidebarOpen}
+              onClick={() => navigate("/despesas")}
+            />
+          )}
+          {(user?.role === "admin" || permissions?.canViewRelatorio) && (
+            <NavItem
+              icon={FileJson}
+              label="Relatório"
+              href="/relatorio"
+              open={sidebarOpen}
+              onClick={() => navigate("/relatorio")}
+            />
+          )}
+          {(user?.role === "admin" || permissions?.canViewAnalytics) && (
+            <NavItem
+              icon={BarChart3}
+              label="Análise"
+              href="/analytics"
+              open={sidebarOpen}
+              onClick={() => navigate("/analytics")}
+            />
           )}
           <NavItem
             icon={User}

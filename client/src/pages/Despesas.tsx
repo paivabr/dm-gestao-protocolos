@@ -44,10 +44,13 @@ export default function Despesas() {
     return (processosResponse as any)?.data || [];
   }, [processosResponse]);
 
-  // Carregar despesas do protocolo selecionado
+  // Carregar despesas do protocolo ou processo selecionado
   const { data: despesas = [] } = trpc.despesas.listarPorProtocolo.useQuery(
-    { statusProtocoloId: parseInt(selectedProtocolo) },
-    { enabled: !!selectedProtocolo }
+    { 
+      statusProtocoloId: selectedProtocolo && selectedProtocolo !== "none" ? parseInt(selectedProtocolo) : undefined,
+      processoId: selectedProcesso && selectedProcesso !== "none" ? parseInt(selectedProcesso) : undefined
+    },
+    { enabled: (!!selectedProtocolo && selectedProtocolo !== "none") || (!!selectedProcesso && selectedProcesso !== "none") }
   );
 
   const utils = trpc.useUtils();
@@ -57,7 +60,12 @@ export default function Despesas() {
       toast.success("Despesa adicionada com sucesso!");
       setFormData({ descricao: "", valor: "" });
       setDialogOpen(false);
-      utils.despesas.listarPorProtocolo.invalidate();
+      createMutation.reset();
+      // Invalidate with exact parameters to ensure UI update
+      utils.despesas.listarPorProtocolo.invalidate({
+        statusProtocoloId: selectedProtocolo && selectedProtocolo !== "none" ? parseInt(selectedProtocolo) : undefined,
+        processoId: selectedProcesso && selectedProcesso !== "none" ? parseInt(selectedProcesso) : undefined
+      });
     },
     onError: (error: any) => {
       console.error("Erro ao criar despesa:", error);
@@ -90,9 +98,11 @@ export default function Despesas() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedProtocolo) {
-      toast.error("Selecione um protocolo");
-      return;
+    if (!selectedProtocolo || selectedProtocolo === "none") {
+      if (!selectedProcesso || selectedProcesso === "none") {
+        toast.error("Selecione um protocolo ou processo");
+        return;
+      }
     }
     
     if (!formData.descricao || !formData.valor) {
@@ -108,7 +118,8 @@ export default function Despesas() {
 
     try {
       await createMutation.mutateAsync({
-        statusProtocoloId: parseInt(selectedProtocolo),
+        statusProtocoloId: selectedProtocolo && selectedProtocolo !== "none" ? parseInt(selectedProtocolo) : 0,
+        processoId: selectedProcesso && selectedProcesso !== "none" ? parseInt(selectedProcesso) : undefined,
         descricao: formData.descricao,
         valor: formData.valor,
       });
@@ -204,6 +215,7 @@ export default function Despesas() {
                 <SelectValue placeholder="Selecione um protocolo..." />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="none">Nenhum protocolo</SelectItem>
                 {protocolos.map((p: any) => (
                   <SelectItem key={p.id} value={p.id.toString()}>
                     {p.numeroProtocolo} - {p.cliente?.nome || "Sem cliente"}
@@ -225,6 +237,7 @@ export default function Despesas() {
                 <SelectValue placeholder="Selecione um processo..." />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="none">Nenhum processo</SelectItem>
                 {processos.map((p: any) => (
                   <SelectItem key={p.id} value={p.id.toString()}>
                     {p.titulo} - {p.cliente?.nome || "Sem cliente"}
@@ -236,7 +249,7 @@ export default function Despesas() {
         </Card>
       </div>
 
-      {selectedProtocolo && (
+      {(selectedProtocolo && selectedProtocolo !== "none" || selectedProcesso && selectedProcesso !== "none") && (
         <>
           {/* Resumo */}
           <div className="grid grid-cols-3 gap-4">
@@ -266,26 +279,34 @@ export default function Despesas() {
             </Card>
           </div>
 
-          {/* Informações do Protocolo */}
-          {protocoloSelecionado && (
+          {/* Informações do Protocolo ou Processo */}
+          {(protocoloSelecionado || processoSelecionado) && (
             <Card className="bg-blue-50 border-blue-200">
               <CardContent className="pt-6">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
-                    <p className="text-xs text-slate-600">Protocolo</p>
-                    <p className="font-semibold text-slate-900">{protocoloSelecionado.numeroProtocolo}</p>
+                    <p className="text-xs text-slate-600">{protocoloSelecionado ? "Protocolo" : "Processo"}</p>
+                    <p className="font-semibold text-slate-900">
+                      {protocoloSelecionado ? protocoloSelecionado.numeroProtocolo : processoSelecionado?.titulo}
+                    </p>
                   </div>
                   <div>
                     <p className="text-xs text-slate-600">Cliente</p>
-                    <p className="font-semibold text-slate-900">{protocoloSelecionado.cliente?.nome || "-"}</p>
+                    <p className="font-semibold text-slate-900">
+                      {protocoloSelecionado ? protocoloSelecionado.cliente?.nome : processoSelecionado?.cliente?.nome || "-"}
+                    </p>
                   </div>
                   <div>
                     <p className="text-xs text-slate-600">Tipo</p>
-                    <p className="font-semibold text-slate-900">{protocoloSelecionado.tipoProcesso || "-"}</p>
+                    <p className="font-semibold text-slate-900">
+                      {protocoloSelecionado ? protocoloSelecionado.tipoProcesso : "Processo Interno"}
+                    </p>
                   </div>
                   <div>
                     <p className="text-xs text-slate-600">Status</p>
-                    <p className="font-semibold text-slate-900">{protocoloSelecionado.status || "-"}</p>
+                    <p className="font-semibold text-slate-900">
+                      {protocoloSelecionado ? protocoloSelecionado.status : processoSelecionado?.status || "-"}
+                    </p>
                   </div>
                 </div>
               </CardContent>
