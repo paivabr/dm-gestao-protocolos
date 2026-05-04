@@ -201,9 +201,17 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
     setEditandoDataId(parcela.id);
     if (parcela.dataPagamento) {
       const date = new Date(parcela.dataPagamento);
-      setDataEditando(date.toISOString().split('T')[0]);
+      // Corrigir bug de timezone: usar UTC para evitar deslocamento
+      const year = date.getUTCFullYear();
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(date.getUTCDate()).padStart(2, '0');
+      setDataEditando(`${year}-${month}-${day}`);
     } else {
-      setDataEditando(new Date().toISOString().split('T')[0]);
+      const today = new Date();
+      const year = today.getUTCFullYear();
+      const month = String(today.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(today.getUTCDate()).padStart(2, '0');
+      setDataEditando(`${year}-${month}-${day}`);
     }
   };
 
@@ -213,9 +221,13 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
       return;
     }
 
+    // Corrigir bug de timezone: adicionar 12 horas para evitar que a data seja puxada um dia antes
+    const [year, month, day] = dataEditando.split('-');
+    const dataComTimezone = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), 12, 0, 0);
+
     await updateDataPagamentoMutation.mutateAsync({
       id: parcelaId,
-      dataPagamento: new Date(dataEditando),
+      dataPagamento: dataComTimezone,
     });
   };
 

@@ -683,6 +683,13 @@ export const appRouter = router({
         }
         return { success: true };
       }),
+
+    updateDataPagamento: protectedProcedure
+      .input(z.object({ id: z.number(), dataPagamento: z.date() }))
+      .mutation(async ({ input }) => {
+        await db.updateParcela(input.id, { dataPagamento: input.dataPagamento });
+        return { success: true };
+      }),
   }),
 
   // ============ CALENDARIO ROUTES ============
@@ -1304,3 +1311,10 @@ export const appRouter = router({
 });
 
 export type AppRouter = typeof appRouter;
+
+    updateDataPagamento: protectedProcedure
+      .input(z.object({ id: z.number(), dataPagamento: z.date() }))
+      .mutation(async ({ input }) => {
+        await db.updateParcela(input.id, { dataPagamento: input.dataPagamento });
+        return { success: true };
+      }),
