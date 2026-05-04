@@ -32,6 +32,8 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
   const [aplicandoDescontoUnico, setAplicandoDescontoUnico] = useState(false);
   const [editandoValorPagoId, setEditandoValorPagoId] = useState<number | null>(null);
   const [valorPagoEditando, setValorPagoEditando] = useState("");
+  const [editandoDataId, setEditandoDataId] = useState<number | null>(null);
+  const [dataEditando, setDataEditando] = useState("");
 
   const { data: parcelas = [], refetch } = trpc.parcelas.getByProcesso.useQuery(
     { processoId },
@@ -91,6 +93,18 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
     },
     onError: (error: any) => {
       toast.error(error.message || "Erro ao atualizar valor pago");
+    },
+  });
+
+  const updateDataPagamentoMutation = trpc.parcelas.updateDataPagamento.useMutation({
+    onSuccess: () => {
+      refetch();
+      setEditandoDataId(null);
+      setDataEditando("");
+      toast.success("Data de pagamento atualizada com sucesso!");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Erro ao atualizar data de pagamento");
     },
   });
 
@@ -180,6 +194,28 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
     await updateValorPagoMutation.mutateAsync({
       id: parcelaId,
       valorPago: valorPagoEditando,
+    });
+  };
+
+  const handleEditarData = (parcela: any) => {
+    setEditandoDataId(parcela.id);
+    if (parcela.dataPagamento) {
+      const date = new Date(parcela.dataPagamento);
+      setDataEditando(date.toISOString().split('T')[0]);
+    } else {
+      setDataEditando(new Date().toISOString().split('T')[0]);
+    }
+  };
+
+  const handleSalvarData = async (parcelaId: number) => {
+    if (!dataEditando) {
+      toast.error("Selecione uma data");
+      return;
+    }
+
+    await updateDataPagamentoMutation.mutateAsync({
+      id: parcelaId,
+      dataPagamento: new Date(dataEditando),
     });
   };
 
@@ -552,6 +588,45 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
                             R$ {Math.max(0, saldoRestante).toFixed(2)}
                           </p>
                         </div>
+                      </div>
+
+                      {/* Data de Pagamento */}
+                      <div className="bg-white p-2 rounded border border-gray-200">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-gray-600">Data Pagamento</p>
+                          <button
+                            onClick={() => handleEditarData(parcela)}
+                            disabled={updateDataPagamentoMutation.isPending}
+                            className="text-blue-600 hover:text-blue-700"
+                            title="Editar data de pagamento"
+                          >
+                            <Edit2 className="h-3 w-3" />
+                          </button>
+                        </div>
+                        {editandoDataId === parcela.id ? (
+                          <div className="flex gap-1 mt-1">
+                            <Input
+                              type="date"
+                              value={dataEditando}
+                              onChange={(e) => setDataEditando(e.target.value)}
+                              className="h-7 text-xs flex-1"
+                            />
+                            <Button
+                              size="sm"
+                              className="h-7 text-xs px-2"
+                              onClick={() => handleSalvarData(parcela.id)}
+                              disabled={updateDataPagamentoMutation.isPending}
+                            >
+                              OK
+                            </Button>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-700 font-semibold">
+                            {parcela.dataPagamento
+                              ? new Date(parcela.dataPagamento).toLocaleDateString("pt-BR")
+                              : "-"}
+                          </p>
+                        )}
                       </div>
                     </div>
                   );
