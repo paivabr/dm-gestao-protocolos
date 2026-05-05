@@ -221,13 +221,13 @@ export default function ParcelasModal({ open, onOpenChange, processoId }: Parcel
       return;
     }
 
-    // Corrigir bug de timezone: adicionar 12 horas para evitar que a data seja puxada um dia antes
-    const [year, month, day] = dataEditando.split('-');
-    const dataComTimezone = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), 12, 0, 0);
+    // Enviar data como string ISO para evitar problemas de timezone
+    // O servidor irá converter corretamente
+    const dataISO = new Date(dataEditando + 'T12:00:00Z');
 
     await updateDataPagamentoMutation.mutateAsync({
       id: parcelaId,
-      dataPagamento: dataComTimezone,
+      dataPagamento: dataISO,
     });
   };
 
