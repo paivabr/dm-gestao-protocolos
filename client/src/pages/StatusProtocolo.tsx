@@ -26,9 +26,17 @@ export default function StatusProtocolo() {
   const [currentPage, setCurrentPage] = useState(1);
   const { user } = useAuth();
   const { data: permissions } = trpc.permissions.getMyPermissions.useQuery();
+  
+  const [searchProtocolo, setSearchProtocolo] = useState("");
+  const [searchCliente, setSearchCliente] = useState("");
+  const [filterTipo, setFilterTipo] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterCartorio, setFilterCartorio] = useState("");
+
   const { data: paginatedData, isLoading } = trpc.statusProtocolo.listPaginated.useQuery({
     page: currentPage,
     limit: ITEMS_PER_PAGE,
+    searchTerm: searchProtocolo || searchCliente || undefined,
   });
   const utils = trpc.useUtils();
   const { data: clientes = [] } = trpc.clientes.list.useQuery();
@@ -47,11 +55,6 @@ export default function StatusProtocolo() {
   const [custasDialogOpen, setCustasDialogOpen] = useState(false);
   const [selectedProtocoloIdForCustas, setSelectedProtocoloIdForCustas] = useState<number | null>(null);
   const [custasFormData, setCustasFormData] = useState({ descricao: "", valor: "" });
-  const [searchProtocolo, setSearchProtocolo] = useState("");
-  const [searchCliente, setSearchCliente] = useState("");
-  const [filterTipo, setFilterTipo] = useState("");
-  const [filterStatus, setFilterStatus] = useState("");
-  const [filterCartorio, setFilterCartorio] = useState("");
   
   const [novoTipo, setNovoTipo] = useState("");
   const [novoCartorio, setNovoCartorio] = useState("");
@@ -72,31 +75,9 @@ export default function StatusProtocolo() {
 
   const STATUS_OPTIONS = ["Pronto", "Reingressado", "Reingressado pós pagamento", "Nota de Pagamento", "Exigência", "Protocolado", "Vencido", "Campo", "Análise/Escritório", "Pendente documento"];
 
-  const protocolos = paginatedData?.data || [];
+  const filteredProtocolos = paginatedData?.data || [];
   const totalItems = paginatedData?.total || 0;
   const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
-
-  // Ordenar protocolos pelos mais recentes
-  const protocolosOrdenados = useMemo(() => {
-    return [...protocolos].sort((a: any, b: any) => {
-      const dataA = new Date(a.dataAbertura).getTime();
-      const dataB = new Date(b.dataAbertura).getTime();
-      return dataB - dataA;
-    });
-  }, [protocolos]);
-
-  const filteredProtocolos = useMemo(() => {
-    return protocolosOrdenados.filter((p: any) => {
-      const matchesProtocolo = p.numeroProtocolo
-        .toLowerCase()
-        .includes(searchProtocolo.toLowerCase());
-      const matchesCliente = !searchCliente || (p.cliente?.nome?.toLowerCase().includes(searchCliente.toLowerCase()) || false);
-      const matchesTipo = !filterTipo || p.tipoProcesso === filterTipo;
-      const matchesStatus = !filterStatus || p.status === filterStatus;
-      const matchesCartorio = !filterCartorio || p.cartorio === filterCartorio;
-      return matchesProtocolo && matchesCliente && matchesTipo && matchesStatus && matchesCartorio;
-    });
-  }, [protocolosOrdenados, searchProtocolo, searchCliente, filterTipo, filterStatus, filterCartorio]);
 
   const handleAddTipo = async () => {
     if (novoTipo && !tiposProcessoNames.includes(novoTipo)) {

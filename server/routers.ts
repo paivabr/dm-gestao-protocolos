@@ -957,11 +957,12 @@ export const appRouter = router({
           page: z.number().min(1).default(1),
           limit: z.number().min(1).max(100).default(10),
           includeArchived: z.boolean().optional().default(false),
+          searchTerm: z.string().optional(),
         })
       )
       .query(async ({ ctx, input }) => {
         if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
-        return await db.getStatusProtocoloPaginated(input.page, input.limit, input.includeArchived);
+        return await db.getStatusProtocoloPaginated(input.page, input.limit, input.includeArchived, input.searchTerm);
       }),
 
     create: protectedProcedure

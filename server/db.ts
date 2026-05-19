@@ -1418,7 +1418,7 @@ export async function getProcessosPaginated(page: number = 1, limit: number = 10
   }
 }
 
-export async function getStatusProtocoloPaginated(page: number = 1, limit: number = 10, includeArchived: boolean = false) {
+export async function getStatusProtocoloPaginated(page: number = 1, limit: number = 10, includeArchived: boolean = false, searchTerm?: string) {
   const db = await getDb();
   if (!db) {
     console.warn("[Database] Cannot get status protocolo paginated: database not available");
@@ -1450,13 +1450,27 @@ export async function getStatusProtocoloPaginated(page: number = 1, limit: numbe
       .from(statusProtocolo)
       .leftJoin(clientes, eq(statusProtocolo.clienteId, clientes.id));
 
-    let countQuery = db.select({ count: sql`COUNT(*)` }).from(statusProtocolo);
+    let countQuery = db.select({ count: sql`COUNT(*)` })
+      .from(statusProtocolo)
+      .leftJoin(clientes, eq(statusProtocolo.clienteId, clientes.id));
 
+    const conditions = [];
     if (!includeArchived) {
-      // Usar a coluna correta (isArchived) que existe no banco de dados para filtrar
-      query = query.where(eq(statusProtocolo.isArchived, 0)) as any;
-      countQuery = countQuery.where(eq(statusProtocolo.isArchived, 0)) as any;
+      conditions.push(eq(statusProtocolo.isArchived, 0));
     }
+    
+    if (searchTerm) {
+      conditions.push(sql`(${statusProtocolo.numeroProtocolo} LIKE ${`%${searchTerm}%`} OR ${clientes.nome} LIKE ${`%${searchTerm}%`})`);
+    }
+
+    if (conditions.length > 0) {
+      const whereClause = and(...conditions);
+      query = query.where(whereClause) as any;
+      countQuery = countQuery.where(whereClause) as any;
+    }
+
+    // Ordenar por data de abertura decrescente (mais recentes primeiro)
+    query = query.orderBy(sql`${statusProtocolo.dataAbertura} DESC`) as any;
 
     const result = await query.limit(limit).offset(offset);
     const countResult: any = await countQuery;
