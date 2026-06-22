@@ -1456,7 +1456,7 @@ export async function getStatusProtocoloPaginated(page: number = 1, limit: numbe
 
     const conditions = [];
     if (!includeArchived) {
-      conditions.push(eq(statusProtocolo.isArchived, 0));
+      conditions.push(eq(statusProtocolo.isArquivado, 0));
     }
     
     if (searchTerm) {
@@ -1525,7 +1525,10 @@ export async function arquivarProtocolo(statusProtocoloId: number, observacoesAr
     });
     
     // Mark statusProtocolo as archived
-    await db.update(statusProtocolo).set({ isArchived: 1 }).where(eq(statusProtocolo.id, statusProtocoloId));
+    await db.update(statusProtocolo).set({ 
+      isArquivado: 1,
+      dataArquivamento: new Date()
+    }).where(eq(statusProtocolo.id, statusProtocoloId));
     
     return (result as any)[0]?.insertId as number || null;
   } catch (error) {
@@ -1577,7 +1580,10 @@ export async function arquivarProcesso(processoId: number, observacoesArquivo?: 
     });
     
     // Mark processo as archived
-    await db.update(processos).set({ isArchived: 1 }).where(eq(processos.id, processoId));
+    await db.update(processos).set({ 
+      isArchived: 1,
+      dataArquivamento: new Date()
+    }).where(eq(processos.id, processoId));
     
     return (result as any)[0]?.insertId as number || null;
   } catch (error) {

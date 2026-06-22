@@ -1056,7 +1056,15 @@ export const appRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
-        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        
+        // Permitir se for admin ou se tiver permissão de ver arquivo (que implica gerenciar o fluxo de arquivamento)
+        if (ctx.user.role !== "admin") {
+          const permissions = await db.getUserPermissions(ctx.user.id);
+          if (!permissions?.canViewArchivo) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Você não tem permissão para arquivar protocolos" });
+          }
+        }
+        
         const id = await db.arquivarProtocolo(input.statusProtocoloId, input.observacoes);
         return { success: id !== null, id };
       }),
@@ -1068,7 +1076,15 @@ export const appRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         if (!ctx.user?.id) throw new TRPCError({ code: "UNAUTHORIZED" });
-        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        
+        // Permitir se for admin ou se tiver permissão de ver arquivo
+        if (ctx.user.role !== "admin") {
+          const permissions = await db.getUserPermissions(ctx.user.id);
+          if (!permissions?.canViewArchivo) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Você não tem permissão para arquivar processos" });
+          }
+        }
+        
         const id = await db.arquivarProcesso(input.processoId, input.observacoes);
         return { success: id !== null, id };
       }),

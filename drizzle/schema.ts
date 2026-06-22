@@ -189,6 +189,7 @@ export const statusProtocolo = mysqlTable("statusProtocolo", {
   ultimaAtualizacao: timestamp("ultimaAtualizacao").defaultNow().onUpdateNow().notNull(),
   observacoes: text("observacoes"),
   dataArquivamento: timestamp("dataArquivamento"),
+  isArquivado: tinyint("isArquivado").default(0).notNull(),
   isArchived: tinyint("isArchived").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
