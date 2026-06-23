@@ -1527,6 +1527,7 @@ export async function arquivarProtocolo(statusProtocoloId: number, observacoesAr
     // Mark statusProtocolo as archived
     await db.update(statusProtocolo).set({ 
       isArquivado: 1,
+      isArchived: 1,
       dataArquivamento: new Date()
     }).where(eq(statusProtocolo.id, statusProtocoloId));
     
