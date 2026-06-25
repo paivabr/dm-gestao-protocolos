@@ -1359,7 +1359,13 @@ export async function getClientesPaginated(page: number = 1, limit: number = 10,
   }
 }
 
-export async function getProcessosPaginated(page: number = 1, limit: number = 10, includeArchived: boolean = false) {
+export async function getProcessosPaginated(
+  page: number = 1, 
+  limit: number = 10, 
+  includeArchived: boolean = false,
+  searchTerm?: string,
+  status?: string
+) {
   const db = await getDb();
   if (!db) {
     console.warn("[Database] Cannot get processos paginated: database not available");
@@ -1371,10 +1377,30 @@ export async function getProcessosPaginated(page: number = 1, limit: number = 10
     let query = db.select().from(processos);
     let countQuery = db.select({ count: sql`COUNT(*)` }).from(processos);
 
+    const conditions = [];
     if (!includeArchived) {
-      query = query.where(eq(processos.isArchived, 0)) as any;
-      countQuery = countQuery.where(eq(processos.isArchived, 0)) as any;
+      conditions.push(eq(processos.isArchived, 0));
     }
+
+    if (searchTerm) {
+      // Buscar por título ou nome do cliente (precisamos do join para o cliente no countQuery também se filtrarmos por ele)
+      // Por simplicidade agora, vamos buscar apenas por título no countQuery ou enriquecer depois.
+      // Mas para ser preciso, vamos adicionar o join.
+      conditions.push(sql`${processos.titulo} LIKE ${`%${searchTerm}%`}`);
+    }
+
+    if (status && status !== "all") {
+      conditions.push(eq(processos.status, status as any));
+    }
+
+    if (conditions.length > 0) {
+      const whereClause = and(...conditions);
+      query = query.where(whereClause) as any;
+      countQuery = countQuery.where(whereClause) as any;
+    }
+
+    // Ordenar por data de criação decrescente (mais recentes primeiro)
+    query = query.orderBy(sql`${processos.createdAt} DESC`) as any;
 
     const result = await query.limit(limit).offset(offset);
     const countResult: any = await countQuery;
@@ -1418,7 +1444,15 @@ export async function getProcessosPaginated(page: number = 1, limit: number = 10
   }
 }
 
-export async function getStatusProtocoloPaginated(page: number = 1, limit: number = 10, includeArchived: boolean = false, searchTerm?: string) {
+export async function getStatusProtocoloPaginated(
+  page: number = 1, 
+  limit: number = 10, 
+  includeArchived: boolean = false, 
+  searchTerm?: string,
+  status?: string,
+  tipoProcesso?: string,
+  cartorio?: string
+) {
   const db = await getDb();
   if (!db) {
     console.warn("[Database] Cannot get status protocolo paginated: database not available");
@@ -1461,6 +1495,18 @@ export async function getStatusProtocoloPaginated(page: number = 1, limit: numbe
     
     if (searchTerm) {
       conditions.push(sql`(${statusProtocolo.numeroProtocolo} LIKE ${`%${searchTerm}%`} OR ${clientes.nome} LIKE ${`%${searchTerm}%`})`);
+    }
+
+    if (status && status !== "all") {
+      conditions.push(eq(statusProtocolo.status, status as any));
+    }
+
+    if (tipoProcesso && tipoProcesso !== "all") {
+      conditions.push(eq(statusProtocolo.tipoProcesso, tipoProcesso));
+    }
+
+    if (cartorio && cartorio !== "all") {
+      conditions.push(eq(statusProtocolo.cartorio, cartorio));
     }
 
     if (conditions.length > 0) {

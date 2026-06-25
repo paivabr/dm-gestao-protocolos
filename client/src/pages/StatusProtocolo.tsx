@@ -37,6 +37,9 @@ export default function StatusProtocolo() {
     page: currentPage,
     limit: ITEMS_PER_PAGE,
     searchTerm: searchProtocolo || searchCliente || undefined,
+    status: filterStatus || undefined,
+    tipoProcesso: filterTipo || undefined,
+    cartorio: filterCartorio || undefined,
   });
   const utils = trpc.useUtils();
   const { data: clientes = [] } = trpc.clientes.list.useQuery();

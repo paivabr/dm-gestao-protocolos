@@ -39,6 +39,8 @@ export default function Processos() {
     {
       page: currentPage,
       limit: ITEMS_PER_PAGE,
+      searchTerm: searchTerm || undefined,
+      status: filterStatus || undefined,
     },
     {
       enabled: user?.role === "admin" || permissions?.canViewProcesses,
@@ -57,18 +59,8 @@ export default function Processos() {
   const totalItems = paginatedData?.total || 0;
   const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
 
-  // Filter and search on client side for displayed items
-  const filteredProcessos = useMemo(() => {
-    if (!processos) return [];
-
-    return processos.filter(p => {
-      const matchesSearch =
-        p.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.cliente?.nome.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = filterStatus === "all" || p.status === filterStatus;
-      return matchesSearch && matchesStatus;
-    });
-  }, [processos, searchTerm, filterStatus]);
+  // Os processos já vêm filtrados do servidor
+  const filteredProcessos = processos;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
