@@ -1374,17 +1374,7 @@ export async function getProcessosPaginated(
 
   try {
     const offset = (page - 1) * limit;
-    let query = db.select({
-      id: processos.id,
-      titulo: processos.titulo,
-      clienteId: processos.clienteId,
-      status: processos.status,
-      prazoVencimento: processos.prazoVencimento,
-      isArchived: processos.isArchived,
-      isArquivado: processos.isArquivado,
-      createdAt: processos.createdAt,
-      updatedAt: processos.updatedAt,
-    }).from(processos).leftJoin(clientes, eq(processos.clienteId, clientes.id));
+    let query = db.select().from(processos).leftJoin(clientes, eq(processos.clienteId, clientes.id));
     
     let countQuery = db.select({ count: sql`COUNT(*)` })
       .from(processos)
@@ -1413,14 +1403,15 @@ export async function getProcessosPaginated(
     // Ordenar por data de criação decrescente (mais recentes primeiro)
     query = query.orderBy(sql`${processos.createdAt} DESC`) as any;
 
-    const result = await query.limit(limit).offset(offset);
+    const rawResult = await query.limit(limit).offset(offset);
+    const result = rawResult.map(r => ({
+      ...r.processos,
+      cliente: r.clientes
+    }));
     const countResult: any = await countQuery;
     const total = (countResult[0]?.count as number) || 0;
 
-    // Enrich with cliente data
-    const clientes_list = await getClientes();
-    const clienteMap = new Map(clientes_list.map(c => [c.id, c]));
-
+    // Enrich with financial data
     const enriched = await Promise.all(result.map(async (p) => {
       const pParcelas = await db.select().from(parcelas).where(eq(parcelas.processoId, p.id));
       
@@ -1437,7 +1428,6 @@ export async function getProcessosPaginated(
 
       return {
         ...p,
-        cliente: clienteMap.get(p.clienteId),
         financeiro: {
           totalGeral,
           totalDesconto,
