@@ -1374,8 +1374,21 @@ export async function getProcessosPaginated(
 
   try {
     const offset = (page - 1) * limit;
-    let query = db.select().from(processos);
-    let countQuery = db.select({ count: sql`COUNT(*)` }).from(processos);
+    let query = db.select({
+      id: processos.id,
+      titulo: processos.titulo,
+      clienteId: processos.clienteId,
+      status: processos.status,
+      prazoVencimento: processos.prazoVencimento,
+      isArchived: processos.isArchived,
+      isArquivado: processos.isArquivado,
+      createdAt: processos.createdAt,
+      updatedAt: processos.updatedAt,
+    }).from(processos).leftJoin(clientes, eq(processos.clienteId, clientes.id));
+    
+    let countQuery = db.select({ count: sql`COUNT(*)` })
+      .from(processos)
+      .leftJoin(clientes, eq(processos.clienteId, clientes.id));
 
     const conditions = [];
     if (!includeArchived) {
@@ -1383,10 +1396,8 @@ export async function getProcessosPaginated(
     }
 
     if (searchTerm) {
-      // Buscar por título ou nome do cliente (precisamos do join para o cliente no countQuery também se filtrarmos por ele)
-      // Por simplicidade agora, vamos buscar apenas por título no countQuery ou enriquecer depois.
-      // Mas para ser preciso, vamos adicionar o join.
-      conditions.push(sql`${processos.titulo} LIKE ${`%${searchTerm}%`}`);
+      // Buscar por título ou nome do cliente
+      conditions.push(sql`(${processos.titulo} LIKE ${`%${searchTerm}%`} OR ${clientes.nome} LIKE ${`%${searchTerm}%`})`);
     }
 
     if (status && status !== "all") {

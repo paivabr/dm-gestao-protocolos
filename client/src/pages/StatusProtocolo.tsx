@@ -32,6 +32,7 @@ export default function StatusProtocolo() {
   const [filterTipo, setFilterTipo] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterCartorio, setFilterCartorio] = useState("");
+  const [searchClienteForm, setSearchClienteForm] = useState("");
 
   const { data: paginatedData, isLoading } = trpc.statusProtocolo.listPaginated.useQuery({
     page: currentPage,
@@ -43,6 +44,11 @@ export default function StatusProtocolo() {
   });
   const utils = trpc.useUtils();
   const { data: clientes = [] } = trpc.clientes.list.useQuery();
+  
+  const filteredClientes = useMemo(() => {
+    if (!searchClienteForm) return clientes;
+    return clientes.filter(c => c.nome.toLowerCase().includes(searchClienteForm.toLowerCase()));
+  }, [clientes, searchClienteForm]);
   const { data: tiposProcessoData = [] } = trpc.tiposProcesso.list.useQuery();
   const { data: cartoriosData = [] } = trpc.cartorios.list.useQuery();
   const createMutation = trpc.statusProtocolo.create.useMutation();
@@ -488,18 +494,33 @@ export default function StatusProtocolo() {
           <form onSubmit={handleSubmit} className="space-y-4 max-h-96 overflow-y-auto">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Cliente</label>
-              <Select value={formData.clienteId} onValueChange={(value) => setFormData(prev => ({ ...prev, clienteId: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um cliente" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clientes.map(cliente => (
-                    <SelectItem key={cliente.id} value={cliente.id.toString()}>
-                      {cliente.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-slate-400" />
+                  <Input
+                    placeholder="Buscar cliente por nome..."
+                    value={searchClienteForm}
+                    onChange={(e) => setSearchClienteForm(e.target.value)}
+                    className="pl-8 h-9"
+                  />
+                </div>
+                <Select value={formData.clienteId} onValueChange={(value) => setFormData(prev => ({ ...prev, clienteId: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um cliente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredClientes.length > 0 ? (
+                      filteredClientes.map(cliente => (
+                        <SelectItem key={cliente.id} value={cliente.id.toString()}>
+                          {cliente.nome}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="p-2 text-sm text-slate-500 text-center">Nenhum cliente encontrado</div>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Número do Protocolo</label>
