@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Trash2, Check, X } from "lucide-react";
+import { Plus, Trash2, Check, X, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +13,8 @@ export default function Despesas() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedProtocolo, setSelectedProtocolo] = useState<string>("");
   const [selectedProcesso, setSelectedProcesso] = useState<string>("");
+  const [searchProtocolo, setSearchProtocolo] = useState("");
+  const [searchProcesso, setSearchProcesso] = useState("");
   const [editingDateId, setEditingDateId] = useState<number | null>(null);
   const [editingDate, setEditingDate] = useState<string>("");
   const [formData, setFormData] = useState({
@@ -20,27 +22,29 @@ export default function Despesas() {
     valor: "",
   });
 
-  // Carregar protocolos
+  // Carregar protocolos com busca
   const { data: protocolosResponse } = trpc.statusProtocolo.listPaginated.useQuery({
     page: 1,
-    limit: 100,
+    limit: 1000,
+    searchTerm: searchProtocolo || undefined,
+    includeArchived: true,
   });
 
   const protocolos = useMemo(() => {
     if (!protocolosResponse) return [];
-    if (Array.isArray(protocolosResponse)) return protocolosResponse;
     return (protocolosResponse as any)?.data || [];
   }, [protocolosResponse]);
 
-  // Carregar processos
+  // Carregar processos com busca
   const { data: processosResponse } = trpc.processos.listPaginated.useQuery({
     page: 1,
-    limit: 100,
+    limit: 1000,
+    searchTerm: searchProcesso || undefined,
+    includeArchived: true,
   });
 
   const processos = useMemo(() => {
     if (!processosResponse) return [];
-    if (Array.isArray(processosResponse)) return processosResponse;
     return (processosResponse as any)?.data || [];
   }, [processosResponse]);
 
@@ -202,14 +206,23 @@ export default function Despesas() {
         <p className="text-slate-600 mt-2">Gerencie custas pagas e adicionais dos protocolos</p>
       </div>
 
-      {/* Seleção dupla: Protocolo + Processo */}
+      {/* Seleção dupla: Protocolo + Processo com Busca */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Selecionar Protocolo</CardTitle>
-            <CardDescription>Escolha um protocolo</CardDescription>
+            <CardDescription>Busque e escolha um protocolo</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="Buscar protocolo ou cliente..."
+                value={searchProtocolo}
+                onChange={(e) => setSearchProtocolo(e.target.value)}
+                className="pl-8"
+              />
+            </div>
             <Select value={selectedProtocolo} onValueChange={setSelectedProtocolo}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione um protocolo..." />
@@ -229,9 +242,18 @@ export default function Despesas() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Selecionar Processo</CardTitle>
-            <CardDescription>Escolha um processo (opcional)</CardDescription>
+            <CardDescription>Busque e escolha um processo</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="Buscar processo ou cliente..."
+                value={searchProcesso}
+                onChange={(e) => setSearchProcesso(e.target.value)}
+                className="pl-8"
+              />
+            </div>
             <Select value={selectedProcesso} onValueChange={setSelectedProcesso}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione um processo..." />

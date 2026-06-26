@@ -286,7 +286,7 @@ export const appRouter = router({
       .input(
         z.object({
           page: z.number().min(1).default(1),
-          limit: z.number().min(1).max(100).default(10),
+          limit: z.number().min(1).max(1000).default(10),
           includeArchived: z.boolean().optional().default(false),
           searchTerm: z.string().optional(),
           status: z.string().optional(),
@@ -957,7 +957,7 @@ export const appRouter = router({
       .input(
         z.object({
           page: z.number().min(1).default(1),
-          limit: z.number().min(1).max(100).default(10),
+          limit: z.number().min(1).max(1000).default(10),
           includeArchived: z.boolean().optional().default(false),
           searchTerm: z.string().optional(),
           status: z.string().optional(),
