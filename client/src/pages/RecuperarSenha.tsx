@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Lock, ArrowLeft } from "lucide-react";
+import { trpc } from "@/lib/trpc";
 
 export default function RecuperarSenha() {
   const [, navigate] = useLocation();
@@ -11,6 +12,7 @@ export default function RecuperarSenha() {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
+  const requestReset = trpc.auth.requestPasswordReset.useMutation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,8 +20,7 @@ export default function RecuperarSenha() {
     setLoading(true);
 
     try {
-      // TODO: Implementar chamada à API de recuperação de senha
-      // await trpc.auth.requestPasswordReset.mutate({ email });
+      await requestReset.mutateAsync({ email });
       setSent(true);
     } catch (err: any) {
       setError(err.message || "Erro ao enviar email de recuperação");

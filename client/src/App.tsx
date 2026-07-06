@@ -13,6 +13,7 @@ import Admin from "./pages/Admin";
 import Calendario from "./pages/Calendario";
 import Perfil from "./pages/Perfil";
 import RecuperarSenha from "./pages/RecuperarSenha";
+import ResetPassword from "./pages/ResetPassword";
 import StatusProtocolo from "./pages/StatusProtocolo";
 import Despesas from "./pages/Despesas";
 import RelatorioProtocolos from "./pages/RelatorioProtocolos";
@@ -244,6 +245,7 @@ function Router() {
       <Switch>
         <Route path="/login" component={Login} />
         <Route path="/recuperar-senha" component={RecuperarSenha} />
+        <Route path="/reset-password" component={ResetPassword} />
         <Route component={Login} />
       </Switch>
     );

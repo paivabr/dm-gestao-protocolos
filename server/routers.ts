@@ -4,6 +4,8 @@ import { z } from "zod";
 import * as auth from "./auth";
 import * as db from "./db";
 import { storagePut } from "./storage";
+import { sendPasswordResetEmail } from "./mailer";
+import crypto from "crypto";
 import { COOKIE_NAME } from "../shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
@@ -161,6 +163,42 @@ export const appRouter = router({
         const success = await db.updateUserPassword(ctx.user.id, newPasswordHash);
         return { success };
       }),
+
+    requestPasswordReset: publicProcedure
+      .input(z.object({ email: z.string().email() }))
+      .mutation(async ({ input }) => {
+        const user = await db.getUserByEmail(input.email);
+        if (!user) {
+          // Por segurança, não revelamos se o email existe ou não
+          return { success: true };
+        }
+
+        const token = crypto.randomBytes(32).toString("hex");
+        const expiresAt = new Date(Date.now() + 3600000); // 1 hora
+
+        await db.savePasswordResetToken(user.id, token, expiresAt);
+        await sendPasswordResetEmail(user.email!, token, user.name || user.username || "Usuário");
+
+        return { success: true };
+      }),
+
+    resetPassword: publicProcedure
+      .input(z.object({
+        token: z.string(),
+        newPassword: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
+      }))
+      .mutation(async ({ input }) => {
+        const user = await db.getUserByResetToken(input.token);
+        if (!user) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Token inválido ou expirado" });
+        }
+
+        const passwordHash = auth.hashPassword(input.newPassword);
+        await db.updateUserPassword(user.id, passwordHash);
+        await db.clearPasswordResetToken(user.id);
+
+        return { success: true };
+      }),
   }),
 
   // ============ CLIENTE ROUTES ============
@@ -290,10 +328,20 @@ export const appRouter = router({
           includeArchived: z.boolean().optional().default(false),
           searchTerm: z.string().optional(),
           status: z.string().optional(),
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
         })
       )
       .query(async ({ input }) => {
-        return await db.getProcessosPaginated(input.page, input.limit, input.includeArchived, input.searchTerm, input.status);
+        return await db.getProcessosPaginated(
+          input.page, 
+          input.limit, 
+          input.includeArchived, 
+          input.searchTerm, 
+          input.status,
+          input.startDate,
+          input.endDate
+        );
       }),
 
     create: protectedProcedure
@@ -963,6 +1011,8 @@ export const appRouter = router({
           status: z.string().optional(),
           tipoProcesso: z.string().optional(),
           cartorio: z.string().optional(),
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
         })
       )
       .query(async ({ ctx, input }) => {
@@ -974,7 +1024,9 @@ export const appRouter = router({
           input.searchTerm,
           input.status,
           input.tipoProcesso,
-          input.cartorio
+          input.cartorio,
+          input.startDate,
+          input.endDate
         );
       }),
 

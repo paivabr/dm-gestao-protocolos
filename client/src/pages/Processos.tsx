@@ -25,6 +25,8 @@ export default function Processos() {
   const [editingProcesso, setEditingProcesso] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchClienteForm, setSearchClienteForm] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   const [formData, setFormData] = useState({
     titulo: "",
@@ -42,6 +44,8 @@ export default function Processos() {
       limit: ITEMS_PER_PAGE,
       searchTerm: searchTerm || undefined,
       status: filterStatus || undefined,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
     },
     {
       enabled: user?.role === "admin" || permissions?.canViewProcesses,
@@ -289,6 +293,24 @@ export default function Processos() {
                 <SelectItem value="Pendente documento">Pendente documento</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Data Inicial</label>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Data Final</label>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
           </div>
         </CardContent>
       </Card>

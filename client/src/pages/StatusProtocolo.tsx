@@ -33,6 +33,8 @@ export default function StatusProtocolo() {
   const [filterStatus, setFilterStatus] = useState("");
   const [filterCartorio, setFilterCartorio] = useState("");
   const [searchClienteForm, setSearchClienteForm] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   const { data: paginatedData, isLoading } = trpc.statusProtocolo.listPaginated.useQuery({
     page: currentPage,
@@ -41,6 +43,8 @@ export default function StatusProtocolo() {
     status: filterStatus || undefined,
     tipoProcesso: filterTipo || undefined,
     cartorio: filterCartorio || undefined,
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
   });
   const utils = trpc.useUtils();
   const { data: clientes = [] } = trpc.clientes.list.useQuery();
@@ -351,6 +355,24 @@ export default function StatusProtocolo() {
                   ))}
                 </SelectContent>
               </Select>
+            </Select>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Data Inicial</label>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Data Final</label>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
             </div>
           </div>
         </CardContent>

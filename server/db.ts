@@ -151,6 +151,44 @@ export async function updateUserPassword(userId: number, passwordHash: string) {
   }
 }
 
+export async function getUserByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  return result[0] || null;
+}
+
+export async function savePasswordResetToken(userId: number, token: string, expiresAt: Date) {
+  const db = await getDb();
+  if (!db) return false;
+  await db.update(users).set({ 
+    resetPasswordToken: token, 
+    resetPasswordExpires: expiresAt.getTime().toString() 
+  }).where(eq(users.id, userId));
+  return true;
+}
+
+export async function getUserByResetToken(token: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(users).where(eq(users.resetPasswordToken, token)).limit(1);
+  const user = result[0];
+  if (user && user.resetPasswordExpires && Number(user.resetPasswordExpires) > Date.now()) {
+    return user;
+  }
+  return null;
+}
+
+export async function clearPasswordResetToken(userId: number) {
+  const db = await getDb();
+  if (!db) return false;
+  await db.update(users).set({ 
+    resetPasswordToken: null, 
+    resetPasswordExpires: null 
+  }).where(eq(users.id, userId));
+  return true;
+}
+
 export async function setResetPasswordToken(userId: number, token: string, expiresIn: number = 3600000) {
   const db = await getDb();
   if (!db) {
@@ -1452,7 +1490,9 @@ export async function getStatusProtocoloPaginated(
   searchTerm?: string,
   status?: string,
   tipoProcesso?: string,
-  cartorio?: string
+  cartorio?: string,
+  startDate?: string,
+  endDate?: string
 ) {
   const db = await getDb();
   if (!db) {
@@ -1508,6 +1548,13 @@ export async function getStatusProtocoloPaginated(
 
     if (cartorio && cartorio !== "all") {
       conditions.push(eq(statusProtocolo.cartorio, cartorio));
+    }
+
+    if (startDate) {
+      conditions.push(sql`${statusProtocolo.dataAbertura} >= ${startDate}`);
+    }
+    if (endDate) {
+      conditions.push(sql`${statusProtocolo.dataAbertura} <= ${endDate}`);
     }
 
     if (conditions.length > 0) {
