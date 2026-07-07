@@ -206,27 +206,7 @@ export async function setResetPasswordToken(userId: number, token: string, expir
   }
 }
 
-export async function getUserByResetToken(token: string) {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get user by reset token: database not available");
-    return undefined;
-  }
 
-  try {
-    const result = await db.select().from(users).where(eq(users.resetPasswordToken, token)).limit(1);
-    if (result.length > 0) {
-      const user = result[0];
-      if (user.resetPasswordExpires && Number(user.resetPasswordExpires) > Date.now()) {
-        return user;
-      }
-    }
-    return undefined;
-  } catch (error) {
-    console.error("[Database] Failed to get user by reset token:", error);
-    return undefined;
-  }
-}
 
 export async function clearResetPasswordToken(userId: number) {
   const db = await getDb();
