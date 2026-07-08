@@ -2,17 +2,26 @@ import nodemailer from "nodemailer";
 
 // Configuração do transportador de e-mail
 // O usuário precisará configurar as variáveis de ambiente no Railway
+const smtpPort = parseInt(process.env.SMTP_PORT || "587");
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port: parseInt(process.env.SMTP_PORT || "587"),
-  secure: process.env.SMTP_SECURE === "true",
+  port: smtpPort,
+  secure: process.env.SMTP_SECURE === "true" || smtpPort === 465,
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
+  connectionTimeout: 15000, // 15 segundos
+  greetingTimeout: 15000,
+  socketTimeout: 15000,
 });
 
 export async function sendPasswordResetEmail(email: string, token: string, name: string) {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.error("[Mailer] SMTP credentials not configured in environment variables.");
+    return { success: false, error: "Serviço de e-mail não configurado." };
+  }
+
   const resetUrl = `${process.env.APP_URL || "https://dm-gestao-protocolos-production.up.railway.app"}/reset-password?token=${token}`;
   
   const mailOptions = {
