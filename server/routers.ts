@@ -177,7 +177,14 @@ export const appRouter = router({
         const expiresAt = new Date(Date.now() + 3600000); // 1 hora
 
         await db.savePasswordResetToken(user.id, token, expiresAt);
-        await sendPasswordResetEmail(user.email!, token, user.name || user.username || "Usuário");
+        const emailResult = await sendPasswordResetEmail(user.email!, token, user.name || user.username || "Usuário");
+
+        if (!emailResult.success) {
+          throw new TRPCError({ 
+            code: "INTERNAL_SERVER_ERROR", 
+            message: typeof emailResult.error === 'string' ? emailResult.error : "Erro ao enviar e-mail de recuperação. Verifique as configurações de SMTP." 
+          });
+        }
 
         return { success: true };
       }),
